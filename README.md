@@ -1,12 +1,12 @@
-# AiGen CMS
+# AIGenApp
 
-A headless CMS framework in Go, rewritten from the [FormCMS](https://github.com/formcms/formcms) original C# implementation (**NOTE:** no upstream dependency).
+A headless CMS and dynamic application framework in Go, evolved from the FormCMS original C# implementation. It uses a single-table JSON store for maximum schema flexibility.
 
 ## Features
 
 - **Agentic Workflows**: Integrated multi-agent system powered by Gemini models for orchestrating tasks.
   - **Router Agent**: Intelligently routes user requests between specialized sub-agents.
-  - **CMS Agent**: Manages and queries CMS data and schemas autonomously.
+  - **App Agent**: Manages and queries app data and schemas autonomously.
   - **UI Agent**: Dynamically updates the A2UI dashboard components based on user interactions and data changes.
 - **App Capability Discovery**: Built-in `app_def.json` and context file framework allowing LLM agents to dynamically discover app purpose, roles, and entity relationships.
 - **A2UI Protocol**: Real-time Agent-to-User Interface for streaming backend-driven UI updates (SSE) using a high-performance adjacency list model.
@@ -14,9 +14,9 @@ A headless CMS framework in Go, rewritten from the [FormCMS](https://github.com/
   - **Authenticated Channels**: Link verified platform identities to user profiles.
   - **E-trail Logging**: Secure audit logs with IP and User Agent for non-repudiation.
   - **Guest Support**: Configurable guest access across different channels.
-- **Frappe/ERPNext Integration**: Built-in support for importing and mapping Frappe Doctypes to native CMS schemas.
-- **Advanced RBAC**: Granular Role-Based Access Control with field-level and row-level security filters.
-- **Dynamic Data Modeling**: Define entities and attributes via UI or API.
+- **Frappe/ERPNext Integration**: Built-in support for importing and mapping Frappe Doctypes to native app schemas.
+- **Advanced RBAC**: Granular Role-Based Access Control with field-level and row-level security filters managed via JSON metadata.
+- **Schema-on-Read Data Modeling**: Define entities and attributes dynamically. All data is stored in a highly flexible single-table JSON schema (`aigen_records`), making migrations a thing of the past.
 - **REST & GraphQL APIs**: Auto-generated CRUD and GraphQL endpoints.
 - **File Storage**: Local and S3 support with image processing.
 - **Social Engagement**: Built-in likes, bookmarks, and comments.
@@ -24,7 +24,7 @@ A headless CMS framework in Go, rewritten from the [FormCMS](https://github.com/
 
 ## Getting Started
 
-AiGen CMS is now a reusable Go framework. To use it, create a new Go project and import the framework.
+AIGenApp is a reusable Go framework. To use it, create a new Go project and import the framework.
 
 ### Prerequisites
 
@@ -34,9 +34,9 @@ AiGen CMS is now a reusable Go framework. To use it, create a new Go project and
 
 1. **Initialize a new Go module:**
 ```bash
-mkdir my-cms
-cd my-cms
-go mod init my-cms
+mkdir my-app
+cd my-app
+go mod init my-app
 ```
 
 2. **Create a `main.go` file:**
@@ -71,8 +71,7 @@ func main() {
 ```yaml
 apps_dir: "apps"
 www_root: "wwwroot"
-database_type: "SQLite"
-database_dsn: "formcms.db"
+database_dsn: "sqlite://aigen.db"
 domain: ""
 port: "5000"
 agentic_config_path: "agentic.yaml"
@@ -96,7 +95,7 @@ The server will start on `http://localhost:5000`.
 
 ### Automatic HTTPS (autocert)
 
-FormCMS Go supports automatic TLS certificate provisioning via Let's Encrypt using `autocert`. To enable this:
+AIGenApp supports automatic TLS certificate provisioning via Let's Encrypt using `autocert`. To enable this:
 
 1. Point your domain's DNS A/AAAA records to your server's IP.
 2. Ensure ports `80` and `443` are open and not in use by other processes.
@@ -110,11 +109,11 @@ The server will automatically handle HTTP-to-HTTPS redirection and store certifi
 
 ## Framework Structure
 
-- `framework`: The main entry point `Start()` function to initialize the CMS.
+- `framework`: The main entry point `Start()` function to initialize the application.
 - `apps`: Pre-packaged data models, test data, and UI logic that load dynamically.
 - `core/api`: HTTP handlers and routing.
 - `core/descriptors`: Data models and schema definitions.
 - `core/services`: Business logic and orchestration.
 - `infrastructure/filestore`: File storage implementations (Local, S3).
-- `infrastructure/relationdbdao`: Database abstraction layer (PostgreSQL, SQLite).
+- `infrastructure/relationdbdao`: Database abstraction layer (PostgreSQL, SQLite using single JSON store).
 - `utils`: Shared utilities and data models.
