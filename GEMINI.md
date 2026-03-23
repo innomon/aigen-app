@@ -18,6 +18,9 @@ You are evolving `AIGenApp` (formerly `aigen-cms` / `FormCMS`) backend in Go (Go
 - Concurrency and background workers should be handled using standard goroutines and channels, rather than heavy background worker frameworks unless necessary.
 - Store static assets and embedded files (like the admin panel frontend) using Go `//go:embed`.
 
+## Downstream App Development
+When tasked with creating a new downstream app (e.g., in `apps/`), refer to the [Downstream App Development Guide](conductor/downstream-app-development-guide.md) for step-by-step instructions on manifests, schemas, and test data.
+
 ## Workflow
 1. Use `codebase_investigator` to search source for business logic.
 2. Ensure new features adhere to the `RecJSON` single-table persistence pattern.
