@@ -3,13 +3,16 @@ package services
 import (
 	"context"
 	"time"
+	"fmt"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	"github.com/mitchellh/mapstructure"
+	gonanoid "github.com/matoous/go-nanoid/v2"
+	"encoding/json"
 )
+
+const NotificationNamespace = "aigen.core.descriptors.Notification"
 
 type NotificationService struct {
 	dao relationdbdao.IPrimaryDao
@@ -20,117 +23,78 @@ func NewNotificationService(dao relationdbdao.IPrimaryDao) *NotificationService 
 }
 
 func (s *NotificationService) List(ctx context.Context, userId string, pagination datamodels.Pagination) ([]*descriptors.Notification, error) {
-	sb := s.dao.GetBuilder().Select("*").From(descriptors.NotificationTableName).
-		Where(squirrel.Eq{"user_id": userId, "deleted": false}).
-		OrderBy("id DESC")
-
-	// Apply pagination
-	if pagination.Limit != nil {
-		// ...
+	filters := []datamodels.Filter{
+		{FieldName: "userId", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{userId}}}},
+		{FieldName: "deleted", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{false}}}},
 	}
 
-	query, args, err := sb.ToSql()
+	recs, _, err := s.dao.List(ctx, NotificationNamespace, filters, pagination, []datamodels.Sort{{Field: "createdAt", Order: datamodels.SortOrderDesc}})
 	if err != nil {
 		return nil, err
 	}
-
-	rows, err := s.dao.GetDb().QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	var results []*descriptors.Notification
-	for rows.Next() {
-		notif, err := s.scanNotification(rows)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, notif)
+	for _, r := range recs {
+		var notif descriptors.Notification
+		data, _ := json.Marshal(r.Rec)
+		json.Unmarshal(data, &notif)
+		results = append(results, &notif)
 	}
-
 	return results, nil
 }
 
 func (s *NotificationService) Send(ctx context.Context, n *descriptors.Notification) error {
+	id, _ := gonanoid.New(12)
 	now := time.Now()
+	n.Id = id
 	n.CreatedAt = now
 	n.UpdatedAt = now
 
-	data := datamodels.Record{
-		"user_id":      n.UserId,
-		"sender_id":    n.SenderId,
-		"action_type":  n.ActionType,
-		"message_type": n.MessageType,
-		"message":      n.Message,
-		"url":          n.Url,
-		"is_read":      n.IsRead,
-		"created_at":   n.CreatedAt,
-		"updated_at":   n.UpdatedAt,
+	rec := datamodels.RecJSON{
+		Namespace: NotificationNamespace,
+		Key:       id,
+		Rec:       n,
+		Tmstamp:   now,
 	}
 
-	query, args, err := s.dao.GetBuilder().Insert(descriptors.NotificationTableName).
-		SetMap(data).ToSql()
-	if err != nil {
-		return err
-	}
-
-	_, err = s.dao.GetDb().ExecContext(ctx, query, args...)
-	return err
+	return s.dao.Save(ctx, rec)
 }
 
-func (s *NotificationService) MarkAsRead(ctx context.Context, userId string, id int64) error {
-	query, args, err := s.dao.GetBuilder().Update(descriptors.NotificationTableName).
-		Set("is_read", true).
-		Where(squirrel.Eq{"id": id, "user_id": userId}).ToSql()
-	if err != nil {
-		return err
+func (s *NotificationService) MarkAsRead(ctx context.Context, userId string, id string) error {
+	rec, err := s.dao.Get(ctx, NotificationNamespace, id)
+	if err != nil || rec == nil {
+		return fmt.Errorf("notification not found")
 	}
 
-	_, err = s.dao.GetDb().ExecContext(ctx, query, args...)
-	return err
+	var notif descriptors.Notification
+	data, _ := json.Marshal(rec.Rec)
+	json.Unmarshal(data, &notif)
+
+	if notif.UserId != userId {
+		return fmt.Errorf("access denied")
+	}
+
+	notif.IsRead = true
+	notif.UpdatedAt = time.Now()
+	rec.Rec = notif
+	return s.dao.Save(ctx, *rec)
 }
 
 func (s *NotificationService) MarkAllAsRead(ctx context.Context, userId string) error {
-	query, args, err := s.dao.GetBuilder().Update(descriptors.NotificationTableName).
-		Set("is_read", true).
-		Where(squirrel.Eq{"user_id": userId, "is_read": false}).ToSql()
-	if err != nil {
-		return err
+	filters := []datamodels.Filter{
+		{FieldName: "userId", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{userId}}}},
+		{FieldName: "isRead", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{false}}}},
 	}
 
-	_, err = s.dao.GetDb().ExecContext(ctx, query, args...)
-	return err
-}
-
-func (s *NotificationService) scanNotification(scanner interface {
-	Scan(dest ...interface{}) error
-	Columns() ([]string, error)
-}) (*descriptors.Notification, error) {
-	cols, _ := scanner.Columns()
-	values := make([]interface{}, len(cols))
-	valuePtrs := make([]interface{}, len(cols))
-	for i := range cols {
-		valuePtrs[i] = &values[i]
+	recs, _, _ := s.dao.List(ctx, NotificationNamespace, filters, datamodels.Pagination{}, nil)
+	for _, r := range recs {
+		var notif descriptors.Notification
+		data, _ := json.Marshal(r.Rec)
+		json.Unmarshal(data, &notif)
+		notif.IsRead = true
+		notif.UpdatedAt = time.Now()
+		r.Rec = notif
+		s.dao.Save(ctx, r)
 	}
-
-	if err := scanner.Scan(valuePtrs...); err != nil {
-		return nil, err
-	}
-
-	record := make(map[string]interface{})
-	for i, col := range cols {
-		val := values[i]
-		if b, ok := val.([]byte); ok {
-			record[col] = string(b)
-		} else {
-			record[col] = val
-		}
-	}
-
-	var n descriptors.Notification
-	if err := mapstructure.Decode(record, &n); err != nil {
-		return nil, err
-	}
-	return &n, nil
+	return nil
 }

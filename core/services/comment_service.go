@@ -25,8 +25,8 @@ func NewCommentService(dao relationdbdao.IPrimaryDao) *CommentService {
 
 func (s *CommentService) List(ctx context.Context, entityName string, recordId int64, pagination datamodels.Pagination) ([]*descriptors.Comment, error) {
 	filters := []datamodels.Filter{
-		{FieldName: "entity_name", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{entityName}}}},
-		{FieldName: "record_id", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{recordId}}}},
+		{FieldName: "entityName", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{entityName}}}},
+		{FieldName: "recordId", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{recordId}}}},
 		{FieldName: "parent", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{nil}}}},
 		{FieldName: "deleted", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{false}}}},
 	}

@@ -54,14 +54,14 @@ func (s *SchemaService) All(ctx context.Context, schemaType *descriptors.SchemaT
 	}
 	if status != nil {
 		filters = append(filters, datamodels.Filter{
-			FieldName: "publication_status",
+			FieldName: "publicationStatus",
 			Constraints: []datamodels.Constraint{
 				{Match: "equals", Values: []interface{}{*status}},
 			},
 		})
 	} else {
 		filters = append(filters, datamodels.Filter{
-			FieldName: "is_latest",
+			FieldName: "isLatest",
 			Constraints: []datamodels.Constraint{
 				{Match: "equals", Values: []interface{}{true}},
 			},
@@ -146,14 +146,14 @@ func (s *SchemaService) ByNameOrDefault(ctx context.Context, name string, schema
 
 	if status != nil {
 		filters = append(filters, datamodels.Filter{
-			FieldName: "publication_status",
+			FieldName: "publicationStatus",
 			Constraints: []datamodels.Constraint{
 				{Match: "equals", Values: []interface{}{*status}},
 			},
 		})
 	} else {
 		filters = append(filters, datamodels.Filter{
-			FieldName: "is_latest",
+			FieldName: "isLatest",
 			Constraints: []datamodels.Constraint{
 				{Match: "equals", Values: []interface{}{true}},
 			},
@@ -328,13 +328,13 @@ func (s *SchemaService) Save(ctx context.Context, schema *descriptors.Schema, as
 	if schema.IsLatest {
 		filters := []datamodels.Filter{
 			{
-				FieldName: "schema_id",
+				FieldName: "schemaId",
 				Constraints: []datamodels.Constraint{
 					{Match: "equals", Values: []interface{}{schema.SchemaId}},
 				},
 			},
 			{
-				FieldName: "is_latest",
+				FieldName: "isLatest",
 				Constraints: matchEqualityConstraint("equals", true),
 			},
 		}
@@ -350,13 +350,13 @@ func (s *SchemaService) Save(ctx context.Context, schema *descriptors.Schema, as
 	if asPublished {
 		filters := []datamodels.Filter{
 			{
-				FieldName: "schema_id",
+				FieldName: "schemaId",
 				Constraints: []datamodels.Constraint{
 					{Match: "equals", Values: []interface{}{schema.SchemaId}},
 				},
 			},
 			{
-				FieldName: "publication_status",
+				FieldName: "publicationStatus",
 				Constraints: []datamodels.Constraint{
 					{Match: "equals", Values: []interface{}{descriptors.Published}},
 				},

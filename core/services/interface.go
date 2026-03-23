@@ -71,7 +71,7 @@ type IAuthService interface {
 type INotificationService interface {
 	List(ctx context.Context, userId string, pagination datamodels.Pagination) ([]*descriptors.Notification, error)
 	Send(ctx context.Context, notification *descriptors.Notification) error
-	MarkAsRead(ctx context.Context, userId string, id int64) error
+	MarkAsRead(ctx context.Context, userId string, id string) error
 	MarkAllAsRead(ctx context.Context, userId string) error
 }
 

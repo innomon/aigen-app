@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/innomon/aigen-app/core/services"
@@ -53,7 +52,7 @@ func (a *NotificationApi) List(w http.ResponseWriter, r *http.Request) {
 
 func (a *NotificationApi) MarkAsRead(w http.ResponseWriter, r *http.Request) {
 	userId := fmt.Sprintf("%v", r.Context().Value("userId"))
-	id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	id := chi.URLParam(r, "id")
 
 	if err := a.notificationService.MarkAsRead(r.Context(), userId, id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

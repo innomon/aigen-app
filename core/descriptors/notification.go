@@ -7,7 +7,7 @@ import (
 const NotificationTableName = "__notifications"
 
 type Notification struct {
-	Id          int64     `json:"id" mapstructure:"id"`
+	Id          string    `json:"id" mapstructure:"id"`
 	UserId      string    `json:"userId" mapstructure:"user_id"`
 	SenderId    string    `json:"senderId" mapstructure:"sender_id"`
 	ActionType  string    `json:"actionType" mapstructure:"action_type"`

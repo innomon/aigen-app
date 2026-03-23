@@ -45,9 +45,9 @@ func NewAssetService(dao relationdbdao.IPrimaryDao, fileStore filestore.IFileSto
 
 func (s *AssetService) ChunkStatus(ctx context.Context, userId, fileName string, fileSize int64) (*datamodels.ChunkStatus, error) {
 	filters := []datamodels.Filter{
-		{FieldName: "user_id", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{userId}}}},
-		{FieldName: "file_name", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{fileName}}}},
-		{FieldName: "file_size", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{fileSize}}}},
+		{FieldName: "userId", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{userId}}}},
+		{FieldName: "fileName", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{fileName}}}},
+		{FieldName: "fileSize", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{fileSize}}}},
 	}
 	recs, _, err := s.dao.List(ctx, UploadSessionNamespace, filters, datamodels.Pagination{}, nil)
 	if err != nil || len(recs) == 0 {

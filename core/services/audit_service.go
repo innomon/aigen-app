@@ -22,7 +22,7 @@ func NewAuditService(dao relationdbdao.IPrimaryDao) *AuditService {
 }
 
 func (s *AuditService) List(ctx context.Context, pagination datamodels.Pagination) ([]*descriptors.AuditLog, error) {
-	recs, _, err := s.dao.List(ctx, AuditLogNamespace, nil, pagination, []datamodels.Sort{{Field: "created_at", Order: datamodels.SortOrderDesc}})
+	recs, _, err := s.dao.List(ctx, AuditLogNamespace, nil, pagination, []datamodels.Sort{{Field: "createdAt", Order: datamodels.SortOrderDesc}})
 	if err != nil {
 		return nil, err
 	}
