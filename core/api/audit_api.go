@@ -3,12 +3,11 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/core/services"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/core/services"
+	"github.com/innomon/aigen-app/utils/datamodels"
 )
 
 type AuditApi struct {
@@ -50,7 +49,7 @@ func (a *AuditApi) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AuditApi) Get(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	id := chi.URLParam(r, "id")
 	log, err := a.auditService.ById(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -48,7 +48,7 @@ export async function loadNavBar(container) {
     const html = `
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="/">
-            <img alt="logo" src="img/aigen-cms.svg" height="50" class="mr-2">
+            <img alt="logo" src="img/aigen-app.svg" height="50" class="mr-2">
         </a>
         <div class="navbar-nav w-100 d-flex align-items-center">
             ${menuItemsHtml}

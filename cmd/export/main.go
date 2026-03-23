@@ -9,10 +9,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/core/services"
-	"github.com/innomon/aigen-cms/infrastructure/relationdbdao"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/core/services"
+	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/utils/datamodels"
 )
 
 func main() {
@@ -22,11 +22,15 @@ func main() {
 
 	log.Printf("Starting export from %s to %s", *dbPath, *outDir)
 
-	dao, err := relationdbdao.CreateDao(descriptors.SQLite, *dbPath)
+	dao, err := relationdbdao.CreateDao(*dbPath)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer dao.Close()
+
+	if err := dao.EnsureTable(context.Background()); err != nil {
+		log.Fatalf("Failed to ensure records table: %v", err)
+	}
 
 	schemaService := services.NewSchemaService(dao)
 	permissionService := services.NewPermissionService(dao, schemaService)

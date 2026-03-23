@@ -9,12 +9,12 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/innomon/aigen-cms/core/api"
-	"github.com/innomon/aigen-cms/core/apps"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/core/services"
-	"github.com/innomon/aigen-cms/infrastructure/filestore"
-	"github.com/innomon/aigen-cms/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/core/api"
+	"github.com/innomon/aigen-app/core/apps"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/core/services"
+	"github.com/innomon/aigen-app/infrastructure/filestore"
+	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/crypto/acme/autocert"
@@ -47,62 +47,14 @@ type App struct {
 // NewApp initializes all services and the router, but does not start the server.
 func NewApp(cfg *Config) (*App, error) {
 	// Initialize Database
-	dao, err := relationdbdao.CreateDao(descriptors.DatabaseProvider(cfg.DatabaseType), cfg.DatabaseDSN)
+	dao, err := relationdbdao.CreateDao(cfg.DatabaseDSN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dao: %w", err)
 	}
 
-	// Ensure core tables exist
-	_, err = dao.GetDb().ExecContext(context.Background(), `
-		CREATE TABLE IF NOT EXISTS __schemas (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			schema_id TEXT,
-			name TEXT,
-			type TEXT,
-			settings TEXT,
-			description TEXT,
-			is_latest BOOLEAN,
-			publication_status TEXT,
-			created_at DATETIME,
-			created_by TEXT,
-			deleted BOOLEAN
-		);
-		CREATE TABLE IF NOT EXISTS __users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			email TEXT UNIQUE NOT NULL,
-			password_hash TEXT NOT NULL,
-			role TEXT NOT NULL,
-			avatar_path TEXT,
-			created_at DATETIME,
-			updated_at DATETIME
-		);
-		CREATE TABLE IF NOT EXISTS __user_channels (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER NOT NULL,
-			agent_id TEXT,
-			channel_type TEXT NOT NULL,
-			identifier TEXT NOT NULL,
-			is_authenticated BOOLEAN DEFAULT 0,
-			metadata TEXT,
-			created_at DATETIME,
-			updated_at DATETIME,
-			FOREIGN KEY (user_id) REFERENCES __users(id)
-		);
-		CREATE TABLE IF NOT EXISTS __auth_logs (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER,
-			channel_type TEXT NOT NULL,
-			action TEXT NOT NULL,
-			ip_address TEXT,
-			user_agent TEXT,
-			success BOOLEAN,
-			metadata TEXT,
-			created_at DATETIME,
-			FOREIGN KEY (user_id) REFERENCES __users(id)
-		);
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create core tables: %w", err)
+	// Ensure core records table exists
+	if err := dao.EnsureTable(context.Background()); err != nil {
+		return nil, fmt.Errorf("failed to ensure records table: %w", err)
 	}
 
 	// Initialize Services

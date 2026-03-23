@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/core/services"
-	"github.com/innomon/aigen-cms/infrastructure/relationdbdao"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/core/services"
+	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/utils/datamodels"
 )
 
 type AppsConfig struct {
@@ -22,7 +22,7 @@ func LoadAppsConfig(appsDir string) ([]string, error) {
 	data, err := os.ReadFile(filepath.Join(appsDir, "apps.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil // No config, no apps
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func SetupApp(ctx context.Context, appsDir string, appName string, schemaService
 	files, err := os.ReadDir(schemasDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil // Nothing to do
+			return nil
 		}
 		return fmt.Errorf("failed to read %s schemas directory: %w", appName, err)
 	}
@@ -59,55 +59,13 @@ func SetupApp(ctx context.Context, appsDir string, appName string, schemaService
 			return fmt.Errorf("failed to parse schema file %s: %w", filePath, err)
 		}
 
-		// Check if schema already exists to avoid duplicates
 		existing, err := schemaService.ByNameOrDefault(ctx, entity.Name, descriptors.EntitySchema, nil)
 		if err != nil {
 			return fmt.Errorf("failed to check existing schema %s: %w", entity.Name, err)
 		}
 
 		if existing != nil {
-			continue // Schema already exists
-		}
-
-		// CREATE TABLE
-		var cols []datamodels.Column
-		// Default fields
-		cols = append(cols, datamodels.Column{Name: "id", Type: datamodels.Id})
-
-		for _, attr := range entity.Attributes {
-			if !attr.DataType.IsLocal() {
-				continue
-			}
-
-			var colType datamodels.ColumnType
-			switch attr.DataType {
-			case descriptors.Int:
-				colType = datamodels.Int
-			case descriptors.Float:
-				colType = datamodels.Float
-			case descriptors.Datetime:
-				colType = datamodels.Datetime
-			case descriptors.Boolean:
-				colType = datamodels.Boolean
-			case descriptors.Text:
-				colType = datamodels.Text
-			case descriptors.String, descriptors.DataTypeLookup:
-				colType = datamodels.String // IDs are UUIDs (strings)
-			default:
-				colType = datamodels.String
-			}
-
-			cols = append(cols, datamodels.Column{Name: attr.Field, Type: colType})
-		}
-
-		// System fields
-		cols = append(cols, datamodels.Column{Name: "created_at", Type: datamodels.CreatedTime})
-		cols = append(cols, datamodels.Column{Name: "updated_at", Type: datamodels.UpdatedTime})
-		cols = append(cols, datamodels.Column{Name: "deleted", Type: datamodels.Boolean})
-
-		err = dao.CreateTable(ctx, entity.TableName, cols)
-		if err != nil && !isTableExistsError(err) {
-			return fmt.Errorf("failed to create table %s: %w", entity.TableName, err)
+			continue
 		}
 
 		schema := &descriptors.Schema{
@@ -125,18 +83,10 @@ func SetupApp(ctx context.Context, appsDir string, appName string, schemaService
 			return fmt.Errorf("failed to save schema %s: %w", entity.Name, err)
 		}
 
-		fmt.Printf("Registered schema and created table: %s\n", entity.Name)
+		fmt.Printf("Registered schema: %s (App: %s)\n", entity.Name, appName)
 	}
 
 	return nil
-}
-
-func isTableExistsError(err error) bool {
-	if err == nil {
-		return false
-	}
-	errStr := strings.ToLower(err.Error())
-	return strings.Contains(errStr, "already exists") || strings.Contains(errStr, "exists")
 }
 
 type TestDataEntry struct {
@@ -151,7 +101,7 @@ func SetupAppTestData(ctx context.Context, appsDir string, appName string, entit
 	dataBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil // Nothing to do
+			return nil
 		}
 		return fmt.Errorf("failed to read test_data.json for %s: %v", appName, err)
 	}
@@ -163,7 +113,6 @@ func SetupAppTestData(ctx context.Context, appsDir string, appName string, entit
 		return fmt.Errorf("failed to unmarshal test data: %v", err)
 	}
 
-	// For deduplication logic, we could check if the first entry entity exists
 	if len(entries) > 0 {
 		limit := "1"
 		records, _, err := entityService.List(ctx, entries[0].Entity, datamodels.Pagination{Limit: &limit}, nil, nil)
@@ -184,15 +133,12 @@ func SetupAppTestData(ctx context.Context, appsDir string, appName string, entit
 				refKey := strings.TrimPrefix(strVal, "$Ref:")
 				if resolvedVal, exists := refMap[refKey]; exists {
 					data[k] = resolvedVal
-				} else {
-					fmt.Printf("Warning: Could not resolve reference %s\n", refKey)
 				}
 			}
 		}
 	}
 
 	for _, entry := range entries {
-		// Prepare data, resolve references
 		resolveRefs(entry.Data)
 
 		rec, err := entityService.Insert(ctx, entry.Entity, entry.Data)
@@ -204,7 +150,6 @@ func SetupAppTestData(ctx context.Context, appsDir string, appName string, entit
 			refMap[entry.Ref] = rec["id"]
 		}
 
-		// Insert children
 		if entry.Children != nil {
 			for childAttr, childrenArr := range entry.Children {
 				for i, childData := range childrenArr {

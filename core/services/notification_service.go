@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/infrastructure/relationdbdao"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/utils/datamodels"
 	"github.com/mitchellh/mapstructure"
 )
 

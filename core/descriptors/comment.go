@@ -17,4 +17,5 @@ type Comment struct {
 	PublishedAt    *time.Time `json:"publishedAt" mapstructure:"publishedAt"`
 	CreatedAt      time.Time  `json:"createdAt" mapstructure:"createdAt"`
 	UpdatedAt      time.Time  `json:"updatedAt" mapstructure:"updatedAt"`
+	Deleted        bool       `json:"deleted" mapstructure:"deleted"`
 }

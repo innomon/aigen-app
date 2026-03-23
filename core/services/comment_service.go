@@ -6,13 +6,14 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/Masterminds/squirrel"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/infrastructure/relationdbdao"
-	"github.com/innomon/aigen-cms/utils/datamodels"
-	"github.com/mitchellh/mapstructure"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/utils/datamodels"
 	"github.com/oklog/ulid/v2"
+	"encoding/json"
 )
+
+const CommentNamespace = "aigen.core.descriptors.Comment"
 
 type CommentService struct {
 	dao relationdbdao.IPrimaryDao
@@ -23,51 +24,38 @@ func NewCommentService(dao relationdbdao.IPrimaryDao) *CommentService {
 }
 
 func (s *CommentService) List(ctx context.Context, entityName string, recordId int64, pagination datamodels.Pagination) ([]*descriptors.Comment, error) {
-	sb := s.dao.GetBuilder().Select("*").From(descriptors.CommentTableName).
-		Where(squirrel.Eq{"entity_name": entityName, "record_id": recordId, "parent": nil, "deleted": false}).
-		OrderBy("id DESC")
+	filters := []datamodels.Filter{
+		{FieldName: "entity_name", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{entityName}}}},
+		{FieldName: "record_id", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{recordId}}}},
+		{FieldName: "parent", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{nil}}}},
+		{FieldName: "deleted", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{false}}}},
+	}
 
-	query, args, err := sb.ToSql()
+	recs, _, err := s.dao.List(ctx, CommentNamespace, filters, pagination, []datamodels.Sort{{Field: "id", Order: datamodels.SortOrderDesc}})
 	if err != nil {
 		return nil, err
 	}
-
-	rows, err := s.dao.GetDb().QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	var results []*descriptors.Comment
-	for rows.Next() {
-		comment, err := s.scanComment(rows)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, comment)
+	for _, r := range recs {
+		var comment descriptors.Comment
+		data, _ := json.Marshal(r.Rec)
+		json.Unmarshal(data, &comment)
+		results = append(results, &comment)
 	}
-
 	return results, nil
 }
 
 func (s *CommentService) Single(ctx context.Context, id string) (*descriptors.Comment, error) {
-	query, args, err := s.dao.GetBuilder().Select("*").From(descriptors.CommentTableName).
-		Where(squirrel.Eq{"id": id, "deleted": false}).Limit(1).ToSql()
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := s.dao.GetDb().QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
+	rec, err := s.dao.Get(ctx, CommentNamespace, id)
+	if err != nil || rec == nil {
 		return nil, fmt.Errorf("comment not found")
 	}
 
-	return s.scanComment(rows)
+	var comment descriptors.Comment
+	data, _ := json.Marshal(rec.Rec)
+	json.Unmarshal(data, &comment)
+	return &comment, nil
 }
 
 func (s *CommentService) Save(ctx context.Context, comment *descriptors.Comment) (*descriptors.Comment, error) {
@@ -81,25 +69,14 @@ func (s *CommentService) Save(ctx context.Context, comment *descriptors.Comment)
 	}
 	comment.UpdatedAt = now
 
-	data := datamodels.Record{
-		"id":          comment.Id,
-		"entity_name": comment.EntityName,
-		"record_id":   comment.RecordId,
-		"created_by":  comment.CreatedBy,
-		"content":     comment.Content,
-		"parent":      comment.Parent,
-		"mention":     comment.Mention,
-		"updated_at":  comment.UpdatedAt,
-	}
-	if comment.CreatedAt.IsZero() {
-		data["created_at"] = now
-	} else {
-		data["created_at"] = comment.CreatedAt
+	rec := datamodels.RecJSON{
+		Namespace: CommentNamespace,
+		Key:       comment.Id,
+		Rec:       comment,
+		Tmstamp:   now,
 	}
 
-	keyFields := []string{"id"}
-	_, err := s.dao.UpdateOnConflict(ctx, descriptors.CommentTableName, data, keyFields)
-	if err != nil {
+	if err := s.dao.Save(ctx, rec); err != nil {
 		return nil, err
 	}
 
@@ -107,45 +84,14 @@ func (s *CommentService) Save(ctx context.Context, comment *descriptors.Comment)
 }
 
 func (s *CommentService) Delete(ctx context.Context, userId, id string) error {
-	query, args, err := s.dao.GetBuilder().Update(descriptors.CommentTableName).
-		Set("deleted", true).
-		Where(squirrel.Eq{"id": id, "created_by": userId}).ToSql()
+	comment, err := s.Single(ctx, id)
 	if err != nil {
 		return err
 	}
-
-	_, err = s.dao.GetDb().ExecContext(ctx, query, args...)
+	if comment.CreatedBy != userId {
+		return fmt.Errorf("access denied")
+	}
+	comment.Deleted = true
+	_, err = s.Save(ctx, comment)
 	return err
-}
-
-func (s *CommentService) scanComment(scanner interface {
-	Scan(dest ...interface{}) error
-	Columns() ([]string, error)
-}) (*descriptors.Comment, error) {
-	cols, _ := scanner.Columns()
-	values := make([]interface{}, len(cols))
-	valuePtrs := make([]interface{}, len(cols))
-	for i := range cols {
-		valuePtrs[i] = &values[i]
-	}
-
-	if err := scanner.Scan(valuePtrs...); err != nil {
-		return nil, err
-	}
-
-	record := make(map[string]interface{})
-	for i, col := range cols {
-		val := values[i]
-		if b, ok := val.([]byte); ok {
-			record[col] = string(b)
-		} else {
-			record[col] = val
-		}
-	}
-
-	var comment descriptors.Comment
-	if err := mapstructure.Decode(record, &comment); err != nil {
-		return nil, err
-	}
-	return &comment, nil
 }

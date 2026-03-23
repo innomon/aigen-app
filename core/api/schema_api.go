@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/core/services"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/core/services"
 )
 
 type SchemaApi struct {

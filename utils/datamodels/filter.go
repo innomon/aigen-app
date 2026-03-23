@@ -1,8 +1,8 @@
 package datamodels
 
 type Constraint struct {
-	Match  string    `json:"match"`
-	Values []*string `json:"values"`
+	Match  string        `json:"match"`
+	Values []interface{} `json:"values"`
 }
 
 const (

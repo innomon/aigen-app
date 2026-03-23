@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/innomon/aigen-cms/core/agentic/agents"
+	"github.com/innomon/aigen-app/core/agentic/agents"
 	"github.com/innomon/agentic/pkg/config"
 	"github.com/innomon/agentic/pkg/registry"
 	"google.golang.org/adk/agent"

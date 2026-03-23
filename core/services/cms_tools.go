@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/utils/datamodels"
 	"github.com/innomon/agentic/pkg/registry"
 )
 

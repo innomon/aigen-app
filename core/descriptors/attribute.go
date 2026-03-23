@@ -1,7 +1,7 @@
 package descriptors
 
 import (
-	"github.com/innomon/aigen-cms/utils/displaymodels"
+	"github.com/innomon/aigen-app/utils/displaymodels"
 )
 
 type Attribute struct {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/utils/datamodels"
 	"github.com/graphql-go/graphql"
 )
 

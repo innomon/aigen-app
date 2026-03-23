@@ -1,7 +1,7 @@
 package descriptors
 
 import (
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/utils/datamodels"
 )
 
 type Variable struct {

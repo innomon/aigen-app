@@ -1,10 +1,10 @@
 # Multi-Channel Communication Setup Guide (A2A & MCP)
 
-This guide provides instructions for setting up and configuring the multi-channel communication system in your `aigen-cms` powered application using the A2A and MCP protocols.
+This guide provides instructions for setting up and configuring the multi-channel communication system in your `aigen-app` powered application using the A2A and MCP protocols.
 
 ## Prerequisites
 
-1.  **Aigen CMS Instance**: A running instance of `aigen-cms`.
+1.  **Aigen CMS Instance**: A running instance of `aigen-app`.
 2.  **External A2A Agents**: External agents (WhatsApp, Email gateways) must support the [A2A Protocol](https://github.com/a2aproject/A2A).
 3.  **MCP Clients**: External agents (e.g., Claude, custom co-workers) that wish to access CMS tools must support the [Model Context Protocol](https://modelcontextprotocol.io).
 

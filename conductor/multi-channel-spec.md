@@ -1,7 +1,7 @@
 # Specification: Multi-Channel Communication (A2A & MCP Redesign)
 
 ## 1. Overview
-This specification defines a redesigned multi-channel communication system for `aigen-cms` using the **Agent2Agent (A2A)** protocol and providing external access via the **Model Context Protocol (MCP)**. All channels (WhatsApp, Email, Signal, Telegram) now act as A2A agents, communicating via structured JSON-RPC messages and authenticated using Ed25519 JWTs.
+This specification defines a redesigned multi-channel communication system for `aigen-app` using the **Agent2Agent (A2A)** protocol and providing external access via the **Model Context Protocol (MCP)**. All channels (WhatsApp, Email, Signal, Telegram) now act as A2A agents, communicating via structured JSON-RPC messages and authenticated using Ed25519 JWTs.
 
 ## 2. A2A Communication Layer
 
@@ -16,7 +16,7 @@ Each communication channel (WhatsApp, Email, etc.) is treated as an independent 
     - `iat`, `exp`: Standard time claims.
 
 ### 2.2. Trusted Channel Auth
-- `aigen-cms` maintains a registry of trusted channel public keys (Ed25519).
+- `aigen-app` maintains a registry of trusted channel public keys (Ed25519).
 - JWTs signed by these keys are accepted for direct user identification or guest session initialization.
 - Channels can also request a JWT from the CMS to authenticate outbound requests.
 

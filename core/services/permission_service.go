@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/innomon/aigen-cms/infrastructure/relationdbdao"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/utils/datamodels"
 )
 
 type PermissionService struct {
@@ -86,16 +86,16 @@ func (s *PermissionService) GetRowFilters(ctx context.Context, userId int64, ent
 	for _, attr := range entity.Attributes {
 		if attr.DataType == "Lookup" && userPerms[attr.Options] != nil {
 			values := userPerms[attr.Options]
-			ptrValues := make([]*string, len(values))
+			ifaceValues := make([]interface{}, len(values))
 			for i := range values {
-				ptrValues[i] = &values[i]
+				ifaceValues[i] = values[i]
 			}
 			filters = append(filters, datamodels.Filter{
 				FieldName: attr.Field,
 				Constraints: []datamodels.Constraint{
 					{
-						Match:  "equals", // Use equals but we can handle slice of values in applyFilters
-						Values: ptrValues,
+						Match:  "equals",
+						Values: ifaceValues,
 					},
 				},
 			})

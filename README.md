@@ -47,7 +47,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/innomon/aigen-cms/framework"
+	"github.com/innomon/aigen-app/framework"
 )
 
 func main() {

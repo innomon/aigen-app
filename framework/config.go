@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/innomon/aigen-cms/core/descriptors"
+	"github.com/innomon/aigen-app/core/descriptors"
 	yaml "gopkg.in/yaml.v3"
 )
 

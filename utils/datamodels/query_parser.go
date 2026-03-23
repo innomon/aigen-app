@@ -48,7 +48,7 @@ func parseFilter(field string, args StrArgs) Filter {
 				val := v
 				constraints = append(constraints, Constraint{
 					Match:  key,
-					Values: []*string{&val},
+					Values: []interface{}{&val},
 				})
 			}
 		}

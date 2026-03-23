@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/stretchr/testify/assert"
 )
 

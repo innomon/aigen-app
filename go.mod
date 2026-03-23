@@ -1,4 +1,4 @@
-module github.com/innomon/aigen-cms
+module github.com/innomon/aigen-app
 
 go 1.25.6
 

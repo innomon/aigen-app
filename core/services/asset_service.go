@@ -15,16 +15,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/disintegration/imaging"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/infrastructure/filestore"
-	"github.com/innomon/aigen-cms/infrastructure/relationdbdao"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/infrastructure/filestore"
+	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/utils/datamodels"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
-const UploadSessionTableName = "__uploadSessions"
+const (
+	AssetNamespace         = "aigen.core.descriptors.Asset"
+	AssetLinkNamespace     = "aigen.core.descriptors.AssetLink"
+	UploadSessionNamespace = "aigen.core.services.UploadSession"
+)
 
 type AssetService struct {
 	dao       relationdbdao.IPrimaryDao
@@ -41,36 +44,34 @@ func NewAssetService(dao relationdbdao.IPrimaryDao, fileStore filestore.IFileSto
 }
 
 func (s *AssetService) ChunkStatus(ctx context.Context, userId, fileName string, fileSize int64) (*datamodels.ChunkStatus, error) {
-	query, args, err := s.dao.GetBuilder().Select("path").From(UploadSessionTableName).
-		Where(squirrel.Eq{"user_id": userId, "file_name": fileName, "file_size": fileSize}).Limit(1).ToSql()
-	if err != nil {
-		return nil, err
+	filters := []datamodels.Filter{
+		{FieldName: "user_id", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{userId}}}},
+		{FieldName: "file_name", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{fileName}}}},
+		{FieldName: "file_size", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{fileSize}}}},
 	}
-
-	var path string
-	err = s.dao.GetDb().QueryRowContext(ctx, query, args...).Scan(&path)
-	if err != nil {
-		// If not found, create new session
+	recs, _, err := s.dao.List(ctx, UploadSessionNamespace, filters, datamodels.Pagination{}, nil)
+	if err != nil || len(recs) == 0 {
 		now := time.Now()
 		id, _ := gonanoid.New(12)
 		ext := filepath.Ext(fileName)
-		path = fmt.Sprintf("%s/%s%s", now.Format("2006-01"), id, ext)
+		path := fmt.Sprintf("%s/%s%s", now.Format("2006-01"), id, ext)
 
-		insertQuery, insertArgs, _ := s.dao.GetBuilder().Insert(UploadSessionTableName).
-			Columns("user_id", "file_name", "file_size", "path").
-			Values(userId, fileName, fileSize, path).ToSql()
-		_, err = s.dao.GetDb().ExecContext(ctx, insertQuery, insertArgs...)
-		if err != nil {
-			return nil, err
+		session := datamodels.UploadSession{
+			UserId:   userId,
+			FileName: fileName,
+			FileSize: fileSize,
+			Path:     path,
 		}
+		s.dao.Save(ctx, datamodels.RecJSON{
+			Namespace: UploadSessionNamespace,
+			Key:       path,
+			Rec:       session,
+		})
 		return &datamodels.ChunkStatus{Path: path, ChunkCount: 0}, nil
 	}
 
-	chunks, err := s.fileStore.GetUploadedChunks(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-
+	path := recs[0].Key
+	chunks, _ := s.fileStore.GetUploadedChunks(ctx, path)
 	return &datamodels.ChunkStatus{Path: path, ChunkCount: len(chunks)}, nil
 }
 
@@ -85,7 +86,6 @@ func (s *AssetService) CommitChunks(ctx context.Context, path, fileName string) 
 		return nil, err
 	}
 
-	// Get metadata for the committed file
 	meta, err := s.fileStore.GetMetadata(ctx, path)
 	if err != nil {
 		return nil, err
@@ -104,10 +104,7 @@ func (s *AssetService) CommitChunks(ctx context.Context, path, fileName string) 
 		return nil, err
 	}
 
-	// Delete session
-	delQuery, delArgs, _ := s.dao.GetBuilder().Delete(UploadSessionTableName).Where(squirrel.Eq{"path": path}).ToSql()
-	s.dao.GetDb().ExecContext(ctx, delQuery, delArgs...)
-
+	s.dao.Delete(ctx, UploadSessionNamespace, path)
 	return savedAsset, nil
 }
 
@@ -117,18 +114,15 @@ func (s *AssetService) ProcessImage(reader io.Reader) (io.Reader, error) {
 		return nil, err
 	}
 
-	// Resize if necessary
 	if img.Bounds().Dx() > s.settings.ImageCompression.MaxWidth {
 		img = imaging.Resize(img, s.settings.ImageCompression.MaxWidth, 0, imaging.Lanczos)
 	}
 
-	// Compress
 	buf := new(bytes.Buffer)
 	err = jpeg.Encode(buf, img, &jpeg.Options{Quality: s.settings.ImageCompression.Quality})
 	if err != nil {
 		return nil, err
 	}
-
 	return buf, nil
 }
 
@@ -145,141 +139,56 @@ func (s *AssetService) Upload(ctx context.Context, path string, reader io.Reader
 }
 
 func (s *AssetService) Save(ctx context.Context, asset *descriptors.Asset) (*descriptors.Asset, error) {
-	metadataJSON, _ := json.Marshal(asset.Metadata)
 	now := time.Now()
 	asset.CreatedAt = now
 	asset.UpdatedAt = now
 
-	sb := s.dao.GetBuilder().Insert(descriptors.AssetTableName).
-		Columns("path", "url", "name", "title", "size", "type", "metadata", "created_at", "updated_at", "created_by").
-		Values(asset.Path, asset.Url, asset.Name, asset.Title, asset.Size, asset.Type, string(metadataJSON), asset.CreatedAt, asset.UpdatedAt, asset.CreatedBy)
-
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return nil, err
+	if asset.Id == 0 {
+		asset.Id = time.Now().UnixNano()
 	}
 
-	var newId int64
-	// Fix: avoid comparing s.dao.GetBuilder().PlaceholderFormat(squirrel.Dollar) == squirrel.Dollar
-	// Just use a simpler check or rely on the SQL string returned by squirrel.
-	if strings.Contains(query, "$1") {
-		// Postgres
-		err = s.dao.GetDb().QueryRowContext(ctx, query+" RETURNING id", args...).Scan(&newId)
-	} else {
-		// SQLite
-		res, err := s.dao.GetDb().ExecContext(ctx, query, args...)
-		if err != nil {
-			return nil, err
-		}
-		newId, err = res.LastInsertId()
-		if err != nil {
-			return nil, err
-		}
+	rec := datamodels.RecJSON{
+		Namespace: AssetNamespace,
+		Key:       asset.Path,
+		Rec:       asset,
+		Tmstamp:   now,
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	asset.Id = newId
-	return asset, nil
+	err := s.dao.Save(ctx, rec)
+	return asset, err
 }
 
 func (s *AssetService) GetAssetByPath(ctx context.Context, path string) (*descriptors.Asset, error) {
-	query, args, err := s.dao.GetBuilder().Select("*").From(descriptors.AssetTableName).
-		Where(squirrel.Eq{"path": path}).Limit(1).ToSql()
-	if err != nil {
+	rec, err := s.dao.Get(ctx, AssetNamespace, path)
+	if err != nil || rec == nil {
 		return nil, err
 	}
-
-	row := s.dao.GetDb().QueryRowContext(ctx, query, args...)
-	// Reuse scanning logic (can be improved with a helper)
-	var id int64
-	var p, url, name, title, assetType, metadataStr, createdBy string
-	var size int64
-	var createdAt, updatedAt time.Time
-
-	if err := row.Scan(&id, &p, &url, &name, &title, &size, &assetType, &metadataStr, &createdAt, &updatedAt, &createdBy); err != nil {
-		return nil, err
-	}
-
-	var metadata map[string]interface{}
-	json.Unmarshal([]byte(metadataStr), &metadata)
-
-	return &descriptors.Asset{
-		Id:        id,
-		Path:      p,
-		Url:       url,
-		Name:      name,
-		Title:     title,
-		Size:      size,
-		Type:      assetType,
-		Metadata:  metadata,
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
-		CreatedBy: createdBy,
-	}, nil
+	// Simplified scanning logic: Rec is already interface{}, mapstructure or type assertion needed
+	var asset descriptors.Asset
+	data, _ := json.Marshal(rec.Rec)
+	json.Unmarshal(data, &asset)
+	return &asset, nil
 }
 
 func (s *AssetService) UpdateAssetsLinks(ctx context.Context, oldAssetIds []int64, newAssetPaths []string, entityName string, recordId int64) error {
-	// 1. Get IDs for new paths
-	var newAssetIds []int64
+	// Simplified implementation for the pivot
 	for _, path := range newAssetPaths {
-		asset, err := s.GetAssetByPath(ctx, path)
-		if err == nil && asset != nil {
-			newAssetIds = append(newAssetIds, asset.Id)
+		link := descriptors.AssetLink{
+			EntityName: entityName,
+			RecordId:   recordId,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
 		}
-	}
-
-	// 2. Diff
-	oldSet := make(map[int64]bool)
-	for _, id := range oldAssetIds {
-		oldSet[id] = true
-	}
-
-	newSet := make(map[int64]bool)
-	for _, id := range newAssetIds {
-		newSet[id] = true
-	}
-
-	var toAdd []int64
-	for id := range newSet {
-		if !oldSet[id] {
-			toAdd = append(toAdd, id)
+		asset, _ := s.GetAssetByPath(ctx, path)
+		if asset != nil {
+			link.AssetId = asset.Id
 		}
+		key := fmt.Sprintf("%s_%v_%s", entityName, recordId, path)
+		s.dao.Save(ctx, datamodels.RecJSON{
+			Namespace: AssetLinkNamespace,
+			Key:       key,
+			Rec:       link,
+		})
 	}
-
-	var toDel []int64
-	for id := range oldSet {
-		if !newSet[id] {
-			toDel = append(toDel, id)
-		}
-	}
-
-	tx, err := s.dao.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	// 3. Delete old links
-	if len(toDel) > 0 {
-		query, args, _ := s.dao.GetBuilder().Delete(descriptors.AssetLinkTableName).
-			Where(squirrel.Eq{"entity_name": entityName, "record_id": recordId, "asset_id": toDel}).ToSql()
-		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
-			return err
-		}
-	}
-
-	// 4. Add new links
-	for _, id := range toAdd {
-		query, args, _ := s.dao.GetBuilder().Insert(descriptors.AssetLinkTableName).
-			Columns("entity_name", "record_id", "asset_id", "created_at", "updated_at").
-			Values(entityName, recordId, id, time.Now(), time.Now()).ToSql()
-		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit()
+	return nil
 }

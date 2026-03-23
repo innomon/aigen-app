@@ -11,8 +11,8 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/core/services"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/core/services"
 )
 
 type A2AApi struct {

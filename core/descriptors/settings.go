@@ -4,15 +4,6 @@ import (
 	"time"
 )
 
-type DatabaseProvider string
-
-const (
-	Postgres  DatabaseProvider = "Postgres"
-	MySQL     DatabaseProvider = "MySQL"
-	SQLite    DatabaseProvider = "SQLite"
-	SQLServer DatabaseProvider = "SQLServer"
-)
-
 type ImageCompressionOptions struct {
 	MaxWidth int `json:"maxWidth"`
 	Quality  int `json:"quality"`
@@ -36,7 +27,6 @@ type SystemSettings struct {
 	QuerySchemaExpiration  time.Duration           `json:"querySchemaExpiration"`
 	ImageCompression       ImageCompressionOptions `json:"imageCompression"`
 	RouteOptions           RouteOptions            `json:"routeOptions"`
-	DatabaseProvider       DatabaseProvider        `json:"databaseProvider"`
 	ReplicaCount           int                     `json:"replicaCount"`
 	KnownPaths             []string                `json:"knownPaths"`
 	LocalFileStoreOptions  LocalFileStoreOptions   `json:"localFileStoreOptions"`

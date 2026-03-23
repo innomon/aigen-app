@@ -45,4 +45,4 @@
 -   **Rare Rack Integration**: Use the refactored framework in the `rare-rack` project's `main.go`.
 
 ## Step 6: Upstream Sync
--   Once verified locally in `tmp`, apply the same changes to the upstream repository at `/home/innomon/orez/aigen-cms`.
+-   Once verified locally in `tmp`, apply the same changes to the upstream repository at `/home/innomon/orez/aigen-app`.

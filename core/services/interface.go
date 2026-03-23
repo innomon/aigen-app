@@ -6,8 +6,8 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2a"
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/utils/datamodels"
 )
 
 type ISchemaService interface {
@@ -65,7 +65,6 @@ type IAuthService interface {
 	LoginByChannel(ctx context.Context, channelType descriptors.ChannelType, identifier string, token string, ip, ua string) (string, error)
 	Me(ctx context.Context, userId int64) (*descriptors.User, error)
 	ValidateToken(token string) (int64, []string, error)
-	ValidateChannelToken(ctx context.Context, channelType descriptors.ChannelType, token string) (int64, string, error)
 	GetRoleByName(ctx context.Context, name string) (*descriptors.Role, error)
 }
 
@@ -78,7 +77,7 @@ type INotificationService interface {
 
 type IAuditService interface {
 	List(ctx context.Context, pagination datamodels.Pagination) ([]*descriptors.AuditLog, error)
-	ById(ctx context.Context, id int64) (*descriptors.AuditLog, error)
+	ById(ctx context.Context, id string) (*descriptors.AuditLog, error)
 	Log(ctx context.Context, log *descriptors.AuditLog) error
 }
 

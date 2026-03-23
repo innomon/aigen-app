@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/innomon/aigen-cms/core/descriptors"
-	"github.com/innomon/aigen-cms/utils/datamodels"
+	"github.com/innomon/aigen-app/core/descriptors"
+	"github.com/innomon/aigen-app/utils/datamodels"
 )
 
 type MCPService struct {
@@ -20,7 +20,7 @@ type MCPService struct {
 
 func NewMCPService(schemaService ISchemaService, entityService IEntityService, authService IAuthService, config descriptors.MCPConfig) *MCPService {
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "aigen-cms-mcp",
+		Name:    "aigen-app-mcp",
 		Version: "1.0.0",
 	}, nil)
 
