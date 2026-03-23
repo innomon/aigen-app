@@ -1,0 +1,15 @@
+{
+  "Name": "JournalEntryAccount",
+  "DisplayName": "Journal Entry Account",
+  "TableName": "journal_entry_account",
+  "LabelAttributeName": "account",
+  "PrimaryKey": "id",
+  "Attributes": [
+    { "Field": "parent", "Header": "Journal Entry", "DataType": "Lookup", "DisplayType": "Lookup", "Options": "JournalEntry" },
+    { "Field": "account", "Header": "Account", "DataType": "Lookup", "DisplayType": "Lookup", "Options": "Account", "InList": true, "InDetail": true },
+    { "Field": "debit", "Header": "Debit", "DataType": "Float", "DisplayType": "Number", "InList": true, "InDetail": true },
+    { "Field": "credit", "Header": "Credit", "DataType": "Float", "DisplayType": "Number", "InList": true, "InDetail": true },
+    { "Field": "cost_center", "Header": "Cost Center", "DataType": "Lookup", "DisplayType": "Lookup", "Options": "CostCenter" },
+    { "Field": "user_remark", "Header": "User Remark", "DataType": "String", "DisplayType": "Text" }
+  ]
+}

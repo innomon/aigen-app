@@ -1,0 +1,59 @@
+{
+  "Name": "CRMTask",
+  "DisplayName": "CRM Task",
+  "TableName": "crm_task",
+  "LabelAttributeName": "title",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "title",
+      "Header": "Title",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "priority",
+      "Header": "Priority",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "Low\nMedium\nHigh",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "start_date",
+      "Header": "Start Date",
+      "DataType": "Datetime",
+      "DisplayType": "Date",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "status",
+      "Header": "Status",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "Backlog\nTodo\nIn Progress\nDone\nCanceled",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "due_date",
+      "Header": "Due Date",
+      "DataType": "Datetime",
+      "DisplayType": "Date",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "description",
+      "Header": "Description",
+      "DataType": "Text",
+      "DisplayType": "Editor",
+      "InList": false,
+      "InDetail": true
+    }
+  ]
+}

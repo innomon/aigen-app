@@ -1,0 +1,40 @@
+{
+  "name": "user_channel",
+  "tableName": "__user_channels",
+  "attributes": [
+    {
+      "name": "user_id",
+      "type": "integer",
+      "displayName": "User ID",
+      "required": true
+    },
+    {
+      "name": "channel_type",
+      "type": "string",
+      "displayName": "Channel Type",
+      "required": true
+    },
+    {
+      "name": "identifier",
+      "type": "string",
+      "displayName": "Identifier",
+      "required": true
+    },
+    {
+      "name": "agent_id",
+      "type": "string",
+      "displayName": "A2A Agent ID"
+    },
+    {
+      "name": "is_authenticated",
+      "type": "boolean",
+      "displayName": "Authenticated",
+      "default": false
+    },
+    {
+      "name": "metadata",
+      "type": "text",
+      "displayName": "Metadata (JSON)"
+    }
+  ]
+}

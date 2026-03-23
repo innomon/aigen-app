@@ -1,0 +1,51 @@
+{
+  "Name": "CRMDealStatus",
+  "DisplayName": "CRM Deal Status",
+  "TableName": "crm_deal_status",
+  "LabelAttributeName": "deal_status",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "deal_status",
+      "Header": "Status Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "color",
+      "Header": "Color",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "black\ngray\nblue\ngreen\nred\npink\norange\u0007mber\nyellow\ncyan\nteal\nviolet\npurple",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "position",
+      "Header": "Position",
+      "DataType": "Int",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "probability",
+      "Header": "Probability (%)",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "type",
+      "Header": "Type",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "Open\nOngoing\nOn Hold\nWon\nLost",
+      "InList": true,
+      "InDetail": true
+    }
+  ]
+}

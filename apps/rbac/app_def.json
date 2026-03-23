@@ -1,0 +1,32 @@
+{
+  "name": "rbac",
+  "display_name": "Role-Based Access Control",
+  "description": "Core system for managing users, roles, and granular entity permissions.",
+  "context": "The RBAC app is foundational to the AiGen CMS ecosystem. It defines system users, assigns them to multiple roles, and controls what entities (documents) those roles can interact with via doc_perms. It also provides row-level security mechanisms through user_perms.",
+  "roles": [
+    "Administrator",
+    "System Manager",
+    "User"
+  ],
+  "entities": {
+    "user": {
+      "description": "System users who can log in and interact with the CMS.",
+      "context_file": "docs/user.md"
+    },
+    "role": {
+      "description": "Defines a set of permissions that govern user actions.",
+      "context_file": "docs/role.md"
+    },
+    "user_role": {
+      "description": "Junction table linking users to multiple roles."
+    },
+    "doc_perm": {
+      "description": "Matrix defining specific CRUD and workflow permissions for a role on a given entity.",
+      "context_file": "docs/doc_perm.md"
+    },
+    "user_perm": {
+      "description": "Row-level security filter restricting specific users to specific data subsets.",
+      "context_file": "docs/user_perm.md"
+    }
+  }
+}

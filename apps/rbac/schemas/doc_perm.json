@@ -1,0 +1,46 @@
+{
+  "Name": "DocPerm",
+  "DisplayName": "Document Permission",
+  "TableName": "__doc_perms",
+  "LabelAttributeName": "id",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "role",
+      "Header": "Role",
+      "DataType": "Lookup",
+      "Options": "Role",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "parent",
+      "Header": "Entity Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "permlevel",
+      "Header": "Perm Level",
+      "DataType": "Int",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    },
+    { "Field": "read", "Header": "Read", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": true, "InDetail": true },
+    { "Field": "write", "Header": "Write", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": true, "InDetail": true },
+    { "Field": "create", "Header": "Create", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": true, "InDetail": true },
+    { "Field": "delete", "Header": "Delete", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": true, "InDetail": true },
+    { "Field": "submit", "Header": "Submit", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true },
+    { "Field": "cancel", "Header": "Cancel", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true },
+    { "Field": "amend", "Header": "Amend", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true },
+    { "Field": "report", "Header": "Report", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true },
+    { "Field": "export", "Header": "Export", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true },
+    { "Field": "import", "Header": "Import", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true },
+    { "Field": "print", "Header": "Print", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true },
+    { "Field": "email", "Header": "Email", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true },
+    { "Field": "share", "Header": "Share", "DataType": "Boolean", "DisplayType": "Checkbox", "InList": false, "InDetail": true }
+  ]
+}

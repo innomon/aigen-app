@@ -1,0 +1,34 @@
+[
+  {
+    "Entity": "Role",
+    "Ref": "role_sa",
+    "Data": {
+      "name": "sa",
+      "disabled": false
+    }
+  },
+  {
+    "Entity": "Role",
+    "Ref": "role_admin",
+    "Data": {
+      "name": "admin",
+      "disabled": false
+    }
+  },
+  {
+    "Entity": "Role",
+    "Ref": "role_user",
+    "Data": {
+      "name": "user",
+      "disabled": false
+    }
+  },
+  {
+    "Entity": "Role",
+    "Ref": "role_guest",
+    "Data": {
+      "name": "guest",
+      "disabled": false
+    }
+  }
+]

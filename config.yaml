@@ -1,0 +1,7 @@
+apps_dir: "apps"
+www_root: "wwwroot"
+database_type: "SQLite"
+database_dsn: "formcms.db"
+domain: ""
+port: "5000"
+agentic_config_path: "agentic.yaml"

@@ -1,0 +1,45 @@
+{
+  "name": "crm",
+  "display_name": "Customer Relationship Management",
+  "description": "Manages leads, organizations, deals, and tasks throughout the sales lifecycle.",
+  "context": "The CRM app provides a comprehensive suite for tracking sales pipelines. It starts with Leads, which can be qualified and converted into Organizations and Deals. It also manages the Product catalog and Tasks for sales reps.",
+  "roles": [
+    "Sales Manager",
+    "Sales Representative"
+  ],
+  "entities": {
+    "crm_lead": {
+      "description": "A potential customer or prospect who has shown interest but is not yet qualified.",
+      "context_file": "docs/crm_lead.md"
+    },
+    "crm_organization": {
+      "description": "A qualified customer or business entity.",
+      "context_file": "docs/crm_organization.md"
+    },
+    "crm_deal": {
+      "description": "A qualified sales opportunity currently in the pipeline.",
+      "context_file": "docs/crm_deal.md"
+    },
+    "crm_task": {
+      "description": "An actionable item or activity, often associated with sales processes.",
+      "context_file": "docs/crm_task.md"
+    },
+    "crm_product": {
+      "description": "A product or service that can be sold to customers.",
+      "context_file": "docs/crm_product.md"
+    },
+    "crm_products": {
+      "description": "A line item associating a product with a lead or deal.",
+      "context_file": "docs/crm_products.md"
+    },
+    "crm_lead_status": {
+      "description": "Lookup table for standard lead statuses."
+    },
+    "crm_deal_status": {
+      "description": "Lookup table for standard deal statuses."
+    },
+    "crm_industry": {
+      "description": "Lookup table for standard industry categories."
+    }
+  }
+}

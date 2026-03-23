@@ -1,0 +1,41 @@
+{
+  "Name": "Role",
+  "DisplayName": "Role",
+  "TableName": "__roles",
+  "LabelAttributeName": "name",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "name",
+      "Header": "Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "disabled",
+      "Header": "Disabled",
+      "DataType": "Boolean",
+      "DisplayType": "Checkbox",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "dashboard_page_id",
+      "Header": "Dashboard Page",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "menu_id",
+      "Header": "Menu",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": false,
+      "InDetail": true
+    }
+  ]
+}

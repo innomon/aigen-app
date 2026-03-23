@@ -1,0 +1,33 @@
+{
+  "Name": "UserPermission",
+  "DisplayName": "User Permission",
+  "TableName": "__user_perms",
+  "LabelAttributeName": "id",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "user_id",
+      "Header": "User ID",
+      "DataType": "Int",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "allow",
+      "Header": "Allow Entity",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "for_value",
+      "Header": "For Value",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    }
+  ]
+}

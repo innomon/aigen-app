@@ -1,0 +1,24 @@
+# Exclude the original .NET project
+formcms/
+
+# Exclude executables
+# Standard Go binary naming and common executable extensions
+formcms-go/formcms-go
+formcms-go/formcms
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+obj/
+
+# Firebase logs
+firebase-debug.log
+.firebase/
+.gemini/tmp
+
+# Exclude exports directory
+formcms-go/exports/
+
+

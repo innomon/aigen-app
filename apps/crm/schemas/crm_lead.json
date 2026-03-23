@@ -1,0 +1,180 @@
+{
+  "Name": "CRMLead",
+  "DisplayName": "CRM Lead",
+  "TableName": "crm_lead",
+  "LabelAttributeName": "lead_name",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "salutation",
+      "Header": "Salutation",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "Mr\nMs\nMrs\nDr\nProf",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "first_name",
+      "Header": "First Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "middle_name",
+      "Header": "Middle Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "last_name",
+      "Header": "Last Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "lead_name",
+      "Header": "Lead Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "gender",
+      "Header": "Gender",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "Male\nFemale\nOther",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "status",
+      "Header": "Status",
+      "DataType": "Lookup",
+      "Options": "CRMLeadStatus",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "email",
+      "Header": "Email",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "website",
+      "Header": "Website",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "mobile_no",
+      "Header": "Mobile No",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "phone",
+      "Header": "Phone",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "no_of_employees",
+      "Header": "No of Employees",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "1-10\n11-50\n51-200\n201-500\n501-1000\n1000+",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "annual_revenue",
+      "Header": "Annual Revenue",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "industry",
+      "Header": "Industry",
+      "DataType": "Lookup",
+      "Options": "CRMIndustry",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "image",
+      "Header": "Image",
+      "DataType": "String",
+      "DisplayType": "Image",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "job_title",
+      "Header": "Job Title",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "organization",
+      "Header": "Organization Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "converted",
+      "Header": "Converted",
+      "DataType": "Boolean",
+      "DisplayType": "Checkbox",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "products",
+      "Header": "Products",
+      "DataType": "Collection",
+      "Options": "CRMProducts|parent_id",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "total",
+      "Header": "Total",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "net_total",
+      "Header": "Net Total",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": false,
+      "InDetail": true
+    }
+  ]
+}

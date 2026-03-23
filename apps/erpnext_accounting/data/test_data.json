@@ -1,0 +1,163 @@
+[
+  {
+    "Entity": "Currency",
+    "Ref": "Currency_INR",
+    "Data": {
+      "currency_name": "INR",
+      "symbol": "₹",
+      "fraction": "Paisa",
+      "fraction_units": 100
+    }
+  },
+  {
+    "Entity": "Company",
+    "Ref": "Company_TATA",
+    "Data": {
+      "company_name": "Tata Motors",
+      "abbr": "TATA",
+      "default_currency": "$Ref:Currency_INR"
+    }
+  },
+  {
+    "Entity": "FiscalYear",
+    "Ref": "FY_23_24",
+    "Data": {
+      "year": "2023-2024",
+      "year_start_date": "2023-04-01T00:00:00Z",
+      "year_end_date": "2024-03-31T00:00:00Z",
+      "disabled": false
+    }
+  },
+  {
+    "Entity": "CostCenter",
+    "Ref": "CC_Main",
+    "Data": {
+      "cost_center_name": "Main - TATA",
+      "company": "$Ref:Company_TATA",
+      "is_group": true
+    }
+  },
+  {
+    "Entity": "CostCenter",
+    "Ref": "CC_Sales",
+    "Data": {
+      "cost_center_name": "Sales - TATA",
+      "company": "$Ref:Company_TATA",
+      "is_group": false,
+      "parent_cost_center": "$Ref:CC_Main"
+    }
+  },
+  {
+    "Entity": "Account",
+    "Ref": "Acc_Assets",
+    "Data": {
+      "account_name": "Assets",
+      "is_group": true,
+      "company": "$Ref:Company_TATA",
+      "root_type": "Asset"
+    }
+  },
+  {
+    "Entity": "Account",
+    "Ref": "Acc_BankGroup",
+    "Data": {
+      "account_name": "Bank Accounts",
+      "is_group": true,
+      "company": "$Ref:Company_TATA",
+      "root_type": "Asset",
+      "parent_account": "$Ref:Acc_Assets"
+    }
+  },
+  {
+    "Entity": "Account",
+    "Ref": "Acc_HDFC",
+    "Data": {
+      "account_name": "HDFC Bank",
+      "is_group": false,
+      "company": "$Ref:Company_TATA",
+      "root_type": "Asset",
+      "parent_account": "$Ref:Acc_BankGroup",
+      "account_type": "Bank"
+    }
+  },
+  {
+    "Entity": "Account",
+    "Ref": "Acc_Income",
+    "Data": {
+      "account_name": "Income",
+      "is_group": true,
+      "company": "$Ref:Company_TATA",
+      "root_type": "Income"
+    }
+  },
+  {
+    "Entity": "Account",
+    "Ref": "Acc_Sales",
+    "Data": {
+      "account_name": "Sales",
+      "is_group": false,
+      "company": "$Ref:Company_TATA",
+      "root_type": "Income",
+      "parent_account": "$Ref:Acc_Income",
+      "account_type": "Income Account"
+    }
+  },
+  {
+    "Entity": "JournalEntry",
+    "Ref": "JE_1",
+    "Data": {
+      "voucher_type": "Journal Entry",
+      "posting_date": "2023-04-05T00:00:00Z",
+      "company": "$Ref:Company_TATA",
+      "total_debit": 50000.0,
+      "total_credit": 50000.0,
+      "user_remark": "Initial Sales Revenue"
+    },
+    "Children": {
+      "accounts": [
+        {
+          "account": "$Ref:Acc_HDFC",
+          "debit": 50000.0,
+          "credit": 0.0,
+          "cost_center": "$Ref:CC_Sales",
+          "user_remark": "Received payment"
+        },
+        {
+          "account": "$Ref:Acc_Sales",
+          "debit": 0.0,
+          "credit": 50000.0,
+          "cost_center": "$Ref:CC_Sales",
+          "user_remark": "Sales booked"
+        }
+      ]
+    }
+  },
+  {
+    "Entity": "GLEntry",
+    "Ref": "GLE_Debit",
+    "Data": {
+      "posting_date": "2023-04-05T00:00:00Z",
+      "account": "$Ref:Acc_HDFC",
+      "debit": 50000.0,
+      "credit": 0.0,
+      "voucher_type": "Journal Entry",
+      "voucher_no": "$Ref:JE_1",
+      "company": "$Ref:Company_TATA",
+      "remarks": "Initial Sales Revenue"
+    }
+  },
+  {
+    "Entity": "GLEntry",
+    "Ref": "GLE_Credit",
+    "Data": {
+      "posting_date": "2023-04-05T00:00:00Z",
+      "account": "$Ref:Acc_Sales",
+      "debit": 0.0,
+      "credit": 50000.0,
+      "voucher_type": "Journal Entry",
+      "voucher_no": "$Ref:JE_1",
+      "company": "$Ref:Company_TATA",
+      "remarks": "Initial Sales Revenue"
+    }
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "name": "multi_channel",
+  "display_name": "Multi-Channel Management",
+  "description": "Manages MCP API keys, A2A trusted agents, and user communication identities.",
+  "context": "The Multi-Channel Management app is the central hub for governing how external agents and users interact with the CMS through various protocols. It manages API keys for the Model Context Protocol (MCP), registers and verifies identities for Agent2Agent (A2A) communication, and maintains a comprehensive e-trail (audit log) for non-repudiation. This app ensures secure, authenticated, and traceable interactions across WhatsApp, Email, Signal, Telegram, and social platforms like X.com and Bluesky.",
+  "roles": [
+    "channel_admin",
+    "MCP"
+  ],
+  "entities": {
+    "mcp_api_key": {
+      "description": "API keys that grant external agents (like Claude or custom co-workers) access to CMS tools via the MCP server.",
+      "context_file": "docs/mcp_api_key.md"
+    },
+    "user_channel": {
+      "description": "Maps system users to their external identities on communication platforms (WhatsApp, Email, etc.).",
+      "context_file": "docs/user_channel.md"
+    },
+    "auth_log": {
+      "description": "A secure audit trail (e-trail) for all channel authentication and A2A/MCP interactions, ensuring non-repudiation.",
+      "context_file": "docs/auth_log.md"
+    }
+  }
+}

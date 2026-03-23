@@ -1,0 +1,89 @@
+{
+  "Name": "CRMProducts",
+  "DisplayName": "CRM Products",
+  "TableName": "crm_products",
+  "LabelAttributeName": "product_name",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "parent_id",
+      "Header": "Parent ID",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": false,
+      "InDetail": false
+    },
+    {
+      "Field": "parent_type",
+      "Header": "Parent Type",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": false,
+      "InDetail": false
+    },
+    {
+      "Field": "product_code",
+      "Header": "Product",
+      "DataType": "Lookup",
+      "Options": "CRMProduct",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "product_name",
+      "Header": "Product Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "qty",
+      "Header": "Quantity",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "rate",
+      "Header": "Rate",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "amount",
+      "Header": "Amount",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "discount_percentage",
+      "Header": "Discount (%)",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "discount_amount",
+      "Header": "Discount Amount",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "net_amount",
+      "Header": "Net Amount",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    }
+  ]
+}

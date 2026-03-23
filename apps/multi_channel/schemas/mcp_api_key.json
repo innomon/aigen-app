@@ -1,0 +1,31 @@
+{
+  "name": "mcp_api_key",
+  "tableName": "__mcp_api_keys",
+  "attributes": [
+    {
+      "name": "name",
+      "type": "string",
+      "displayName": "Key Name",
+      "required": true
+    },
+    {
+      "name": "key",
+      "type": "string",
+      "displayName": "API Key",
+      "required": true,
+      "isUnique": true
+    },
+    {
+      "name": "user_id",
+      "type": "integer",
+      "displayName": "Linked User ID",
+      "required": true
+    },
+    {
+      "name": "enabled",
+      "type": "boolean",
+      "displayName": "Enabled",
+      "default": true
+    }
+  ]
+}

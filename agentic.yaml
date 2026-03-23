@@ -1,0 +1,120 @@
+root_agent: router_agent
+
+models:
+  gemini_pro:
+    provider: gemini
+    config:
+      model: gemini-2.5-pro
+
+tools:
+  cms_entity_list:
+    type: builtin
+    description: List CMS entities
+    parameters:
+      name:
+        type: string
+        description: Name of the entity schema
+        required: true
+      limit:
+        type: string
+        description: Number of records to return
+        required: false
+
+  cms_entity_get:
+    type: builtin
+    description: Get a CMS entity record by ID
+    parameters:
+      name:
+        type: string
+        description: Name of the entity schema
+        required: true
+      id:
+        type: string
+        description: ID of the record
+        required: true
+
+  cms_entity_create:
+    type: builtin
+    description: Create a CMS entity record
+    parameters:
+      name:
+        type: string
+        description: Name of the entity schema
+        required: true
+      data:
+        type: object
+        description: Record data
+        required: true
+
+  cms_schema_list:
+    type: builtin
+    description: List all schemas
+    parameters: {}
+
+  cms_app_list:
+    type: builtin
+    description: List all available CMS apps and their descriptions.
+    parameters: {}
+
+  cms_app_get:
+    type: builtin
+    description: Get the detailed definition and context for a specific CMS app, including roles and entity descriptions.
+    parameters:
+      name:
+        type: string
+        description: Name of the app
+        required: true
+
+  cms_a2ui_update:
+    type: builtin
+    description: Update a component in the A2UI dashboard
+    parameters:
+      id:
+        type: string
+        description: Component ID
+        required: true
+      type:
+        type: string
+        description: Component type (e.g., Card, DataTable, Heading)
+        required: true
+      attributes:
+        type: object
+        description: Component attributes
+        required: false
+      children:
+        type: array
+        description: List of child component IDs
+        required: false
+
+agents:
+  router_agent:
+    type: router
+    description: Routes requests between CMS and UI sub-agents
+    sub_agents:
+      - cms_agent
+      - ui_agent
+
+  cms_agent:
+    type: llm
+    description: Manages CMS data (entities, schemas)
+    model: gemini_pro
+    instruction: |
+      You are the CMS data assistant. You can query, create, update, and list CMS data using the provided tools.
+      Always retrieve data when asked by the user.
+    tools:
+      - cms_entity_list
+      - cms_entity_get
+      - cms_entity_create
+      - cms_schema_list
+      - cms_app_list
+      - cms_app_get
+
+  ui_agent:
+    type: llm
+    description: Manages the A2UI dashboard
+    model: gemini_pro
+    instruction: |
+      You are the UI assistant. You can modify the active dashboard components using A2UI.
+      When asked to show data on the screen, update the necessary A2UI components using the cms_a2ui_update tool.
+    tools:
+      - cms_a2ui_update

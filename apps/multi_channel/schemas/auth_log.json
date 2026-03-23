@@ -1,0 +1,46 @@
+{
+  "name": "auth_log",
+  "tableName": "__auth_logs",
+  "attributes": [
+    {
+      "name": "user_id",
+      "type": "integer",
+      "displayName": "User ID"
+    },
+    {
+      "name": "channel_type",
+      "type": "string",
+      "displayName": "Channel Type"
+    },
+    {
+      "name": "action",
+      "type": "string",
+      "displayName": "Action"
+    },
+    {
+      "name": "ip_address",
+      "type": "string",
+      "displayName": "IP Address"
+    },
+    {
+      "name": "user_agent",
+      "type": "string",
+      "displayName": "User Agent"
+    },
+    {
+      "name": "success",
+      "type": "boolean",
+      "displayName": "Success"
+    },
+    {
+      "name": "metadata",
+      "type": "text",
+      "displayName": "Log Details"
+    },
+    {
+      "name": "created_at",
+      "type": "datetime",
+      "displayName": "Timestamp"
+    }
+  ]
+}

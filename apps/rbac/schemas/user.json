@@ -1,0 +1,49 @@
+{
+  "Name": "User",
+  "DisplayName": "User",
+  "TableName": "__users",
+  "LabelAttributeName": "email",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "email",
+      "Header": "Email",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "password_hash",
+      "Header": "Password",
+      "DataType": "String",
+      "DisplayType": "Password",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "role",
+      "Header": "Legacy Role",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "avatar_path",
+      "Header": "Avatar Path",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "default_role_id",
+      "Header": "Default Role",
+      "DataType": "Integer",
+      "DisplayType": "Number",
+      "InList": false,
+      "InDetail": true
+    }
+  ]
+}

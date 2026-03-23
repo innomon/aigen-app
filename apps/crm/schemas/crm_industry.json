@@ -1,0 +1,17 @@
+{
+  "Name": "CRMIndustry",
+  "DisplayName": "CRM Industry",
+  "TableName": "crm_industry",
+  "LabelAttributeName": "industry",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "industry",
+      "Header": "Industry Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    }
+  ]
+}

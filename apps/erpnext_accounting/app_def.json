@@ -1,0 +1,41 @@
+{
+  "name": "erpnext_accounting",
+  "display_name": "ERPNext Accounting",
+  "description": "Comprehensive accounting and financial management app.",
+  "context": "The ERPNext Accounting app provides a full suite of tools to manage accounts, journal entries, general ledger entries, cost centers, fiscal years, and currencies. It models the core accounting functionality from ERPNext.",
+  "roles": ["System Manager", "Accounts Manager", "Accounts User", "Auditor"],
+  "entities": {
+    "account": {
+      "description": "Chart of Accounts entry. Represents a node in the account tree (Asset, Liability, Equity, Income, Expense).",
+      "context_file": "docs/account.md"
+    },
+    "company": {
+      "description": "Represents the legal entity for which accounts are maintained.",
+      "context_file": "docs/company.md"
+    },
+    "cost_center": {
+      "description": "Cost Center for tracking income and expenses for specific business units or projects.",
+      "context_file": "docs/cost_center.md"
+    },
+    "currency": {
+      "description": "Currency definition for multi-currency accounting.",
+      "context_file": "docs/currency.md"
+    },
+    "fiscal_year": {
+      "description": "Financial year definition.",
+      "context_file": "docs/fiscal_year.md"
+    },
+    "gl_entry": {
+      "description": "General Ledger Entry. Represents a single debit or credit line in the accounting ledger. Typically created automatically when submitting a Journal Entry.",
+      "context_file": "docs/gl_entry.md"
+    },
+    "journal_entry": {
+      "description": "A document to record financial transactions, containing multiple journal entry accounts.",
+      "context_file": "docs/journal_entry.md"
+    },
+    "journal_entry_account": {
+      "description": "A line item within a Journal Entry representing a specific debit or credit to an Account.",
+      "context_file": "docs/journal_entry_account.md"
+    }
+  }
+}

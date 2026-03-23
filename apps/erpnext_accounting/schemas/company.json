@@ -1,0 +1,12 @@
+{
+  "Name": "Company",
+  "DisplayName": "Company",
+  "TableName": "company",
+  "LabelAttributeName": "company_name",
+  "PrimaryKey": "id",
+  "Attributes": [
+    { "Field": "company_name", "Header": "Company Name", "DataType": "String", "DisplayType": "Text", "InList": true, "InDetail": true },
+    { "Field": "abbr", "Header": "Abbreviation", "DataType": "String", "DisplayType": "Text", "InList": true, "InDetail": true },
+    { "Field": "default_currency", "Header": "Default Currency", "DataType": "Lookup", "DisplayType": "Lookup", "Options": "Currency", "InList": true, "InDetail": true }
+  ]
+}

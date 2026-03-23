@@ -1,0 +1,13 @@
+{
+  "Name": "CostCenter",
+  "DisplayName": "Cost Center",
+  "TableName": "cost_center",
+  "LabelAttributeName": "cost_center_name",
+  "PrimaryKey": "id",
+  "Attributes": [
+    { "Field": "cost_center_name", "Header": "Cost Center Name", "DataType": "String", "DisplayType": "Text", "InList": true, "InDetail": true },
+    { "Field": "company", "Header": "Company", "DataType": "Lookup", "DisplayType": "Lookup", "Options": "Company", "InList": true, "InDetail": true },
+    { "Field": "is_group", "Header": "Is Group", "DataType": "Boolean", "DisplayType": "Text" },
+    { "Field": "parent_cost_center", "Header": "Parent Cost Center", "DataType": "Lookup", "DisplayType": "Lookup", "Options": "CostCenter" }
+  ]
+}

@@ -1,0 +1,118 @@
+[
+  {
+    "Entity": "CRMIndustry",
+    "Ref": "Industry_Tech",
+    "Data": {
+      "industry": "Information Technology"
+    }
+  },
+  {
+    "Entity": "CRMIndustry",
+    "Ref": "Industry_Auto",
+    "Data": {
+      "industry": "Automobile"
+    }
+  },
+  {
+    "Entity": "CRMOrganization",
+    "Ref": "Org_Tata",
+    "Data": {
+      "organization_name": "Tata Motors India",
+      "website": "https://www.tatamotors.com",
+      "no_of_employees": "1000+",
+      "annual_revenue": 500000000.0,
+      "industry": "$Ref:Industry_Auto",
+      "currency": "INR",
+      "exchange_rate": 1.0
+    }
+  },
+  {
+    "Entity": "CRMOrganization",
+    "Ref": "Org_Infosys",
+    "Data": {
+      "organization_name": "Infosys Ltd",
+      "website": "https://www.infosys.com",
+      "no_of_employees": "1000+",
+      "annual_revenue": 1200000000.0,
+      "industry": "$Ref:Industry_Tech",
+      "currency": "INR",
+      "exchange_rate": 1.0
+    }
+  },
+  {
+    "Entity": "CRMProduct",
+    "Ref": "Prod_Consulting",
+    "Data": {
+      "product_code": "SVC-CON-01",
+      "product_name": "IT Consulting Services",
+      "disabled": false,
+      "description": "Standard IT consulting services per hour.",
+      "standard_rate": 5000.0
+    }
+  },
+  {
+    "Entity": "CRMLeadStatus",
+    "Ref": "LeadStatus_Open",
+    "Data": {
+      "lead_status": "Open",
+      "color": "blue",
+      "position": 1,
+      "type": "Open"
+    }
+  },
+  {
+    "Entity": "CRMDealStatus",
+    "Ref": "DealStatus_Quotation",
+    "Data": {
+      "deal_status": "Quotation",
+      "color": "orange",
+      "position": 2,
+      "probability": 50.0,
+      "type": "Ongoing"
+    }
+  },
+  {
+    "Entity": "CRMLead",
+    "Ref": "Lead_1",
+    "Data": {
+      "salutation": "Mr",
+      "first_name": "Rajesh",
+      "last_name": "Kumar",
+      "lead_name": "Rajesh Kumar - Tech Upgrade",
+      "gender": "Male",
+      "status": "$Ref:LeadStatus_Open",
+      "email": "rajesh.k@example.in",
+      "mobile_no": "+91 9876543210",
+      "annual_revenue": 10000000.0,
+      "industry": "$Ref:Industry_Tech",
+      "job_title": "CTO",
+      "organization": "Mumbai Tech Solutions"
+    }
+  },
+  {
+    "Entity": "CRMDeal",
+    "Ref": "Deal_1",
+    "Data": {
+      "organization": "$Ref:Org_Tata",
+      "probability": 50.0,
+      "annual_revenue": 500000000.0,
+      "status": "$Ref:DealStatus_Quotation",
+      "organization_name": "Tata Motors India",
+      "industry": "$Ref:Industry_Auto",
+      "first_name": "Amit",
+      "last_name": "Sharma",
+      "deal_value": 500000.0,
+      "expected_deal_value": 250000.0
+    }
+  },
+  {
+    "Entity": "CRMTask",
+    "Ref": "Task_1",
+    "Data": {
+      "title": "Follow up with Rajesh",
+      "priority": "High",
+      "status": "Todo",
+      "description": "Discuss the new IT consulting service package."
+    }
+  }
+]

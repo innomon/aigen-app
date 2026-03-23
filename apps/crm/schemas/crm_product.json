@@ -1,0 +1,57 @@
+{
+  "Name": "CRMProduct",
+  "DisplayName": "CRM Product",
+  "TableName": "crm_product",
+  "LabelAttributeName": "product_name",
+  "PrimaryKey": "id",
+  "Attributes": [
+    {
+      "Field": "product_code",
+      "Header": "Product Code",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "product_name",
+      "Header": "Product Name",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "disabled",
+      "Header": "Disabled",
+      "DataType": "Boolean",
+      "DisplayType": "Checkbox",
+      "InList": true,
+      "InDetail": true
+    },
+    {
+      "Field": "image",
+      "Header": "Image",
+      "DataType": "String",
+      "DisplayType": "Image",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "description",
+      "Header": "Description",
+      "DataType": "Text",
+      "DisplayType": "Editor",
+      "InList": false,
+      "InDetail": true
+    },
+    {
+      "Field": "standard_rate",
+      "Header": "Standard Rate",
+      "DataType": "Float",
+      "DisplayType": "Number",
+      "InList": true,
+      "InDetail": true
+    }
+  ]
+}

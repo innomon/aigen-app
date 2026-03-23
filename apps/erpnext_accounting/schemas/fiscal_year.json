@@ -1,0 +1,13 @@
+{
+  "Name": "FiscalYear",
+  "DisplayName": "Fiscal Year",
+  "TableName": "fiscal_year",
+  "LabelAttributeName": "year",
+  "PrimaryKey": "id",
+  "Attributes": [
+    { "Field": "year", "Header": "Year", "DataType": "String", "DisplayType": "Text", "InList": true, "InDetail": true },
+    { "Field": "year_start_date", "Header": "Start Date", "DataType": "Datetime", "DisplayType": "Date", "InList": true, "InDetail": true },
+    { "Field": "year_end_date", "Header": "End Date", "DataType": "Datetime", "DisplayType": "Date", "InList": true, "InDetail": true },
+    { "Field": "disabled", "Header": "Disabled", "DataType": "Boolean", "DisplayType": "Text" }
+  ]
+}

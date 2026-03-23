@@ -1,0 +1,17 @@
+{
+  "Name": "GLEntry",
+  "DisplayName": "GL Entry",
+  "TableName": "gl_entry",
+  "LabelAttributeName": "voucher_no",
+  "PrimaryKey": "id",
+  "Attributes": [
+    { "Field": "posting_date", "Header": "Posting Date", "DataType": "Datetime", "DisplayType": "Date", "InList": true, "InDetail": true },
+    { "Field": "account", "Header": "Account", "DataType": "Lookup", "DisplayType": "Lookup", "Options": "Account", "InList": true, "InDetail": true },
+    { "Field": "debit", "Header": "Debit", "DataType": "Float", "DisplayType": "Number", "InList": true, "InDetail": true },
+    { "Field": "credit", "Header": "Credit", "DataType": "Float", "DisplayType": "Number", "InList": true, "InDetail": true },
+    { "Field": "voucher_type", "Header": "Voucher Type", "DataType": "String", "DisplayType": "Text", "InList": true },
+    { "Field": "voucher_no", "Header": "Voucher No", "DataType": "String", "DisplayType": "Text", "InList": true },
+    { "Field": "company", "Header": "Company", "DataType": "Lookup", "DisplayType": "Lookup", "Options": "Company", "InList": true },
+    { "Field": "remarks", "Header": "Remarks", "DataType": "String", "DisplayType": "Textarea" }
+  ]
+}
