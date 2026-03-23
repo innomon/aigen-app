@@ -8,5 +8,7 @@ func CreateDao(connectionString string) (IPrimaryDao, error) {
 	if strings.HasPrefix(connectionString, "postgres://") || strings.Contains(connectionString, "user=") {
 		return NewPostgresDao(connectionString)
 	}
-	return NewSqliteDao(connectionString)
+	// Strip sqlite:// prefix if present
+	dsn := strings.TrimPrefix(connectionString, "sqlite://")
+	return NewSqliteDao(dsn)
 }

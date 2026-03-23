@@ -11,7 +11,6 @@ import (
 type Config struct {
 	AppsDir           string                     `yaml:"apps_dir" json:"apps_dir"`
 	WWWRoot           string                     `yaml:"www_root" json:"www_root"`
-	DatabaseType      string                     `yaml:"database_type" json:"database_type"`
 	DatabaseDSN       string                     `yaml:"database_dsn" json:"database_dsn"`
 	Domain            string                     `yaml:"domain" json:"domain"`
 	Port              string                     `yaml:"port" json:"port"`
@@ -24,8 +23,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		AppsDir:           "apps",
 		WWWRoot:           "wwwroot",
-		DatabaseType:      "SQLite",
-		DatabaseDSN:       "formcms.db",
+		DatabaseDSN:       "aigen.db",
 		Port:              "5000",
 		AgenticConfigPath: "agentic.yaml",
 	}
@@ -57,9 +55,6 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if wwwRoot := os.Getenv("FORMCMS_WWW_ROOT"); wwwRoot != "" {
 		config.WWWRoot = wwwRoot
-	}
-	if dbType := os.Getenv("FORMCMS_DB_TYPE"); dbType != "" {
-		config.DatabaseType = dbType
 	}
 	if dbDSN := os.Getenv("FORMCMS_DB_DSN"); dbDSN != "" {
 		config.DatabaseDSN = dbDSN

@@ -1,0 +1,30 @@
+# AIGenApp Sample Configuration
+
+# Directory where application definitions (schemas, data, docs) are stored
+apps_dir: "apps"
+
+# Directory for static assets and public files
+www_root: "wwwroot"
+
+# Database Connection String
+# For SQLite: "aigen.db" or "sqlite://aigen.db"
+# For PostgreSQL: "postgres://user:password@localhost:5432/dbname?sslmode=disable"
+database_dsn: "aigen.db"
+
+# External domain name for automatic HTTPS via autocert (optional)
+domain: ""
+
+# Port to listen on (ignored if domain is set)
+port: "5000"
+
+# Path to agentic configuration for LLM workflows
+agentic_config_path: "agentic.yaml"
+
+# Channel configurations (optional)
+# channels:
+#   whatsapp:
+#     enabled: true
+#     gateway_url: "..."
+#   email:
+#     enabled: true
+#     smtp_server: "..."
