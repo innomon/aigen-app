@@ -17,7 +17,7 @@ apps/{app_name}/
 │   └── {entity_2}.md
 ├── data/                # Initial/Test data
 │   └── test_data.json
-└── migrations/          # (Optional) SQL DDL for physical export
+└── migrations/          # (Optional) SQL DDL for relational mapping/documentation
     └── 001_initial.sql
 ```
 
@@ -84,8 +84,11 @@ Initialize the app with sample data. Use the `$Ref:RefName` syntax to link relat
 ]
 ```
 
-### Step 5: (Optional) SQL Migrations
-While the framework uses a single-table JSON architecture (`aigen_records`), you should generate standard `CREATE TABLE` SQL scripts in `migrations/` for documentation and physical database export/import compatibility.
+### Step 5: (Optional) SQL Migrations & JSON Portability
+The framework's primary mechanism for portability is JSON-based export/import.
+
+- **JSON Portability**: All schemas and data are serialized to JSON. Use the core CLI tools (`cmd/export` and `cmd/import`) for system-wide migration and environment synchronization.
+- **Relational Mapping (Migrations)**: While the framework uses a single-table JSON architecture (`aigen_records`), you can optionally provide standard `CREATE TABLE` SQL scripts in `migrations/`. These serve as documentation for external reporting (BI tools) or for mapping the JSON structure to a traditional relational schema in external systems.
 
 ### Step 6: Register the App
 Add your app's folder name to the `enabled_apps` array in `apps/apps.json`.

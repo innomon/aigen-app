@@ -7,7 +7,7 @@ This document serves as the Standard Operating Procedure (SOP) and execution pla
 1. **No Hardcoded Go Descriptors:** Schema definitions MUST strictly be created as `.json` files inside the target module's `schemas/` directory.
 2. **Indian Locale Mandate:** All mock/test data generated MUST use the Indian locale (e.g., Currency: INR `₹`, Example Companies: Tata Motors, Reliance, Indian cities/addresses, standard Indian financial years like starting April 1st).
 3. **JSON Test Data:** Test data MUST be created as `.json` files in the module's `data/` directory, utilizing the `$Ref:Key` referencing mechanism to link relational entities.
-4. **SQL Migrations:** Alongside JSON schemas, migration SQL scripts (DDL/DML) MUST be generated for users who need to deploy to bare-metal databases without relying solely on application-level DDL generation.
+4. **JSON Portability:** All schemas and data are stored as JSON. SQL Migrations are strictly optional and only intended for relational mapping or external documentation, not for core functionality.
 5. **Temporary Workspace:** The target Frappe/ERPNext application MUST be cloned into a temporary directory for exploration to avoid cluttering the main workspace.
 
 ---
@@ -57,8 +57,8 @@ Create a new JSON file in `apps/<module_name>/schemas/<doctype_snake_case>.json`
 }
 ```
 
-### Phase 3: SQL Migration Generation
-Generate standard SQL migration files (e.g., `apps/<module_name>/migrations/001_initial_schema.sql`). 
+### Phase 3: (Optional) SQL Migration Generation
+While AiGen CMS uses a single-table JSON architecture, you can optionally generate standard SQL migration files (e.g., `apps/<module_name>/migrations/001_initial_schema.sql`) for external documentation or reporting purposes. 
 1. Write the `CREATE TABLE` statements equivalent to the JSON schemas for PostgreSQL and SQLite.
 2. Include system columns: `id`, `created_at`, `updated_at`, `deleted`.
 3. Generate `INSERT INTO` statements containing baseline production data (if applicable, e.g., default Indian states, tax categories).
@@ -111,7 +111,7 @@ The `AiGen CMS` framework utilizes a fully configuration-driven initialization s
 ## 🚦 Verification Steps for Agents
 1. Have I created **only** `.json` files for the DocType representations?
 2. Are all monetary values, companies, and date structures conforming to the **Indian locale**?
-3. Did I generate a corresponding `.sql` migration script?
+3. Did I map the DocType correctly to the single-table JSON schema?
 4. Is the Frappe source code appropriately isolated in `.gemini/tmp/temp_repos/`?
 5. Did I update `apps/apps.json` to enable the new module?
 6. Does the test server boot up and seed the configuration data without errors?

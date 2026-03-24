@@ -55,12 +55,10 @@ The lifecycle of an app is managed by the core CMS initialization process (speci
 2. **Schema Setup (`SetupApp`)**:
    For each enabled app, the CMS scans the `apps/<app_name>/schemas/` directory.
    - Parses each `.json` file into an `Entity` descriptor.
-   - Translates local data types (e.g., `Text`, `Int`, `Boolean`) into physical SQL column types.
-   - Automatically adds system columns: `id`, `created_at`, `updated_at`, and `deleted`.
-   - Executes a `CREATE TABLE` query to construct the physical table if it doesn't already exist.
-   - Saves the schema definition into the core `__schemas` table, marking it as `Published`.
+   - Registers the schema definition for dynamic API generation.
+   - Saves the schema definition as a JSON record in the core `aigen_records` table, marking it as `Published`.
 3. **Data Seeding (`SetupAppTestData`)**:
-   After all tables are created, the CMS reads `apps/<app_name>/data/test_data.json`.
+   After schemas are registered, the CMS reads `apps/<app_name>/data/test_data.json`.
    - It checks if data already exists to prevent duplicate seeding.
    - Inserts the records, dynamically resolving any `$Ref` cross-references between records.
 
@@ -134,11 +132,11 @@ Deploying an app simply involves enabling it so the CMS picks it up on the next 
 Modifying an app's structure or behavior depends on what phase the modification occurs in.
 
 **Modifying via Codebase (Pre-deployment or Development):**
-- You can add new `.json` schemas to the app's `schemas/` directory. On the next restart, the CMS will detect the new schemas and create the corresponding tables.
-- Because `SetupApp` currently uses `CREATE TABLE IF NOT EXISTS`, altering existing columns directly via JSON files requires manual database migrations if the table already exists.
+- You can add new `.json` schemas to the app's `schemas/` directory. On the next restart, the CMS will detect the new schemas and register them.
+- Because all data is stored in the single `aigen_records` JSON table, altering existing attributes directly via JSON files requires no physical database migrations; schema-on-read handles it natively.
 
 **Modifying via CMS (Post-deployment):**
-- Once deployed, the app's schemas are saved in the internal `__schemas` table. 
+- Once deployed, the app's schemas are saved in the internal `aigen_records` table. 
 - You can use the CMS admin interface to dynamically add new columns, modify pages, or adjust Handlebars templates. These modifications are persisted to the database and take effect immediately via the dynamic `squirrel` query builder and `raymond` templating engine.
 - Note: UI modifications currently exist in the database and would need to be exported back to `.json` files if you want to bundle them into the persistent app source code. You can use the `cmd/export` utility for this.
 
@@ -146,11 +144,11 @@ Modifying an app's structure or behavior depends on what phase the modification 
 
 ## 7. Exporting App Modifications
 
-Since UI modifications and dynamically created data live in the database (e.g., in the `__schemas` table and individual dynamic tables), you can use the built-in export utility to export these modifications back into JSON files. This allows you to bundle them into your source control as part of your application.
+Since UI modifications and dynamically created data live in the database (e.g., in the single `aigen_records` table), you can use the built-in export utility to export these modifications back into JSON files. This allows you to bundle them into your source control as part of your application.
 
 ### Using the Export Utility
 
-The export utility connects to the SQLite database, extracts all published schemas (Entity, Page, Menu, Query) as well as the row data for `EntitySchema` objects, and saves them to an output directory.
+The export utility connects to the database, extracts all published schemas (Entity, Page, Menu, Query) as well as the row data for entities, and saves them to an output directory.
 
 From your project directory, run:
 
@@ -175,7 +173,7 @@ You can restore your exported app modifications (both schemas and data) into any
 
 ### Using the Import Utility
 
-The import tool dynamically reads your exported `.json` schemas and data files, creates the necessary core tables (`__schemas`) and dynamic entity tables if they do not exist, and inserts all definitions and row data back into the target database.
+The import tool dynamically reads your exported `.json` schemas and data files, ensures the core `aigen_records` table exists, and inserts all definitions and row data back into the target database.
 
 From your project directory, run:
 
@@ -192,8 +190,7 @@ go run cmd/import/main.go --in=./my-export-dir --db=path/to/target-db.sqlite
 
 **Idempotency & Preventing Duplicates:**
 The import script is designed to be completely safe to run multiple times:
-1. **Schemas:** Before inserting a schema into the `__schemas` table, the utility checks if a schema of the same type and name already exists. If it does, it skips it.
-2. **Tables:** It uses `CREATE TABLE IF NOT EXISTS` when constructing physical SQL tables, safely ignoring tables that are already built.
-3. **Data:** Exported records contain their original primary key (`id`). During import, the utility verifies if a record with that specific `id` already exists in the target table. Existing records are skipped, meaning running the import twice will **not** duplicate your exported data. (Note: If you manually author new data in the `.json` files without providing an `"id"`, the database will treat those as brand-new records and auto-assign them IDs, which could cause duplication if run multiple times).
+1. **Schemas:** Before inserting a schema into the `aigen_records` table, the utility checks if a schema of the same type and name already exists. If it does, it skips it.
+2. **Data:** Exported records contain their original primary key (`id`). During import, the utility verifies if a record with that specific `id` already exists in the target table. Existing records are skipped, meaning running the import twice will **not** duplicate your exported data. (Note: If you manually author new data in the `.json` files without providing an `"id"`, the database will treat those as brand-new records and auto-assign them IDs, which could cause duplication if run multiple times).
 
 **Note:** Export from a local SQLite development environment and import directly into a production PostgreSQL environment without modifying the JSON files, is supported.
