@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"testing"
-	"fmt"
 
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
