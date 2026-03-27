@@ -115,5 +115,5 @@ The server will automatically handle HTTP-to-HTTPS redirection and store certifi
 - `core/descriptors`: Data models and schema definitions.
 - `core/services`: Business logic and orchestration.
 - `infrastructure/filestore`: File storage implementations (Local, S3).
-- `infrastructure/relationdbdao`: Database abstraction layer (PostgreSQL, SQLite using single JSON store).
+- `infrastructure/relationdbdao`: Database abstraction layer (PostgreSQL, SQLite, and Firestore using single JSON store).
 - `utils`: Shared utilities and data models.

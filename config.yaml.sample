@@ -9,6 +9,7 @@ www_root: "wwwroot"
 # Database Connection String
 # For SQLite: "aigen.db" or "sqlite://aigen.db"
 # For PostgreSQL: "postgres://user:password@localhost:5432/dbname?sslmode=disable"
+# For Firestore: "firestore://your-google-cloud-project-id"
 database_dsn: "aigen.db"
 
 # External domain name for automatic HTTPS via autocert (optional)

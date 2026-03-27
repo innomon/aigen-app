@@ -2,10 +2,15 @@ package services
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
+)
+
+const (
+	DocPermNamespace  = "aigen.core.descriptors.DocPerm"
+	UserPermNamespace = "aigen.core.descriptors.UserPerm"
 )
 
 type PermissionService struct {
@@ -29,46 +34,70 @@ func (s *PermissionService) HasAccess(ctx context.Context, userId int64, roles [
 	}
 
 	// Fetch doc perms for the roles and entity
-	// Note: Action names should match the fields in __doc_perms: read, write, create, delete, etc.
-	query, args, err := s.dao.GetBuilder().Select("count(*)").From("__doc_perms").
-		Join("__roles ON __doc_perms.role = __roles.id").
-		Where(squirrel.Eq{"__roles.name": roles, "parent": entityName, action: true, "permlevel": 0}).
-		ToSql()
+	// Since we can't JOIN, we fetch doc_perms and filter by roles in Go
+	filters := []datamodels.Filter{
+		{
+			FieldName: "parent",
+			Constraints: []datamodels.Constraint{
+				{Match: "equals", Values: []interface{}{entityName}},
+			},
+		},
+		{
+			FieldName: "permlevel",
+			Constraints: []datamodels.Constraint{
+				{Match: "equals", Values: []interface{}{0}},
+			},
+		},
+		{
+			FieldName: action,
+			Constraints: []datamodels.Constraint{
+				{Match: "equals", Values: []interface{}{true}},
+			},
+		},
+	}
 
+	recs, _, err := s.dao.List(ctx, DocPermNamespace, filters, datamodels.Pagination{}, nil)
 	if err != nil {
 		return false, err
 	}
 
-	var count int
-	err = s.dao.GetDb().QueryRowContext(ctx, query, args...).Scan(&count)
-	if err != nil {
-		return false, err
+	for _, r := range recs {
+		// rec.role is either role name or role id. 
+		// Assuming it matches the role name for simplicity, or we should resolve role IDs.
+		// If DocPerm.role is role name:
+		data := r.Rec.(map[string]interface{})
+		roleInPerm := fmt.Sprintf("%v", data["role"])
+		for _, userRole := range roles {
+			if roleInPerm == userRole {
+				return true, nil
+			}
+		}
 	}
 
-	return count > 0, nil
+	return false, nil
 }
 
 func (s *PermissionService) GetRowFilters(ctx context.Context, userId int64, entityName string) ([]datamodels.Filter, error) {
 	// Fetch user permissions for the user
-	query, args, err := s.dao.GetBuilder().Select("allow", "for_value").From("__user_perms").
-		Where(squirrel.Eq{"user_id": userId}).ToSql()
+	filters := []datamodels.Filter{
+		{
+			FieldName: "userId",
+			Constraints: []datamodels.Constraint{
+				{Match: "equals", Values: []interface{}{userId}},
+			},
+		},
+	}
 
+	recs, _, err := s.dao.List(ctx, UserPermNamespace, filters, datamodels.Pagination{}, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	rows, err := s.dao.GetDb().QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	userPerms := make(map[string][]string)
-	for rows.Next() {
-		var allow, forValue string
-		if err := rows.Scan(&allow, &forValue); err != nil {
-			return nil, err
-		}
+	for _, r := range recs {
+		data := r.Rec.(map[string]interface{})
+		allow := fmt.Sprintf("%v", data["allow"])
+		forValue := fmt.Sprintf("%v", data["for_value"])
 		userPerms[allow] = append(userPerms[allow], forValue)
 	}
 
@@ -82,7 +111,7 @@ func (s *PermissionService) GetRowFilters(ctx context.Context, userId int64, ent
 		return nil, err
 	}
 
-	var filters []datamodels.Filter
+	var rowFilters []datamodels.Filter
 	for _, attr := range entity.Attributes {
 		if attr.DataType == "Lookup" && userPerms[attr.Options] != nil {
 			values := userPerms[attr.Options]
@@ -90,7 +119,7 @@ func (s *PermissionService) GetRowFilters(ctx context.Context, userId int64, ent
 			for i := range values {
 				ifaceValues[i] = values[i]
 			}
-			filters = append(filters, datamodels.Filter{
+			rowFilters = append(rowFilters, datamodels.Filter{
 				FieldName: attr.Field,
 				Constraints: []datamodels.Constraint{
 					{
@@ -102,7 +131,7 @@ func (s *PermissionService) GetRowFilters(ctx context.Context, userId int64, ent
 		}
 	}
 
-	return filters, nil
+	return rowFilters, nil
 }
 
 func (s *PermissionService) GetFieldPermissions(ctx context.Context, entityName string, roles []string) (map[string]map[string]bool, error) {
@@ -125,36 +154,47 @@ func (s *PermissionService) GetFieldPermissions(ctx context.Context, entityName 
 	}
 
 	// Fetch all doc perms for these roles and entity
-	query, args, err := s.dao.GetBuilder().Select("permlevel", "read", "write").From("__doc_perms").
-		Join("__roles ON __doc_perms.role = __roles.id").
-		Where(squirrel.Eq{"__roles.name": roles, "parent": entityName}).
-		ToSql()
+	filters := []datamodels.Filter{
+		{
+			FieldName: "parent",
+			Constraints: []datamodels.Constraint{
+				{Match: "equals", Values: []interface{}{entityName}},
+			},
+		},
+	}
 
+	recs, _, err := s.dao.List(ctx, DocPermNamespace, filters, datamodels.Pagination{}, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	rows, err := s.dao.GetDb().QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	permLevels := make(map[int]map[string]bool)
-	for rows.Next() {
-		var lvl int
-		var r, w bool
-		if err := rows.Scan(&lvl, &r, &w); err != nil {
-			return nil, err
+	for _, r := range recs {
+		data := r.Rec.(map[string]interface{})
+		roleInPerm := fmt.Sprintf("%v", data["role"])
+		
+		match := false
+		for _, userRole := range roles {
+			if roleInPerm == userRole {
+				match = true
+				break
+			}
 		}
-		if _, ok := permLevels[lvl]; !ok {
-			permLevels[lvl] = map[string]bool{"read": false, "write": false}
-		}
-		if r {
-			permLevels[lvl]["read"] = true
-		}
-		if w {
-			permLevels[lvl]["write"] = true
+
+		if match {
+			lvl := int(data["permlevel"].(float64))
+			read := data["read"].(bool)
+			write := data["write"].(bool)
+			
+			if _, ok := permLevels[lvl]; !ok {
+				permLevels[lvl] = map[string]bool{"read": false, "write": false}
+			}
+			if read {
+				permLevels[lvl]["read"] = true
+			}
+			if write {
+				permLevels[lvl]["write"] = true
+			}
 		}
 	}
 

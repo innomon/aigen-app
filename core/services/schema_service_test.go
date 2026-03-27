@@ -41,15 +41,6 @@ func TestSchemaService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, saved.SchemaId)
 
-		// Debug: check what's in the table
-		rows, _ := dao.GetDb().Query("SELECT namespace, key, rec FROM aigen_records")
-		for rows.Next() {
-			var ns, key, rec string
-			rows.Scan(&ns, &key, &rec)
-			fmt.Printf("DEBUG: ns=%s, key=%s, rec=%s\n", ns, key, rec)
-		}
-		rows.Close()
-
 		all, err := svc.All(ctx, nil, nil, nil)
 		assert.NoError(t, err)
 		assert.Len(t, all, 1)

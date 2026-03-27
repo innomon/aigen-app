@@ -8,7 +8,7 @@ AiGen CMS is a headless Content Management System written in Go (migrated from C
 
 ### Core Technology Stack
 - **Routing**: `net/http` + `chi` router
-- **Database Access**: Standard `database/sql` supporting SQLite, PostgreSQL, MySQL, and SQL Server.
+- **Database Access**: A unified `IPrimaryDao` abstraction supporting SQLite, PostgreSQL, and Google Cloud Firestore.
 - **Dynamic Queries**: `Masterminds/squirrel` for query building, as table schemas are not known at compile time (preventing the use of standard ORMs).
 - **GraphQL**: `graphql-go/graphql` for dynamic API endpoints based on schemas.
 - **Templating**: `aymerick/raymond` (Handlebars template engine) for dynamic page rendering.
