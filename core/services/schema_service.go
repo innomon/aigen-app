@@ -9,7 +9,7 @@ import (
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/innomon/aigen-app/utils/ids"
 )
 
 const SchemaNamespace = "aigen.core.descriptors.Schema"
@@ -312,8 +312,7 @@ func (s *SchemaService) loadCollection(ctx context.Context, sourceLe *descriptor
 
 func (s *SchemaService) Save(ctx context.Context, schema *descriptors.Schema, asPublished bool) (*descriptors.Schema, error) {
 	if schema.SchemaId == "" {
-		id, _ := gonanoid.New(12)
-		schema.SchemaId = id
+		schema.SchemaId = ids.NewRandomID()
 	}
 
 	if asPublished || schema.Id == 0 {

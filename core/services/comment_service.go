@@ -3,13 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	"github.com/oklog/ulid/v2"
+	"github.com/innomon/aigen-app/utils/ids"
 	"encoding/json"
 )
 
@@ -61,10 +60,7 @@ func (s *CommentService) Single(ctx context.Context, id string) (*descriptors.Co
 func (s *CommentService) Save(ctx context.Context, comment *descriptors.Comment) (*descriptors.Comment, error) {
 	now := time.Now()
 	if comment.Id == "" {
-		t := time.Now()
-		entropy := ulid.Monotonic(rand.New(rand.NewSource(t.UnixNano())), 0)
-		id := ulid.MustNew(ulid.Timestamp(t), entropy)
-		comment.Id = fmt.Sprintf("%s_%d_%s", comment.EntityName, comment.RecordId, id.String())
+		comment.Id = fmt.Sprintf("%s_%d_%s", comment.EntityName, comment.RecordId, ids.NewID())
 		comment.CreatedAt = now
 	}
 	comment.UpdatedAt = now

@@ -20,7 +20,7 @@ import (
 	"github.com/innomon/aigen-app/infrastructure/filestore"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/innomon/aigen-app/utils/ids"
 )
 
 const (
@@ -52,7 +52,7 @@ func (s *AssetService) ChunkStatus(ctx context.Context, userId, fileName string,
 	recs, _, err := s.dao.List(ctx, UploadSessionNamespace, filters, datamodels.Pagination{}, nil)
 	if err != nil || len(recs) == 0 {
 		now := time.Now()
-		id, _ := gonanoid.New(12)
+		id := ids.NewRandomID()
 		ext := filepath.Ext(fileName)
 		path := fmt.Sprintf("%s/%s%s", now.Format("2006-01"), id, ext)
 

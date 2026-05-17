@@ -15,7 +15,7 @@ const (
 )
 
 type AuditLog struct {
-	Id          int64                  `json:"id" mapstructure:"id"`
+	Id          string                 `json:"id" mapstructure:"id"`
 	UserId      string                 `json:"userId" mapstructure:"user_id"`
 	UserName    string                 `json:"userName" mapstructure:"user_name"`
 	Action      ActionType             `json:"action" mapstructure:"action"`

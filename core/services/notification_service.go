@@ -2,14 +2,14 @@ package services
 
 import (
 	"context"
-	"time"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	gonanoid "github.com/matoous/go-nanoid/v2"
-	"encoding/json"
+	"github.com/innomon/aigen-app/utils/ids"
 )
 
 const NotificationNamespace = "aigen.core.descriptors.Notification"
@@ -25,9 +25,7 @@ func NewNotificationService(dao relationdbdao.IPrimaryDao) *NotificationService 
 func (s *NotificationService) List(ctx context.Context, userId string, pagination datamodels.Pagination) ([]*descriptors.Notification, error) {
 	filters := []datamodels.Filter{
 		{FieldName: "userId", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{userId}}}},
-		{FieldName: "deleted", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{false}}}},
 	}
-
 	recs, _, err := s.dao.List(ctx, NotificationNamespace, filters, pagination, []datamodels.Sort{{Field: "createdAt", Order: datamodels.SortOrderDesc}})
 	if err != nil {
 		return nil, err
@@ -35,26 +33,24 @@ func (s *NotificationService) List(ctx context.Context, userId string, paginatio
 
 	var results []*descriptors.Notification
 	for _, r := range recs {
-		var notif descriptors.Notification
+		var n descriptors.Notification
 		data, _ := json.Marshal(r.Rec)
-		json.Unmarshal(data, &notif)
-		results = append(results, &notif)
+		json.Unmarshal(data, &n)
+		results = append(results, &n)
 	}
 	return results, nil
 }
 
 func (s *NotificationService) Send(ctx context.Context, n *descriptors.Notification) error {
-	id, _ := gonanoid.New(12)
-	now := time.Now()
-	n.Id = id
-	n.CreatedAt = now
-	n.UpdatedAt = now
+	n.Id = ids.NewRandomID()
+	n.CreatedAt = time.Now()
+	n.UpdatedAt = time.Now()
 
 	rec := datamodels.RecJSON{
 		Namespace: NotificationNamespace,
-		Key:       id,
+		Key:       n.Id,
 		Rec:       n,
-		Tmstamp:   now,
+		Tmstamp:   n.CreatedAt,
 	}
 
 	return s.dao.Save(ctx, rec)
@@ -66,17 +62,18 @@ func (s *NotificationService) MarkAsRead(ctx context.Context, userId string, id 
 		return fmt.Errorf("notification not found")
 	}
 
-	var notif descriptors.Notification
+	var n descriptors.Notification
 	data, _ := json.Marshal(rec.Rec)
-	json.Unmarshal(data, &notif)
+	json.Unmarshal(data, &n)
 
-	if notif.UserId != userId {
+	if n.UserId != userId {
 		return fmt.Errorf("access denied")
 	}
 
-	notif.IsRead = true
-	notif.UpdatedAt = time.Now()
-	rec.Rec = notif
+	n.IsRead = true
+	n.UpdatedAt = time.Now()
+	rec.Rec = n
+	rec.Tmstamp = n.UpdatedAt
 	return s.dao.Save(ctx, *rec)
 }
 
@@ -86,15 +83,21 @@ func (s *NotificationService) MarkAllAsRead(ctx context.Context, userId string) 
 		{FieldName: "isRead", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{false}}}},
 	}
 
-	recs, _, _ := s.dao.List(ctx, NotificationNamespace, filters, datamodels.Pagination{}, nil)
+	recs, _, err := s.dao.List(ctx, NotificationNamespace, filters, datamodels.Pagination{}, nil)
+	if err != nil {
+		return err
+	}
+
 	for _, r := range recs {
-		var notif descriptors.Notification
+		var n descriptors.Notification
 		data, _ := json.Marshal(r.Rec)
-		json.Unmarshal(data, &notif)
-		notif.IsRead = true
-		notif.UpdatedAt = time.Now()
-		r.Rec = notif
+		json.Unmarshal(data, &n)
+		n.IsRead = true
+		n.UpdatedAt = time.Now()
+		r.Rec = n
+		r.Tmstamp = n.UpdatedAt
 		s.dao.Save(ctx, r)
 	}
+
 	return nil
 }

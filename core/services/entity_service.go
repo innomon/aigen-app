@@ -8,7 +8,7 @@ import (
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/innomon/aigen-app/utils/ids"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -95,8 +95,7 @@ func (s *EntityService) Insert(ctx context.Context, name string, data datamodels
 
 	id := data[entity.PrimaryKey]
 	if id == nil || id == "" {
-		newId, _ := gonanoid.New(12)
-		id = newId
+		id = ids.NewRandomID()
 		data[entity.PrimaryKey] = id
 	}
 

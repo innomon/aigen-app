@@ -13,7 +13,7 @@ import (
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/innomon/aigen-app/utils/ids"
 )
 
 type ChannelService struct {
@@ -333,7 +333,7 @@ func (s *ChannelService) HandleInbound(ctx context.Context, channelType descript
 				fileName = "upload_" + time.Now().Format("150405") + ".bin"
 			}
 
-			id, _ := gonanoid.New(12)
+			id := ids.NewRandomID()
 			ext := filepath.Ext(fileName)
 			path := fmt.Sprintf("%s/%s%s", time.Now().Format("2006-01"), id, ext)
 

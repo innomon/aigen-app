@@ -17,10 +17,8 @@ require (
 	github.com/graphql-go/graphql v0.8.1
 	github.com/innomon/agentic v0.6.0
 	github.com/lib/pq v1.12.0
-	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modelcontextprotocol/go-sdk v1.4.1
-	github.com/oklog/ulid/v2 v2.1.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.49.0
 	google.golang.org/adk v0.6.0

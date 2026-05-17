@@ -9,7 +9,7 @@ import (
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/innomon/aigen-app/utils/ids"
 )
 
 type InteractionService struct {
@@ -22,8 +22,7 @@ func NewInteractionService(dao relationdbdao.IPrimaryDao) *InteractionService {
 
 func (s *InteractionService) Log(ctx context.Context, i *descriptors.Interaction) error {
 	if i.Id == "" {
-		id, _ := gonanoid.New(12)
-		i.Id = id
+		i.Id = ids.NewRandomID()
 	}
 	if i.CreatedAt.IsZero() {
 		i.CreatedAt = time.Now()

@@ -2,13 +2,14 @@ package services
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
-	gonanoid "github.com/matoous/go-nanoid/v2"
-	"encoding/json"
+	"github.com/innomon/aigen-app/utils/ids"
 )
 
 const AuditLogNamespace = "aigen.core.descriptors.AuditLog"
@@ -40,7 +41,7 @@ func (s *AuditService) List(ctx context.Context, pagination datamodels.Paginatio
 func (s *AuditService) ById(ctx context.Context, id string) (*descriptors.AuditLog, error) {
 	rec, err := s.dao.Get(ctx, AuditLogNamespace, id)
 	if err != nil || rec == nil {
-		return nil, err
+		return nil, fmt.Errorf("audit log not found")
 	}
 
 	var log descriptors.AuditLog
@@ -49,15 +50,15 @@ func (s *AuditService) ById(ctx context.Context, id string) (*descriptors.AuditL
 	return &log, nil
 }
 
-func (s *AuditService) Log(ctx context.Context, l *descriptors.AuditLog) error {
-	id, _ := gonanoid.New(12)
-	l.CreatedAt = time.Now()
+func (s *AuditService) Log(ctx context.Context, log *descriptors.AuditLog) error {
+	log.Id = ids.NewRandomID()
+	log.CreatedAt = time.Now()
 
 	rec := datamodels.RecJSON{
 		Namespace: AuditLogNamespace,
-		Key:       id,
-		Rec:       l,
-		Tmstamp:   l.CreatedAt,
+		Key:       log.Id,
+		Rec:       log,
+		Tmstamp:   log.CreatedAt,
 	}
 
 	return s.dao.Save(ctx, rec)
