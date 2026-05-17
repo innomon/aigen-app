@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type S3FileStore struct {
@@ -18,13 +19,27 @@ type S3FileStore struct {
 	region string
 }
 
-func NewS3FileStore(ctx context.Context, bucket, region string) (*S3FileStore, error) {
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+func NewS3FileStore(ctx context.Context, bucket, region, accessKey, secretKey, endpoint string) (*S3FileStore, error) {
+	var opts []func(*config.LoadOptions) error
+	if region != "" {
+		opts = append(opts, config.WithRegion(region))
+	}
+
+	if accessKey != "" && secretKey != "" {
+		opts = append(opts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")))
+	}
+
+	cfg, err := config.LoadDefaultConfig(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	client := s3.NewFromConfig(cfg)
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		if endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
+		}
+	})
+
 	return &S3FileStore{
 		client: client,
 		bucket: bucket,
@@ -40,15 +55,6 @@ func (s *S3FileStore) Upload(ctx context.Context, path string, reader io.Reader)
 		Body:   reader,
 	})
 	return err
-}
-
-func (s *S3FileStore) UploadLocal(ctx context.Context, localPath, destPath string) error {
-	file, err := os.Open(localPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	return s.Upload(ctx, destPath, file)
 }
 
 func (s *S3FileStore) GetMetadata(ctx context.Context, path string) (*FileMetadata, error) {
@@ -79,15 +85,6 @@ func (s *S3FileStore) Download(ctx context.Context, path string, writer io.Write
 	return err
 }
 
-func (s *S3FileStore) DownloadToLocal(ctx context.Context, path, localPath string) error {
-	file, err := os.Create(localPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	return s.Download(ctx, path, file)
-}
-
 func (s *S3FileStore) Delete(ctx context.Context, path string) error {
 	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -97,8 +94,34 @@ func (s *S3FileStore) Delete(ctx context.Context, path string) error {
 }
 
 func (s *S3FileStore) DeleteByPrefix(ctx context.Context, prefix string) error {
-	// Need to list and delete
-	return fmt.Errorf("DeleteByPrefix not implemented for S3")
+	paginator := s3.NewListObjectsV2Paginator(s.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucket),
+		Prefix: aws.String(prefix),
+	})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return err
+		}
+
+		var objects []types.ObjectIdentifier
+		for _, obj := range page.Contents {
+			objects = append(objects, types.ObjectIdentifier{Key: obj.Key})
+		}
+
+		if len(objects) > 0 {
+			_, err = s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+				Bucket: aws.String(s.bucket),
+				Delete: &types.Delete{Objects: objects},
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *S3FileStore) GetUploadedChunks(ctx context.Context, path string) ([]string, error) {

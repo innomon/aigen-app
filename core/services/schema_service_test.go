@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/innomon/aigen-app/core/descriptors"
@@ -11,11 +10,7 @@ import (
 )
 
 func TestSchemaService(t *testing.T) {
-	dbFile := "test_schemas.db"
-	os.Remove(dbFile)
-	defer os.Remove(dbFile)
-
-	dao, err := relationdbdao.CreateDao(dbFile)
+	dao, err := relationdbdao.CreateDao("memory://")
 	assert.NoError(t, err)
 	defer dao.Close()
 

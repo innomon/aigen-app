@@ -7,10 +7,9 @@ apps_dir: "apps"
 www_root: "wwwroot"
 
 # Database Connection String
-# For SQLite: "aigen.db" or "sqlite://aigen.db"
 # For PostgreSQL: "postgres://user:password@localhost:5432/dbname?sslmode=disable"
 # For Firestore: "firestore://your-google-cloud-project-id"
-database_dsn: "aigen.db"
+database_dsn: "postgres://user:password@localhost:5432/aigen_db?sslmode=disable"
 
 # External domain name for automatic HTTPS via autocert (optional)
 domain: ""
@@ -20,6 +19,31 @@ port: "5000"
 
 # Path to agentic configuration for LLM workflows
 agentic_config_path: "agentic.yaml"
+
+# Storage configuration
+storage:
+  # Driver can be "fs" (local filesystem) or "s3"
+  driver: "fs"
+  fs:
+    # Root directory for file storage (relative to project root or absolute)
+    root: "wwwroot/files"
+    # URL prefix for serving files
+    url_prefix: "/files"
+  s3:
+    bucket: "my-bucket"
+    region: "us-east-1"
+    # Optional credentials (if not using IAM roles)
+    # access_key_id: "..."
+    # secret_access_key: "..."
+    # Optional endpoint for S3-compatible storage (e.g., MinIO)
+    # endpoint: "http://localhost:9000"
+  gcs:
+    bucket: "my-gcs-bucket"
+    # Optional credentials file
+    # credentials_file: "path/to/credentials.json"
+  postgres:
+    # URL for a separate postgres instance to store files (or use existing one)
+    url: "postgres://user:password@localhost:5432/file_storage?sslmode=disable"
 
 # Channel configurations (optional)
 # channels:

@@ -8,6 +8,36 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
+type S3Config struct {
+	Bucket          string `yaml:"bucket" json:"bucket"`
+	Region          string `yaml:"region" json:"region"`
+	AccessKeyID     string `yaml:"access_key_id,omitempty" json:"access_key_id,omitempty"`
+	SecretAccessKey string `yaml:"secret_access_key,omitempty" json:"secret_access_key,omitempty"`
+	Endpoint        string `yaml:"endpoint,omitempty" json:"endpoint,omitempty"`
+}
+
+type FSConfig struct {
+	Root      string `yaml:"root" json:"root"`
+	UrlPrefix string `yaml:"url_prefix" json:"url_prefix"`
+}
+
+type GCSConfig struct {
+	Bucket          string `yaml:"bucket" json:"bucket"`
+	CredentialsFile string `yaml:"credentials_file,omitempty" json:"credentials_file,omitempty"`
+}
+
+type PostgresStorageConfig struct {
+	URL string `yaml:"url" json:"url"`
+}
+
+type StorageConfig struct {
+	Driver   string                `yaml:"driver" json:"driver"`
+	FS       FSConfig              `yaml:"fs" json:"fs"`
+	S3       S3Config              `yaml:"s3" json:"s3"`
+	GCS      GCSConfig             `yaml:"gcs" json:"gcs"`
+	Postgres PostgresStorageConfig `yaml:"postgres" json:"postgres"`
+}
+
 type Config struct {
 	AppsDir           string                     `yaml:"apps_dir" json:"apps_dir"`
 	WWWRoot           string                     `yaml:"www_root" json:"www_root"`
@@ -17,6 +47,7 @@ type Config struct {
 	AgenticConfigPath string                     `yaml:"agentic_config_path" json:"agentic_config_path"`
 	Channels          descriptors.ChannelsConfig `yaml:"channels" json:"channels"`
 	MCP               descriptors.MCPConfig      `yaml:"mcp" json:"mcp"`
+	Storage           StorageConfig              `yaml:"storage" json:"storage"`
 }
 
 func DefaultConfig() *Config {
@@ -26,6 +57,13 @@ func DefaultConfig() *Config {
 		DatabaseDSN:       "aigen.db",
 		Port:              "5000",
 		AgenticConfigPath: "agentic.yaml",
+		Storage: StorageConfig{
+			Driver: "fs",
+			FS: FSConfig{
+				Root:      "wwwroot/files",
+				UrlPrefix: "/files",
+			},
+		},
 	}
 }
 

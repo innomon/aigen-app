@@ -16,13 +16,13 @@ import (
 )
 
 func main() {
-	dbPath := flag.String("db", "formcms.db", "Path to SQLite database")
+	dbConn := flag.String("db", "postgres://user:pass@localhost:5432/dbname", "Database connection string")
 	outDir := flag.String("out", "exports", "Output directory for schemas and data")
 	flag.Parse()
 
-	log.Printf("Starting export from %s to %s", *dbPath, *outDir)
+	log.Printf("Starting export from %s to %s", *dbConn, *outDir)
 
-	dao, err := relationdbdao.CreateDao(*dbPath)
+	dao, err := relationdbdao.CreateDao(*dbConn)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

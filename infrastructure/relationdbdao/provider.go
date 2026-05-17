@@ -1,6 +1,7 @@
 package relationdbdao
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -11,7 +12,8 @@ func CreateDao(connectionString string) (IPrimaryDao, error) {
 	if strings.HasPrefix(connectionString, "firestore://") {
 		return NewFirestoreDao(connectionString)
 	}
-	// Strip sqlite:// prefix if present
-	dsn := strings.TrimPrefix(connectionString, "sqlite://")
-	return NewSqliteDao(dsn)
+	if strings.HasPrefix(connectionString, "memory://") || connectionString == ":memory:" {
+		return NewMemoryDao(), nil
+	}
+	return nil, fmt.Errorf("unsupported database or invalid connection string: %s. SQLite is NOT supported.", connectionString)
 }

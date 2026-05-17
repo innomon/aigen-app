@@ -10,7 +10,7 @@ import (
 )
 
 func TestInteractionService(t *testing.T) {
-	dao, _ := relationdbdao.CreateDao("sqlite://:memory:")
+	dao, _ := relationdbdao.CreateDao("memory://")
 	dao.EnsureTable(context.Background())
 	svc := NewInteractionService(dao)
 	ctx := context.Background()

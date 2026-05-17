@@ -12,11 +12,9 @@ type FileMetadata struct {
 
 type IFileStore interface {
 	Upload(ctx context.Context, path string, reader io.Reader) error
-	UploadLocal(ctx context.Context, localPath, destPath string) error
 	GetMetadata(ctx context.Context, path string) (*FileMetadata, error)
 	GetUrl(path string) string
 	Download(ctx context.Context, path string, writer io.Writer) error
-	DownloadToLocal(ctx context.Context, path, localPath string) error
 	Delete(ctx context.Context, path string) error
 	DeleteByPrefix(ctx context.Context, prefix string) error
 

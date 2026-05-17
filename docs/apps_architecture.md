@@ -8,7 +8,7 @@ AiGen CMS is a headless Content Management System written in Go (migrated from C
 
 ### Core Technology Stack
 - **Routing**: `net/http` + `chi` router
-- **Database Access**: A unified `IPrimaryDao` abstraction supporting SQLite, PostgreSQL, and Google Cloud Firestore.
+- **Database Access**: A unified `IPrimaryDao` abstraction supporting PostgreSQL and Google Cloud Firestore.
 - **Dynamic Queries**: `Masterminds/squirrel` for query building, as table schemas are not known at compile time (preventing the use of standard ORMs).
 - **GraphQL**: `graphql-go/graphql` for dynamic API endpoints based on schemas.
 - **Templating**: `aymerick/raymond` (Handlebars template engine) for dynamic page rendering.
@@ -156,13 +156,13 @@ From your project directory, run:
 go run cmd/export/main.go
 ```
 
-By default, this will read from `formcms.db` and output to an `exports` directory:
+By default, this will output to an `exports` directory:
 - **Schemas**: Extracted to `exports/schemas/<SchemaType>/<SchemaName>.json`
 - **Data**: Extracted to `exports/data/<EntityName>.json`
 
-You can customize the database path and output directory using flags:
+You can customize the database connection and output directory using flags:
 ```bash
-go run cmd/export/main.go --db=path/to/my-db.sqlite --out=./my-export-dir
+go run cmd/export/main.go --db="postgres://..." --out=./my-export-dir
 ```
 
 ---
@@ -181,11 +181,11 @@ From your project directory, run:
 go run cmd/import/main.go
 ```
 
-By default, it reads from the `./exports` directory and imports into `formcms.db`.
+By default, it reads from the `./exports` directory.
 
-You can optionally specify the input folder and target database:
+You can optionally specify the input folder and target database connection:
 ```bash
-go run cmd/import/main.go --in=./my-export-dir --db=path/to/target-db.sqlite
+go run cmd/import/main.go --in=./my-export-dir --db="postgres://..."
 ```
 
 **Idempotency & Preventing Duplicates:**
@@ -193,4 +193,4 @@ The import script is designed to be completely safe to run multiple times:
 1. **Schemas:** Before inserting a schema into the `aigen_records` table, the utility checks if a schema of the same type and name already exists. If it does, it skips it.
 2. **Data:** Exported records contain their original primary key (`id`). During import, the utility verifies if a record with that specific `id` already exists in the target table. Existing records are skipped, meaning running the import twice will **not** duplicate your exported data. (Note: If you manually author new data in the `.json` files without providing an `"id"`, the database will treat those as brand-new records and auto-assign them IDs, which could cause duplication if run multiple times).
 
-**Note:** Export from a local SQLite development environment and import directly into a production PostgreSQL environment without modifying the JSON files, is supported.
+**Note:** Exporting from a development environment and importing into a production PostgreSQL environment without modifying the JSON files is fully supported.

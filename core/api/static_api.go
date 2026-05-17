@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -12,11 +13,12 @@ import (
 var uiAssets embed.FS
 
 type StaticApi struct {
-	wwwRoot string
+	wwwRoot     string
+	filesPrefix string
 }
 
-func NewStaticApi(wwwRoot string) *StaticApi {
-	return &StaticApi{wwwRoot: wwwRoot}
+func NewStaticApi(wwwRoot, filesPrefix string) *StaticApi {
+	return &StaticApi{wwwRoot: wwwRoot, filesPrefix: filesPrefix}
 }
 
 func (a *StaticApi) Register(r chi.Router) {
@@ -33,9 +35,14 @@ func (a *StaticApi) Register(r chi.Router) {
 	r.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
 	// Serve from WWWRoot if it exists
-	if a.wwwRoot != "" {
+	if a.wwwRoot != "" && a.filesPrefix != "" {
+		pattern := a.filesPrefix
+		if !strings.HasSuffix(pattern, "/") {
+			pattern += "/"
+		}
+		pattern += "*"
 		// Serve the whole wwwRoot directory. 
-		// This will handle /files/* (stored in wwwRoot/files) and any other static files.
-		r.Handle("/files/*", http.FileServer(http.Dir(a.wwwRoot)))
+		// This will handle the files prefix and any other static files in wwwRoot.
+		r.Handle(pattern, http.FileServer(http.Dir(a.wwwRoot)))
 	}
 }

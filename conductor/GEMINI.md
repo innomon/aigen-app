@@ -6,9 +6,9 @@ You are evolving `AIGenApp` (formerly `aigen-cms` / `FormCMS`) backend in Go (Go
 ## Important Architectural Decisions
 - **Framework**: `net/http` + `chi` for routing.
 - **Data Model**: All entities are stored in a single table (`aigen_records`) utilizing a JSON schema structure (Namespace, Key, Rec, MetaData). 
-- **SQL Building**: Use `Masterminds/squirrel` for queries inside SQL-based DAOs (Postgres, SQLite). Services MUST NOT use squirrel or direct SQL; they must rely exclusively on `IPrimaryDao` methods.
+- **SQL Building**: Use `Masterminds/squirrel` for queries inside SQL-based DAOs (Postgres). Services MUST NOT use squirrel or direct SQL; they must rely exclusively on `IPrimaryDao` methods.
 - **GraphQL**: Use `graphql-go/graphql`.
-- **Database**: The abstraction layer (`IPrimaryDao`) supports PostgreSQL, SQLite, and Google Cloud Firestore natively utilizing their JSON/document capabilities.
+- **Database**: The abstraction layer (`IPrimaryDao`) supports PostgreSQL and Google Cloud Firestore natively utilizing their JSON/document capabilities.
 - **Template Engine**: `aymerick/raymond` for Handlebars templates.
 
 ## Important Rules

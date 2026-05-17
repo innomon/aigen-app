@@ -43,15 +43,6 @@ func (s *LocalFileStore) Upload(ctx context.Context, path string, reader io.Read
 	return err
 }
 
-func (s *LocalFileStore) UploadLocal(ctx context.Context, localPath, destPath string) error {
-	file, err := os.Open(localPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	return s.Upload(ctx, destPath, file)
-}
-
 func (s *LocalFileStore) GetMetadata(ctx context.Context, path string) (*FileMetadata, error) {
 	fullPath := filepath.Join(s.pathPrefix, path)
 	info, err := os.Stat(fullPath)
@@ -87,21 +78,6 @@ func (s *LocalFileStore) Download(ctx context.Context, path string, writer io.Wr
 
 	_, err = io.Copy(writer, file)
 	return err
-}
-
-func (s *LocalFileStore) DownloadToLocal(ctx context.Context, path, localPath string) error {
-	dir := filepath.Dir(localPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-
-	file, err := os.Create(localPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	return s.Download(ctx, path, file)
 }
 
 func (s *LocalFileStore) Delete(ctx context.Context, path string) error {

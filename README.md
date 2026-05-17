@@ -71,7 +71,7 @@ func main() {
 ```yaml
 apps_dir: "apps"
 www_root: "wwwroot"
-database_dsn: "sqlite://aigen.db"
+database_dsn: "postgres://user:pass@localhost:5432/aigen_db"
 domain: ""
 port: "5000"
 agentic_config_path: "agentic.yaml"
@@ -94,7 +94,7 @@ The server will start on `http://localhost:5000`.
 | `PORT` | The port to listen on for HTTP. Ignored if `DOMAIN` is set. | `5000` |
 | `FORMCMS_WWW_ROOT` | The directory for serving static files and storing uploaded assets. | `wwwroot` |
 | `FORMCMS_APPS_DIR` | The directory where app definitions and data are located. | `apps` |
-| `FORMCMS_DB_DSN` | Database connection string (e.g., `sqlite://aigen.db` or `postgres://...`). | `aigen.db` |
+| `FORMCMS_DB_DSN` | Database connection string (e.g., `postgres://user:pass@host:port/db`). | `""` |
 | `FORMCMS_CONFIG_PATH` | Path to the YAML/JSON configuration file. | `""` |
 
 ## Static File Serving
@@ -122,5 +122,5 @@ The root route (`/`) is dynamically handled by the `PageApi` and follows a tiere
 - `core/descriptors`: Data models and schema definitions.
 - `core/services`: Business logic and orchestration.
 - `infrastructure/filestore`: File storage implementations (Local, S3).
-- `infrastructure/relationdbdao`: Database abstraction layer (PostgreSQL, SQLite, and Firestore using single JSON store).
+- `infrastructure/relationdbdao`: Database abstraction layer (PostgreSQL and Firestore using single JSON store).
 - `utils`: Shared utilities and data models.

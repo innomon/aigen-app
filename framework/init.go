@@ -60,8 +60,32 @@ func NewApp(cfg *Config) (*App, error) {
 
 	// Initialize Services
 	systemSettings := descriptors.DefaultSystemSettings()
-	systemSettings.LocalFileStoreOptions.PathPrefix = filepath.Join(cfg.WWWRoot, "files")
-	fileStore := filestore.NewLocalFileStore(systemSettings.LocalFileStoreOptions.PathPrefix, systemSettings.LocalFileStoreOptions.UrlPrefix)
+
+	fsCfg := filestore.Config{
+		Driver: cfg.Storage.Driver,
+	}
+	fsCfg.FS.PathPrefix = cfg.Storage.FS.Root
+	fsCfg.FS.UrlPrefix = cfg.Storage.FS.UrlPrefix
+	fsCfg.S3.Bucket = cfg.Storage.S3.Bucket
+	fsCfg.S3.Region = cfg.Storage.S3.Region
+	fsCfg.S3.AccessKeyID = cfg.Storage.S3.AccessKeyID
+	fsCfg.S3.SecretAccessKey = cfg.Storage.S3.SecretAccessKey
+	fsCfg.S3.Endpoint = cfg.Storage.S3.Endpoint
+	fsCfg.GCS.Bucket = cfg.Storage.GCS.Bucket
+	fsCfg.GCS.CredentialsFile = cfg.Storage.GCS.CredentialsFile
+	fsCfg.Postgres.URL = cfg.Storage.Postgres.URL
+
+	// If root is default and WWWRoot was overridden, update it
+	if cfg.WWWRoot != "wwwroot" && cfg.Storage.FS.Root == "wwwroot/files" {
+		fsCfg.FS.PathPrefix = filepath.Join(cfg.WWWRoot, "files")
+	}
+
+	fileStore, err := filestore.CreateFileStore(context.Background(), fsCfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create file store: %w", err)
+	}
+	systemSettings.LocalFileStoreOptions.PathPrefix = fsCfg.FS.PathPrefix
+	systemSettings.LocalFileStoreOptions.UrlPrefix = fsCfg.FS.UrlPrefix
 
 	schemaService := services.NewSchemaService(dao)
 	permissionService := services.NewPermissionService(dao, schemaService)
@@ -127,7 +151,7 @@ func NewApp(cfg *Config) (*App, error) {
 	channelApi := api.NewChannelApi(channelService, authApi)
 	a2aApi := api.NewA2AApi(a2aService, authService, cfg.Channels)
 	mcpApi := api.NewMCPApi(mcpService)
-	staticApi := api.NewStaticApi(cfg.WWWRoot)
+	staticApi := api.NewStaticApi(cfg.WWWRoot, cfg.Storage.FS.UrlPrefix)
 	pageApi := api.NewPageApi(pageService, authService, authApi)
 	a2uiApi := api.NewA2UIApi(a2uiService, authApi)
 	var chatApi *api.ChatApi
