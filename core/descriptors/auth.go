@@ -24,6 +24,9 @@ type Role struct {
 type User struct {
 	Id            int64     `json:"id" mapstructure:"id"`
 	Email         string    `json:"email" mapstructure:"email"`
+	Phone         string    `json:"phone" mapstructure:"phone"`
+	TOTPSecret    []byte    `json:"totpSecret,omitempty" mapstructure:"totp_secret"`
+	TOTPPubKey     []byte    `json:"totpPubKey,omitempty" mapstructure:"totp_pub_key"`
 	PasswordHash  string    `json:"-" mapstructure:"password_hash"`
 	Roles         []string  `json:"roles" mapstructure:"roles"`
 	RolesDetails  []Role    `json:"rolesDetails,omitempty"`

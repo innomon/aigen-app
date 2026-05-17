@@ -11,3 +11,4 @@ This file tracks the various development tracks for AIGenApp.
 | `rbac` | Fine-Grained RBAC | Proposed | `./tracks/rbac/` |
 | `multi-channel` | Multi-Channel Communication (A2A & MCP) | Proposed | `./tracks/multi-channel/` |
 | `framework-pivot` | Framework Reorganization & Pivot | In Progress | `./tracks/framework-pivot/` |
+| `advanced-auth` | Advanced Authentication (WhatsApp & Guest) | Proposed | `./tracks/advanced-auth/` |

@@ -45,7 +45,9 @@ type AuthLog struct {
 type ChannelConfig struct {
 	Enabled             bool     `json:"enabled" mapstructure:"enabled"`
 	GatewayURL          string   `json:"gateway_url" mapstructure:"gateway_url"`
+	GatewayNumber       string   `json:"gateway_number" mapstructure:"gateway_number"`
 	PublicKey           string   `json:"public_key" mapstructure:"public_key"`
+	PrivateKey          string   `json:"private_key" mapstructure:"private_key"`
 	IMAPServer          string   `json:"imap_server" mapstructure:"imap_server"`
 	VerificationRequired bool     `json:"verification_required" mapstructure:"verification_required"`
 }

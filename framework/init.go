@@ -94,8 +94,12 @@ func NewApp(cfg *Config) (*App, error) {
 	commentService := services.NewCommentService(dao)
 	notificationService := services.NewNotificationService(dao)
 	interactionService := services.NewInteractionService(dao)
+	whatsappService, err := services.NewWhatsAppService(cfg.Channels.WhatsApp)
+	if err != nil {
+		log.Printf("Warning: failed to initialize WhatsApp service: %v", err)
+	}
 	channelService := services.NewChannelService(dao, cfg.Channels, interactionService, assetService)
-	authService := services.NewAuthService(dao, "your-secret-key", channelService)
+	authService := services.NewAuthService(dao, "your-secret-key", channelService, whatsappService)
 	auditService := services.NewAuditService(dao)
 	pageService := services.NewPageService(schemaService, graphqlService)
 	a2uiService := services.NewA2UIService()
@@ -109,7 +113,7 @@ func NewApp(cfg *Config) (*App, error) {
 	mcpService := services.NewMCPService(schemaService, entityService, authService, cfg.MCP)
 
 	// Initialize APIs
-	authApi := api.NewAuthApi(authService, permissionService)
+	authApi := api.NewAuthApi(authService, permissionService, whatsappService)
 	rbacApi := api.NewRBACApi(entityService, authApi)
 	schemaApi := api.NewSchemaApi(schemaService, authApi)
 	entityApi := api.NewEntityApi(entityService, authApi)

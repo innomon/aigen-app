@@ -65,6 +65,8 @@ type IAuthService interface {
 	Register(ctx context.Context, email, password string) (*descriptors.User, error)
 	Login(ctx context.Context, email, password string) (string, error)
 	LoginByChannel(ctx context.Context, channelType descriptors.ChannelType, identifier string, token string, ip, ua string) (string, error)
+	LinkChannel(ctx context.Context, userId int64, channelType descriptors.ChannelType, identifier string) error
+	UpdateUser(ctx context.Context, user *descriptors.User) error
 	Me(ctx context.Context, userId int64) (*descriptors.User, error)
 	ValidateToken(token string) (int64, []string, error)
 	GetRoleByName(ctx context.Context, name string) (*descriptors.Role, error)
@@ -104,10 +106,22 @@ type IChannelService interface {
 	RegisterChannel(ctx context.Context, userId int64, channelType descriptors.ChannelType, identifier string, metadata map[string]interface{}) (*descriptors.UserChannel, error)
 	VerifyChannel(ctx context.Context, userId int64, channelType descriptors.ChannelType, token string) (bool, error)
 	GetChannelsByUserId(ctx context.Context, userId int64) ([]*descriptors.UserChannel, error)
+	GetChannelByIdentifier(ctx context.Context, channelType descriptors.ChannelType, identifier string) (*descriptors.UserChannel, error)
 	LogAuthAttempt(ctx context.Context, log *descriptors.AuthLog) error
 	GetAuthLogs(ctx context.Context, userId int64, pagination datamodels.Pagination) ([]*descriptors.AuthLog, int64, error)
 	SendNotification(ctx context.Context, userId int64, message string, preferredChannels []descriptors.ChannelType) error
 	HandleInbound(ctx context.Context, channelType descriptors.ChannelType, identifier string, payload map[string]interface{}) error
+}
+
+type IWhatsAppService interface {
+	GenerateReverseOTPJWT(mobile string, challengeID string) (string, error)
+	VerifyGatewayJWT(tokenString string) (mobile string, challengeID string, err error)
+	GenerateOTP(challengeID string) (string, error)
+	VerifyOTP(challengeID string, otp string) (bool, error)
+	
+	GenerateTOTPCode(secret []byte, pubKey []byte, userID, appID string) uint32
+	VerifyTOTPCode(secret []byte, pubKey []byte, userID, appID string, code uint32) bool
+	EnrollTOTP(ctx context.Context, userId int64, pubKey []byte) (secret []byte, err error)
 }
 
 type IA2AService interface {
