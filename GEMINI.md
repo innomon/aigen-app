@@ -6,10 +6,20 @@ You are evolving `AIGenApp` (formerly `aigen-cms` / `FormCMS`) backend in Go (Go
 ## Important Architectural Decisions
 - **Framework**: `net/http` + `chi` for routing.
 - **Data Model**: All entities are stored in a single table (`aigen_records`) utilizing a JSON schema structure (Namespace, Key, Rec, MetaData). 
-- **SQL Building**: Use `Masterminds/squirrel` for queries inside SQL-based DAOs (Postgres, SQLite). Services MUST NOT use squirrel or direct SQL; they must rely exclusively on `IPrimaryDao` methods.
+- **SQL Building**: Use `Masterminds/squirrel` for queries inside SQL-based DAOs (Postgres). Services MUST NOT use squirrel or direct SQL; they must rely exclusively on `IPrimaryDao` methods.
 - **GraphQL**: Use `graphql-go/graphql`.
-- **Database**: The abstraction layer (`IPrimaryDao`) supports PostgreSQL, SQLite, and Google Cloud Firestore natively utilizing their JSON/document capabilities.
+- **Database**: The abstraction layer (`IPrimaryDao`) supports PostgreSQL and Google Cloud Firestore natively utilizing their JSON/document capabilities.
 - **Template Engine**: `aymerick/raymond` for Handlebars templates.
+
+### Go Development
+- **Style**: Adhere strictly to [Effective Go](https://go.dev/doc/effective_go) and Go Code Review Comments.
+- **Formatting**: Always use `gofmt` and `goimports`.
+- **Error Handling**: Never ignore errors with `_`. Handle them explicitly and return early to reduce nesting.
+- **Testing**: Use table-driven tests with `t.Run()`. Tests must reside in the same package as the code they test.
+- **Concurrency**: Use `context.Context` as the first parameter for functions involving cancellation or timeouts.
+- use on postgres database, **DO NOT** use sqilite for this project.
+- never use the spf13 library (Cobra/Pflag). Instead, always implement a handcrafted command registry for CLI and slash commands.
+
 
 ## Important Rules
 - Favor simple, clean Go idioms over overly complex abstractions.

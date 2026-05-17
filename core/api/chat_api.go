@@ -46,8 +46,13 @@ func (a *ChatApi) Message(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
+	userId, _ := ctx.Value("userId").(int64)
+	identifier := fmt.Sprintf("%d", userId)
+	if userId == 0 {
+		identifier = "guest"
+	}
 	
-	resp, err := a.chatService.ProcessMessage(ctx, req.Message, nil)
+	resp, err := a.chatService.ProcessMessage(ctx, identifier, req.Message)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)

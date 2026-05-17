@@ -5,39 +5,34 @@ Implement a Multimodal Chat interface powered by the `agentic` framework with A2
 
 ## Checklist
 
-### 1. Framework Integration
-- [ ] **Import Agentic Dependency**: Update `go.mod` in `AiGen CMS` to include `github.com/innomon/agentic`. We MUST NOT make any modifications to the `agentic` project's source code.
-- [ ] **Agent Config Initialization**: Set up `agentic` config loading (YAMLs) and registry initialization in `core/apps/setup.go` or a dedicated `chat_service.go`.
+### 1. Framework Integration (DONE)
+- [x] **Import Agentic Dependency**: Updated `go.mod`.
+- [x] **Agent Config Initialization**: Set up `agentic` config loading and registry initialization in `framework/init.go`.
 
-### 2. Function Tool Integration
-- [ ] **Define CMS Tool Handlers**: (`core/agentic/tools/cms_tools.go`)
-    - [ ] Create `ToolHandler` wrappers for `EntityService` (List, Get, Create, Update, Delete).
-    - [ ] Create `ToolHandler` wrappers for `SchemaService` (GetSchema, ListSchemas).
-    - [ ] Create `ToolHandler` wrappers for `A2UIService` (RenderComponent).
-- [ ] **Register Tools**:
-    - [ ] Import `github.com/innomon/agentic/pkg/registry` and invoke `RegisterToolHandler` for each CMS capability during application startup.
+### 2. Function Tool Integration (DONE)
+- [x] **Define CMS Tool Handlers**: (`core/services/cms_tools.go`)
+    - [x] Create `ToolHandler` wrappers for `EntityService`.
+    - [x] Create `ToolHandler` wrappers for `SchemaService`.
+    - [x] Create `ToolHandler` wrappers for `A2UIService`.
+- [x] **Register Tools**: Tools are registered during application startup.
 
-### 3. Deterministic Router Agent
-- [ ] **Implement Router Agent**: (`core/agentic/agents/router_agent.go`)
-    - [ ] Create a custom Go struct implementing the `agentic` Agent-like interface/behavior.
-    - [ ] Implement the routing logic (regex/intent-based matching to forward prompts to registered LLM sub-agents).
-- [ ] **Register Router Agent**: Register this Go struct into the `agentic` agent registry so that it can be retrieved generically.
+### 3. Deterministic Router Agent (IN PROGRESS)
+- [x] **Implement Router Agent**: Initial implementation in `core/agentic/agents/router_agent.go`.
+- [ ] **Advanced Routing**: Plan for replacement with stateful/LLM-based router (see `router-agent-replacement` track).
+- [x] **Register Router Agent**: Registered in the `agentic` agent registry.
 
-### 4. API & Backend Wiring
-- [ ] **Create Chat Controller**: (`core/api/chat_api.go`)
-    - [ ] Add `/api/chat/message` (POST, Multimodal support).
-    - [ ] Add `/api/chat/stream` (SSE) endpoint to push agent responses.
-- [ ] **Create Chat Service**: (`core/services/chat_service.go`)
-    - [ ] Handle session context, chat history management.
-    - [ ] Invoke the Deterministic Router Agent with the incoming message and stream the output back.
+### 4. API & Backend Wiring (DONE)
+- [x] **Create Chat Controller**: (`core/api/chat_api.go`)
+    - [x] Add `/api/chat/message`.
+- [x] **Create Chat Service**: (`core/services/chat_service.go`)
+    - [x] Handle session context, chat history management.
+    - [x] Invoke the Deterministic Router Agent.
 
-### 5. Frontend UI Development
+### 5. Frontend UI Development (IN PROGRESS)
 - [ ] **Implement Chat Interface**: (`core/api/ui/chat.html`, `core/api/ui/js/chat/app.js`)
-    - [ ] Build a Multimodal input field (supporting file drops/uploads).
-    - [ ] Implement SSE Listener for the chat stream.
-- [ ] **Integrate A2UI Renderer**: (`core/api/ui/js/chat/renderer.js`)
-    - [ ] Intercept messages containing A2UI JSON payload.
-    - [ ] Dynamically render the components using the `A2UI Component Catalog` within the chat bubble.
+- [x] **Implement A2UI Service**: (`core/services/a2ui_service.go`)
+- [x] **Implement A2UI API**: (`core/api/a2ui_api.go`)
+- [ ] **Integrate A2UI Renderer**: Dynamically render components using the `A2UI Component Catalog`.
 
 ## Deliverables
 1. **Registered Go Tools**: Core services exposed to the `agentic` framework.

@@ -93,6 +93,16 @@ agents:
     sub_agents:
       - cms_agent
       - ui_agent
+    classifier:
+      model: gemini_pro
+      prompt: |
+        Classify the user's intent to one of the following apps: ${options}.
+        User message: "${userInput}"
+        Output ONLY the app name.
+      fallback_message: "I'm not sure which app you want to use. Please select from the options provided."
+    selection_prompt: |
+      I'm not sure which assistant to use. Please select one:
+      ${options}
 
   cms_agent:
     type: llm

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"io"
 
 	"github.com/a2aproject/a2a-go/v2/a2a"
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
@@ -44,6 +45,7 @@ type IGraphQLService interface {
 
 type IAssetService interface {
 	Save(ctx context.Context, asset *descriptors.Asset) (*descriptors.Asset, error)
+	Upload(ctx context.Context, path string, reader io.Reader) error
 	UpdateAssetsLinks(ctx context.Context, oldAssetIds []int64, newAssetPaths []string, entityName string, recordId int64) error
 	GetAssetByPath(ctx context.Context, path string) (*descriptors.Asset, error)
 }
@@ -83,6 +85,13 @@ type IAuditService interface {
 
 type IPageService interface {
 	Render(ctx context.Context, path string, strArgs datamodels.StrArgs) (string, error)
+}
+
+type IInteractionService interface {
+	Log(ctx context.Context, interaction *descriptors.Interaction) error
+	GetHistory(ctx context.Context, identifier string, limit int) ([]*descriptors.Interaction, error)
+	UpdateStatus(ctx context.Context, id string, status string, errStr string) error
+	GetPendingOutbound(ctx context.Context, channel descriptors.ChannelType) ([]*descriptors.Interaction, error)
 }
 
 type IPermissionService interface {

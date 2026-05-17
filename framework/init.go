@@ -33,15 +33,16 @@ func isExternalDomain(domain string) bool {
 
 // App represents the initialized AiGen CMS application.
 type App struct {
-	Router            chi.Router
-	Config            *Config
-	DAO               relationdbdao.IPrimaryDao
-	EntityService     services.IEntityService
-	SchemaService     services.ISchemaService
-	AuthService       services.IAuthService
-	PageService       *services.PageService
-	PermissionService *services.PermissionService
-	A2UIService       *services.A2UIService
+	Router             chi.Router
+	Config             *Config
+	DAO                relationdbdao.IPrimaryDao
+	EntityService      services.IEntityService
+	SchemaService      services.ISchemaService
+	AuthService        services.IAuthService
+	InteractionService services.IInteractionService
+	PageService        *services.PageService
+	PermissionService  *services.PermissionService
+	A2UIService        services.IA2UIService
 }
 
 // NewApp initializes all services and the router, but does not start the server.
@@ -92,13 +93,14 @@ func NewApp(cfg *Config) (*App, error) {
 	engagementService := services.NewEngagementService(dao)
 	commentService := services.NewCommentService(dao)
 	notificationService := services.NewNotificationService(dao)
-	channelService := services.NewChannelService(dao, cfg.Channels)
+	interactionService := services.NewInteractionService(dao)
+	channelService := services.NewChannelService(dao, cfg.Channels, interactionService, assetService)
 	authService := services.NewAuthService(dao, "your-secret-key", channelService)
 	auditService := services.NewAuditService(dao)
 	pageService := services.NewPageService(schemaService, graphqlService)
 	a2uiService := services.NewA2UIService()
 
-	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, a2uiService)
+	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, a2uiService, interactionService)
 	if err != nil {
 		log.Printf("Warning: failed to initialize chat service (agentic config missing or invalid): %v", err)
 	}
@@ -160,15 +162,16 @@ func NewApp(cfg *Config) (*App, error) {
 	}
 
 	return &App{
-		Router:            r,
-		Config:            cfg,
-		DAO:               dao,
-		EntityService:     entityService,
-		SchemaService:     schemaService,
-		AuthService:       authService,
-		PageService:       pageService,
-		PermissionService: permissionService,
-		A2UIService:       a2uiService,
+		Router:             r,
+		Config:             cfg,
+		DAO:                dao,
+		EntityService:      entityService,
+		SchemaService:      schemaService,
+		AuthService:        authService,
+		InteractionService: interactionService,
+		PageService:        pageService,
+		PermissionService:  permissionService,
+		A2UIService:        a2uiService,
 	}, nil
 }
 

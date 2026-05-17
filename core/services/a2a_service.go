@@ -68,10 +68,9 @@ func (e *cmsAgentExecutor) Execute(ctx context.Context, execCtx *a2asrv.Executor
 		}
 
 		// Call ChatService (this is where we'd bridge A2A to our internal Agentic system)
-		// For now, simple response or stream if supported
-		// In a real scenario, we'd wrap the ChatService stream into A2A events
-		
-		resp, err := e.chatService.ProcessMessage(ctx, userMessage, nil)
+		// For A2A, we'll use a generic identifier for now
+		identifier := "a2a-user"
+		resp, err := e.chatService.ProcessMessage(ctx, identifier, userMessage)
 		if err != nil {
 			yield(nil, err)
 			return
