@@ -92,20 +92,27 @@ The server will start on `http://localhost:5000`.
 | :--- | :--- | :--- |
 | `DOMAIN` | Your external domain name (e.g., `example.com`). If set, enables automatic HTTPS via `autocert`. | `""` |
 | `PORT` | The port to listen on for HTTP. Ignored if `DOMAIN` is set. | `5000` |
+| `FORMCMS_WWW_ROOT` | The directory for serving static files and storing uploaded assets. | `wwwroot` |
+| `FORMCMS_APPS_DIR` | The directory where app definitions and data are located. | `apps` |
+| `FORMCMS_DB_DSN` | Database connection string (e.g., `sqlite://aigen.db` or `postgres://...`). | `aigen.db` |
+| `FORMCMS_CONFIG_PATH` | Path to the YAML/JSON configuration file. | `""` |
 
-### Automatic HTTPS (autocert)
+## Static File Serving
 
-AIGenApp supports automatic TLS certificate provisioning via Let's Encrypt using `autocert`. To enable this:
+AIGenApp serves static files from two main sources:
 
-1. Point your domain's DNS A/AAAA records to your server's IP.
-2. Ensure ports `80` and `443` are open and not in use by other processes.
-3. Run the application with the `DOMAIN` environment variable:
+1.  **Embedded UI Assets**: The core admin panel and static system assets are embedded in the binary and served under `/admin` and `/static`.
+2.  **Dynamic Static Files**: Files stored in the directory specified by `www_root` (default `wwwroot`) are served via HTTP:
+    *   **Uploaded Assets**: By default, uploaded files are stored in `wwwroot/files` and are served under the `/files/*` path.
+    *   **Custom Assets**: Any directory or file placed within `www_root` can be accessed if a corresponding route is registered. By default, the `/files/*` route is mapped to the `www_root` directory, meaning `wwwroot/files/logo.png` is available at `/files/logo.png`.
 
-```bash
-DOMAIN=yourdomain.com go run main.go config.yaml
-```
+## Root Route Handling
 
-The server will automatically handle HTTP-to-HTTPS redirection and store certificates in a local `certs` directory.
+The root route (`/`) is dynamically handled by the `PageApi` and follows a tiered resolution logic:
+
+1.  **Dynamic "Home" Page**: It first looks for a page entity in the database specifically named `home`. If found, it renders this page using the application's Handlebars-based template engine.
+2.  **Role-Based Dashboard**: If no `home` page exists, the system checks the current user's role (or the `guest` role if not authenticated). If that role has a `DashboardPageId` configured, it renders that specific page.
+3.  **Admin Redirect**: If neither of the above is found, the system redirects the user to the admin interface (`/admin/list.html`).
 
 ## Framework Structure
 

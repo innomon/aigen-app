@@ -11,10 +11,12 @@ import (
 //go:embed all:ui
 var uiAssets embed.FS
 
-type StaticApi struct{}
+type StaticApi struct {
+	wwwRoot string
+}
 
-func NewStaticApi() *StaticApi {
-	return &StaticApi{}
+func NewStaticApi(wwwRoot string) *StaticApi {
+	return &StaticApi{wwwRoot: wwwRoot}
 }
 
 func (a *StaticApi) Register(r chi.Router) {
@@ -29,7 +31,11 @@ func (a *StaticApi) Register(r chi.Router) {
 	// Serve all files from root
 	r.Handle("/admin/*", http.StripPrefix("/admin", fileServer))
 	r.Handle("/static/*", http.StripPrefix("/static", fileServer))
-	
-	// If a request doesn't match an API or a specific file, it might be a direct link to an admin page
-	// So we might need a fallback for /admin
+
+	// Serve from WWWRoot if it exists
+	if a.wwwRoot != "" {
+		// Serve the whole wwwRoot directory. 
+		// This will handle /files/* (stored in wwwRoot/files) and any other static files.
+		r.Handle("/files/*", http.FileServer(http.Dir(a.wwwRoot)))
+	}
 }

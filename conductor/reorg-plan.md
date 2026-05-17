@@ -26,7 +26,7 @@ Move the monolithic `main.go` script into a reusable framework lifecycle functio
 - [ ] **Create `framework/init.go`:** Move the core logic of `main.go` into a new exported function: `func Start(cfg *Config) error`.
 - [ ] **Dynamic Database Initialization:** Update the `relationdbdao.CreateDao(descriptors.SQLite, "formcms.db")` call to use `cfg.DatabaseType` and `cfg.DatabaseDSN`.
 - [ ] **Dynamic Apps Loading:** Update `apps.LoadAppsConfig()` and the `apps.SetupApp()` loops to use `cfg.AppsDir` instead of hardcoded relative paths.
-- [ ] **Dynamic Static Files:** Update `api.NewStaticApi()` and other components that rely on static files to serve from `cfg.WWWRoot`.
+- [x] **Dynamic Static Files:** Update `api.NewStaticApi()` and other components that rely on static files to serve from `cfg.WWWRoot`.
 - [ ] **Dynamic Agentic Config:** Update `services.NewChatService("agentic.yaml", ...)` to use `cfg.AgenticConfigPath`.
 - [ ] **Dynamic Server Port/Domain:** Replace `os.Getenv("PORT")` and `os.Getenv("DOMAIN")` with `cfg.Port` and `cfg.Domain`.
 

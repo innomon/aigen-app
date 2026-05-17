@@ -96,7 +96,7 @@ func (s *AssetService) CommitChunks(ctx context.Context, path, fileName string) 
 		Name: fileName,
 		Size: meta.Size,
 		Type: meta.ContentType,
-		Url:  path,
+		Url:  s.fileStore.GetUrl(path),
 	}
 
 	savedAsset, err := s.Save(ctx, asset)

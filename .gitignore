@@ -1,24 +1,41 @@
-# Exclude the original .NET project
-formcms/
-
-# Exclude executables
-# Standard Go binary naming and common executable extensions
-formcms-go/formcms-go
-formcms-go/formcms
+# Go Binaries
+aigen-app
+aigen-cms
+/aigen-app
+/aigen-cms
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+
+# Build artifacts
 bin/
 obj/
+dist/
 
-# Firebase logs
+# Local Databases
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Configuration & Secrets
+.env
+.env.*
+certs/
+
+# Logs & Temporary Files
+*.log
 firebase-debug.log
 .firebase/
-.gemini/tmp
+.gemini/tmp/
 
-# Exclude exports directory
-formcms-go/exports/
+# Exports/Imports (Environment specific)
+exports/
+imports/
+
+# Static Assets (User uploads)
+wwwroot/files/
 
 

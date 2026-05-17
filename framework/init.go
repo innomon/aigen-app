@@ -121,7 +121,7 @@ func NewApp(cfg *Config) (*App, error) {
 	channelApi := api.NewChannelApi(channelService, authApi)
 	a2aApi := api.NewA2AApi(a2aService, authService, cfg.Channels)
 	mcpApi := api.NewMCPApi(mcpService)
-	staticApi := api.NewStaticApi()
+	staticApi := api.NewStaticApi(cfg.WWWRoot)
 	pageApi := api.NewPageApi(pageService, authService, authApi)
 	a2uiApi := api.NewA2UIApi(a2uiService, authApi)
 	var chatApi *api.ChatApi
