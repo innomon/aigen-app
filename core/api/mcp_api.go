@@ -3,13 +3,10 @@ package api
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"path/filepath"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/core/services"
 	"github.com/innomon/aigen-app/infrastructure/filestore"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
