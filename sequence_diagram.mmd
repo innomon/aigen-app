@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant User
+    participant API as ChatApi
+    participant Service as ChatService
+    participant Router as RouterAgent
+    participant Sub as Sub-Agent (CMS/UI)
+    participant Tools as Tool Registry
+
+    User->>API: POST /api/chat/message
+    API->>Service: ProcessMessage
+    Service->>Router: Execute (Run)
+    Router->>Router: Analyze Intent
+    Router->>Sub: Route to Agent
+    Sub->>Tools: Invoke Tool
+    Tools->>Sub: Tool Result
+    Sub->>Router: Final Response
+    Router->>Service: Return Response
+    Service->>API: Return Response
+    API->>User: JSON Response

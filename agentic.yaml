@@ -4,6 +4,9 @@ models:
   gemini_pro:
     provider: gemini
     model_id: gemini-2.0-flash
+  gemma4_26b:
+    provider: gemini
+    model_id: gemma-4-26b-a4b-it
 
 tools:
   cms_entity_list:
@@ -93,7 +96,7 @@ agents:
       - cms_agent
       - ui_agent
     classifier:
-      model: gemini_pro
+      model: gemma4_26b
       prompt: |
         Classify the user's intent to one of the following apps: ${options}.
         User message: "${userInput}"

@@ -87,3 +87,60 @@ AIGenApp is designed to be cloud-agnostic:
 - **Downstream Apps**: Add new business domains by creating a folder in `apps/`.
 - **Custom Tools**: Extend the agentic capabilities by adding tools to `core/agentic/tools/`.
 - **New Channels**: Implement the `ChannelService` patterns for new messaging platforms.
+
+## App Integration & Invocation
+
+Apps (like `apps/crm`) are not standalone executables, but rather collections of business logic, schemas, and metadata managed by the system's core services.
+
+### Integration Flow
+1. **Manifest Registration**: Each app defines its capabilities, entities, and context in an `app_def.json` manifest.
+2. **Schema Discovery**: Upon initialization, the `SchemaService` automatically scans the `apps/` directory to discover these manifests and their associated JSON schemas (e.g., `apps/crm/schemas/crm_lead.json`).
+3. **Data Modeling**: The system registers these entities into memory, allowing the `EntityService` to perform CRUD operations on the app's entities using the standard JSON store pattern.
+4. **Agent-Awareness**: The `cms_agent` is "app-aware." When a user asks a question, the agent uses tools like `cms_app_list` and `cms_app_get` to introspect the registered app manifests, allowing it to understand the business domain and translate natural language into specific entity queries.
+5. **Polymorphic Execution**: Because the backend uses a single-table architecture, app "invocation" is effectively the dynamic routing of requests through the `EntityService` to the appropriate entity table as defined in the app's schema.
+
+## Agentic Interaction
+
+Users interact with the AI-driven agentic framework through the `Chat API` endpoint. This allows for natural language interaction with defined downstream apps and tools.
+
+### Interaction Flow
+1. **Request**: A user sends a POST request to `/api/chat/message` with their prompt.
+2. **Entry**: The `ChatApi` layer authenticates the request and delegates the message to the `ChatService`.
+3. **Session**: The `ChatService` loads the user's session and historical context from the `InteractionService`.
+4. **Agent Orchestration**:
+    - The `ChatService` invokes the `router_agent` (the root agent defined in `agentic.yaml`).
+    - The `router_agent` analyzes the input using heuristics or a configured LLM (`gemma4_26b`) to identify the appropriate downstream `cms_agent` or `ui_agent`.
+5. **Execution**: The chosen sub-agent executes, potentially invoking registered tools (implemented in `core/services/cms_tools.go`) to fetch data from the CMS or update the UI dashboard.
+6. **Response**: The agent's final output is streamed back, packaged as a JSON response, and returned to the user via the `ChatApi`.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API as ChatApi
+    participant Service as ChatService
+    participant Router as RouterAgent
+    participant Sub as Sub-Agent (CMS/UI)
+    participant Tools as Tool Registry
+
+    User->>API: POST /api/chat/message
+    API->>Service: ProcessMessage
+    Service->>Router: Execute (Run)
+    Router->>Router: Analyze Intent
+    Router->>Sub: Route to Agent
+    Sub->>Tools: Invoke Tool
+    Tools->>Sub: Tool Result
+    Sub->>Router: Final Response
+    Router->>Service: Return Response
+    Service->>API: Return Response
+    API->>User: JSON Response
+```
+
+## UI Architecture
+
+AIGenApp provides a hybrid interface that blends traditional structured administration with modern, conversational AI interactions.
+
+- **Dynamic Dashboards**: The primary administrative interface (`dashboard.html`) is role-aware and highly customizable. It dynamically renders pages based on a user's assigned role, allowing for tailored workflows and specialized dashboards defined by system administrators.
+- **Entity Administration**: Provides standard, form-based interfaces for direct entity and user management (`entity_list.html`, `entity_edit.html`), ensuring complete control over system data.
+- **Conversational Agent (Chat UI)**: The chat interface (`chat.html`) serves as an agent-led, conversational alternative to the structured UI. It allows users to query data, trigger actions, and manage entities using natural language via the AI-driven agentic framework.
+
+Users are free to navigate between these structured dashboards and the conversational chat assistant depending on their current workflow requirements.
