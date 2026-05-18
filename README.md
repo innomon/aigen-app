@@ -1,6 +1,6 @@
 # AIGenApp
 
-A headless CMS and dynamic application framework in Go, evolved from the FormCMS original C# implementation. It uses a single-table JSON store for maximum schema flexibility.
+A headless CMS and dynamic application framework in Go, evolved from the FormCMS original C# implementation. It uses a single-table JSON store for maximum schema flexibility. [Read the Architecture Overview](ARCHITECTURE.md).
 
 ## Features
 
