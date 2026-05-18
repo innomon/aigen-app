@@ -5,7 +5,7 @@
   "context": "The RBAC app is foundational to the AiGen CMS ecosystem. It defines system users, assigns them to multiple roles, and controls what entities (documents) those roles can interact with via doc_perms. It also provides row-level security mechanisms through user_perms.",
   "roles": [
     "Administrator",
-    "System Manager",
+    "SuperUser",
     "User"
   ],
   "entities": {

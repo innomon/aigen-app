@@ -96,6 +96,17 @@ The server will start on `http://localhost:5000`.
 | `FORMCMS_APPS_DIR` | The directory where app definitions and data are located. | `apps` |
 | `FORMCMS_DB_DSN` | Database connection string (e.g., `postgres://user:pass@host:port/db`). | `""` |
 | `FORMCMS_CONFIG_PATH` | Path to the YAML/JSON configuration file. | `""` |
+| `FORMCMS_AGENTIC_CONFIG_PATH` | Path to the `agentic.yaml` configuration for LLM workflows. | `agentic.yaml` |
+| `GEMINI_API_KEY` | API key for Google Gemini models. | `""` |
+| `GOOGLE_API_KEY` | Alternative API key variable for Google Gemini/Vertex AI. | `""` |
+| `OPENAI_API_KEY` | API key for OpenAI models. | `""` |
+| `OLLAMA_BASE_URL` | Base URL for local Ollama models (e.g., `http://localhost:11434/v1`). | `""` |
+| `AGENT_ENCRYPTION_KEY` | 32-byte key for state encryption in specific agent types (e.g., GnoVM). | `""` |
+| `BYPASS_AUTH` | Set to `true` to bypass JWT authentication for local development. | `false` |
+| `AWS_ACCESS_KEY_ID` | AWS access key for S3 storage. | `""` |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 storage. | `""` |
+| `AWS_REGION` | AWS region for S3 storage. | `us-east-1` |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google Cloud service account JSON for GCS/Firestore. | `""` |
 
 ## Static File Serving
 
