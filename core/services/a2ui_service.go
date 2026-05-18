@@ -2,7 +2,10 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"sync"
+	"time"
 )
 
 // A2UIComponent represents a single component in the adjacency list.
@@ -104,8 +107,5 @@ func (s *A2UIService) serializeState() []A2UIComponent {
 
 // Simple ID generator for subscribers
 func generateID() string {
-	b := make([]byte, 8)
-	// In a real app, use a proper UUID, but this works for a prototype
-	// We'll just use a counter or timestamp for simplicity in this turn
-	return "sub_" + string(b) 
+	return fmt.Sprintf("sub_%d_%d", time.Now().UnixNano(), rand.Intn(1000))
 }

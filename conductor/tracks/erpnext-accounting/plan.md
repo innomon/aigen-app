@@ -28,6 +28,7 @@
 - [x] Implement the `Entity` registration in `AiGen CMS`.
 - [x] Verify schema creation in the database.
 
-## Phase 5: Validation
-- [ ] Create test data for each entity.
-- [ ] Verify that basic CRUD operations work for the translated accounting entities.
+## Phase 5: Validation (DONE)
+- [x] Create test data for each entity.
+- [x] Verify that basic CRUD operations work for the translated accounting entities.
+

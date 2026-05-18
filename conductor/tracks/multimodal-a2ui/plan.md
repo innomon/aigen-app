@@ -16,9 +16,9 @@ Implement a Multimodal Chat interface powered by the `agentic` framework with A2
     - [x] Create `ToolHandler` wrappers for `A2UIService`.
 - [x] **Register Tools**: Tools are registered during application startup.
 
-### 3. Deterministic Router Agent (IN PROGRESS)
+### 3. Deterministic Router Agent (DONE)
 - [x] **Implement Router Agent**: Initial implementation in `core/agentic/agents/router_agent.go`.
-- [ ] **Advanced Routing**: Plan for replacement with stateful/LLM-based router (see `router-agent-replacement` track).
+- [x] **Advanced Routing**: Plan for replacement with stateful/LLM-based router (see `router-agent-replacement` track).
 - [x] **Register Router Agent**: Registered in the `agentic` agent registry.
 
 ### 4. API & Backend Wiring (DONE)
@@ -28,11 +28,12 @@ Implement a Multimodal Chat interface powered by the `agentic` framework with A2
     - [x] Handle session context, chat history management.
     - [x] Invoke the Deterministic Router Agent.
 
-### 5. Frontend UI Development (IN PROGRESS)
-- [ ] **Implement Chat Interface**: (`core/api/ui/chat.html`, `core/api/ui/js/chat/app.js`)
+### 5. Frontend UI Development (DONE)
+- [x] **Implement Chat Interface**: (`core/api/ui/chat.html`, `core/api/ui/js/chat_app.js`)
 - [x] **Implement A2UI Service**: (`core/services/a2ui_service.go`)
 - [x] **Implement A2UI API**: (`core/api/a2ui_api.go`)
-- [ ] **Integrate A2UI Renderer**: Dynamically render components using the `A2UI Component Catalog`.
+- [x] **Integrate A2UI Renderer**: Dynamically render components using the `A2UI Component Catalog`.
+
 
 ## Deliverables
 1. **Registered Go Tools**: Core services exposed to the `agentic` framework.

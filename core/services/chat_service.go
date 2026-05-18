@@ -88,6 +88,23 @@ func (s *ChatService) ProcessMessage(ctx context.Context, identifier string, mes
 	sessionID := "session-" + identifier
 	userID := identifier
 
+	// Ensure session exists
+	_, err = s.SessionService.Get(ctx, &session.GetRequest{
+		AppName:   "AiGenCMS",
+		UserID:    userID,
+		SessionID: sessionID,
+	})
+	if err != nil {
+		_, err = s.SessionService.Create(ctx, &session.CreateRequest{
+			AppName:   "AiGenCMS",
+			UserID:    userID,
+			SessionID: sessionID,
+		})
+		if err != nil {
+			return "", fmt.Errorf("failed to create session: %v", err)
+		}
+	}
+
 	var finalResponse string
 	for evt, err := range rnr.Run(ctx, userID, sessionID, userContent, agent.RunConfig{}) {
 		if err != nil {
