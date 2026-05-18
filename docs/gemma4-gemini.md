@@ -64,6 +64,71 @@ func main() {
 
 ```
 
+**Thinking Mode Off:**
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/api/option"
+)
+
+func main() {
+	ctx := context.Background()
+
+	// 1. Retrieve the API key from your environment
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		log.Fatal("GEMINI_API_KEY environment variable not set")
+	}
+
+	// 2. Initialize the client
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		log.Fatalf("Error creating Gemini client: %v", err)
+	}
+	defer client.Close()
+
+	// 3. Select the Gemma 4 model
+	model := client.GenerativeModel("gemma-4-26b-a4b-it")
+
+	// 4. Turn thinking mode OFF explicitly 
+	// Setting the ThinkingBudget to 0 tells the API not to spend any tokens on reasoning.
+	model.GenerationConfig = genai.GenerationConfig{
+		Temperature: genai.Ptr(0.7),
+		ThinkingConfig: &genai.ThinkingConfig{
+			ThinkingBudget: genai.Ptr(0),
+		},
+	}
+
+	// 5. Generate content
+	prompt := "Explain the concept of Go routines and channels to a beginner in two sentences."
+	fmt.Printf("Prompt: %s\n\nResponded (Thinking Mode: OFF):\n", prompt)
+
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		log.Fatalf("Error generating content: %v", err)
+	}
+
+	// 6. Print the response
+	for _, cand := range resp.Candidates {
+		if cand.Content != nil {
+			for _, part := range cand.Content.Parts {
+				fmt.Print(part)
+			}
+		}
+	}
+	fmt.Println()
+}
+
+```
+
 ---
 
 ### 📦 Prerequisites & Running
