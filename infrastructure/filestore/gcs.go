@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -50,6 +52,7 @@ func (g *GCSFileStore) GetMetadata(ctx context.Context, path string) (*FileMetad
 	return &FileMetadata{
 		Size:        attrs.Size,
 		ContentType: attrs.ContentType,
+		CreatedAt:   attrs.Created,
 	}, nil
 }
 
@@ -74,6 +77,47 @@ func (g *GCSFileStore) Delete(ctx context.Context, path string) error {
 
 func (g *GCSFileStore) DeleteByPrefix(ctx context.Context, prefix string) error {
 	return fmt.Errorf("DeleteByPrefix not implemented for GCS")
+}
+
+func (g *GCSFileStore) List(ctx context.Context, prefix string) ([]string, error) {
+	var files []string
+	it := g.client.Bucket(g.bucket).Objects(ctx, &storage.Query{Prefix: prefix})
+	for {
+		attrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, attrs.Name)
+	}
+	return files, nil
+}
+
+func (g *GCSFileStore) PurgeExpired(ctx context.Context, prefix string, ttlSeconds int) (int, error) {
+	now := time.Now()
+	expiryDuration := time.Duration(ttlSeconds) * time.Second
+	count := 0
+
+	it := g.client.Bucket(g.bucket).Objects(ctx, &storage.Query{Prefix: prefix})
+	for {
+		attrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return count, err
+		}
+
+		if now.Sub(attrs.Created) > expiryDuration {
+			err = g.client.Bucket(g.bucket).Object(attrs.Name).Delete(ctx)
+			if err == nil {
+				count++
+			}
+		}
+	}
+	return count, nil
 }
 
 func (g *GCSFileStore) GetUploadedChunks(ctx context.Context, path string) ([]string, error) {

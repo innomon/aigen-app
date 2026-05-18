@@ -127,6 +127,7 @@ func NewApp(cfg *Config) (*App, error) {
 	auditService := services.NewAuditService(dao)
 	pageService := services.NewPageService(schemaService, graphqlService)
 	a2uiService := services.NewA2UIService()
+	tempAccessService := services.NewTempAccessService(cfg.TemporaryAccess, fileStore)
 
 	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, a2uiService, interactionService)
 	if err != nil {
@@ -150,7 +151,8 @@ func NewApp(cfg *Config) (*App, error) {
 	auditApi := api.NewAuditApi(auditService, authApi)
 	channelApi := api.NewChannelApi(channelService, authApi)
 	a2aApi := api.NewA2AApi(a2aService, authService, cfg.Channels)
-	mcpApi := api.NewMCPApi(mcpService)
+	mcpApi := api.NewMCPApi(mcpService, authApi, tempAccessService, fileStore)
+	tempAccessApi := api.NewTempAccessApi(cfg.TemporaryAccess, tempAccessService, fileStore)
 	staticApi := api.NewStaticApi(cfg.WWWRoot, cfg.Storage.FS.UrlPrefix)
 	pageApi := api.NewPageApi(pageService, authService, authApi)
 	a2uiApi := api.NewA2UIApi(a2uiService, authApi)
@@ -182,6 +184,7 @@ func NewApp(cfg *Config) (*App, error) {
 	channelApi.Register(r)
 	a2aApi.Register(r)
 	mcpApi.Register(r)
+	tempAccessApi.Register(r)
 	staticApi.Register(r)
 	pageApi.Register(r)
 	a2uiApi.Register(r)

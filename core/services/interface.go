@@ -132,3 +132,8 @@ type IA2AService interface {
 type IMCPService interface {
 	GetServer() *mcp.Server
 }
+
+type ITempAccessService interface {
+	IsExpired(ctx context.Context, path string, filename string) (bool, error)
+	CleanupExpired(ctx context.Context, path string) (int, error)
+}

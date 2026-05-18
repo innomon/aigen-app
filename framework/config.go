@@ -48,6 +48,7 @@ type Config struct {
 	Channels          descriptors.ChannelsConfig `yaml:"channels" json:"channels"`
 	MCP               descriptors.MCPConfig      `yaml:"mcp" json:"mcp"`
 	Storage           StorageConfig              `yaml:"storage" json:"storage"`
+	TemporaryAccess   []descriptors.TemporaryAccessConfig `yaml:"temporary_access" json:"temporary_access"`
 }
 
 func DefaultConfig() *Config {
@@ -64,8 +65,16 @@ func DefaultConfig() *Config {
 				UrlPrefix: "/files",
 			},
 		},
+		TemporaryAccess: []descriptors.TemporaryAccessConfig{
+			{
+				Path: "tmp",
+				TTL:  300,
+				Role: "admin",
+			},
+		},
 	}
 }
+
 
 func LoadConfig(path string) (*Config, error) {
 	config := DefaultConfig()

@@ -3,11 +3,13 @@ package filestore
 import (
 	"context"
 	"io"
+	"time"
 )
 
 type FileMetadata struct {
 	Size        int64
 	ContentType string
+	CreatedAt   time.Time
 }
 
 type IFileStore interface {
@@ -17,6 +19,8 @@ type IFileStore interface {
 	Download(ctx context.Context, path string, writer io.Writer) error
 	Delete(ctx context.Context, path string) error
 	DeleteByPrefix(ctx context.Context, prefix string) error
+	List(ctx context.Context, prefix string) ([]string, error)
+	PurgeExpired(ctx context.Context, prefix string, ttlSeconds int) (int, error)
 
 	// Chunked upload
 	GetUploadedChunks(ctx context.Context, path string) ([]string, error)

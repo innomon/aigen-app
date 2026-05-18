@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 )
 
 type LocalFileStore struct {
@@ -61,6 +62,7 @@ func (s *LocalFileStore) GetMetadata(ctx context.Context, path string) (*FileMet
 	return &FileMetadata{
 		Size:        info.Size(),
 		ContentType: contentType,
+		CreatedAt:   info.ModTime(),
 	}, nil
 }
 
@@ -88,6 +90,52 @@ func (s *LocalFileStore) Delete(ctx context.Context, path string) error {
 func (s *LocalFileStore) DeleteByPrefix(ctx context.Context, prefix string) error {
 	fullPath := filepath.Join(s.pathPrefix, prefix)
 	return os.RemoveAll(fullPath)
+}
+
+func (s *LocalFileStore) List(ctx context.Context, prefix string) ([]string, error) {
+	fullPath := filepath.Join(s.pathPrefix, prefix)
+	var files []string
+	err := filepath.Walk(fullPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			relPath, err := filepath.Rel(s.pathPrefix, path)
+			if err != nil {
+				return err
+			}
+			files = append(files, relPath)
+		}
+		return nil
+	})
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+	return files, nil
+}
+
+func (s *LocalFileStore) PurgeExpired(ctx context.Context, prefix string, ttlSeconds int) (int, error) {
+	fullPath := filepath.Join(s.pathPrefix, prefix)
+	now := time.Now()
+	expiryDuration := time.Duration(ttlSeconds) * time.Second
+	count := 0
+
+	err := filepath.Walk(fullPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil // Continue walk even if error on one file
+		}
+		if !info.IsDir() && now.Sub(info.ModTime()) > expiryDuration {
+			if err := os.Remove(path); err == nil {
+				count++
+			}
+		}
+		return nil
+	})
+
+	return count, err
 }
 
 func (s *LocalFileStore) GetUploadedChunks(ctx context.Context, path string) ([]string, error) {

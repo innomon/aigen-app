@@ -77,8 +77,9 @@ func (s *PostgresFileStore) Upload(ctx context.Context, path string, reader io.R
 
 func (s *PostgresFileStore) GetMetadata(ctx context.Context, path string) (*FileMetadata, error) {
 	var metaJSON []byte
-	query := `SELECT metadata FROM filesys WHERE path = $1`
-	err := s.db.QueryRowContext(ctx, query, path).Scan(&metaJSON)
+	var createdAt time.Time
+	query := `SELECT metadata, tmstamp FROM filesys WHERE path = $1`
+	err := s.db.QueryRowContext(ctx, query, path).Scan(&metaJSON, &createdAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -97,6 +98,7 @@ func (s *PostgresFileStore) GetMetadata(ctx context.Context, path string) (*File
 	return &FileMetadata{
 		Size:        metadata.Size,
 		ContentType: metadata.ContentType,
+		CreatedAt:   createdAt,
 	}, nil
 }
 
@@ -125,6 +127,42 @@ func (s *PostgresFileStore) DeleteByPrefix(ctx context.Context, prefix string) e
 	query := `DELETE FROM filesys WHERE path LIKE $1`
 	_, err := s.db.ExecContext(ctx, query, prefix+"%")
 	return err
+}
+
+func (s *PostgresFileStore) List(ctx context.Context, prefix string) ([]string, error) {
+	query := `SELECT path FROM filesys WHERE path LIKE $1`
+	rows, err := s.db.QueryContext(ctx, query, prefix+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []string
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return nil, err
+		}
+		files = append(files, path)
+	}
+	return files, nil
+}
+
+func (s *PostgresFileStore) PurgeExpired(ctx context.Context, prefix string, ttlSeconds int) (int, error) {
+	query := `
+		DELETE FROM filesys 
+		WHERE path LIKE $1 
+		AND tmstamp < NOW() - (INTERVAL '1 second' * $2)
+	`
+	result, err := s.db.ExecContext(ctx, query, prefix+"%", ttlSeconds)
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return int(rowsAffected), nil
 }
 
 func (s *PostgresFileStore) GetUploadedChunks(ctx context.Context, path string) ([]string, error) {

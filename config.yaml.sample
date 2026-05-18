@@ -53,3 +53,12 @@ storage:
 #   email:
 #     enabled: true
 #     smtp_server: "..."
+
+# Temporary file access configurations (unauthenticated GET with TTL)
+temporary_access:
+  - path: "tmp"
+    ttl_sec: 300
+    role: "admin"
+  - path: "reports"
+    ttl_sec: 3600
+    role: "editor"

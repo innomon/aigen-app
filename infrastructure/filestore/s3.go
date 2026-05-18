@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -69,6 +70,7 @@ func (s *S3FileStore) GetMetadata(ctx context.Context, path string) (*FileMetada
 	return &FileMetadata{
 		Size:        *head.ContentLength,
 		ContentType: *head.ContentType,
+		CreatedAt:   *head.LastModified,
 	}, nil
 }
 
@@ -122,6 +124,65 @@ func (s *S3FileStore) DeleteByPrefix(ctx context.Context, prefix string) error {
 	}
 
 	return nil
+}
+
+func (s *S3FileStore) List(ctx context.Context, prefix string) ([]string, error) {
+	var files []string
+	paginator := s3.NewListObjectsV2Paginator(s.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucket),
+		Prefix: aws.String(prefix),
+	})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, obj := range page.Contents {
+			files = append(files, *obj.Key)
+		}
+	}
+
+	return files, nil
+}
+
+func (s *S3FileStore) PurgeExpired(ctx context.Context, prefix string, ttlSeconds int) (int, error) {
+	paginator := s3.NewListObjectsV2Paginator(s.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucket),
+		Prefix: aws.String(prefix),
+	})
+
+	now := time.Now()
+	expiryDuration := time.Duration(ttlSeconds) * time.Second
+
+	totalDeleted := 0
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return totalDeleted, err
+		}
+
+		var batch []types.ObjectIdentifier
+		for _, obj := range page.Contents {
+			if now.Sub(*obj.LastModified) > expiryDuration {
+				batch = append(batch, types.ObjectIdentifier{Key: obj.Key})
+			}
+		}
+
+		if len(batch) > 0 {
+			_, err = s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+				Bucket: aws.String(s.bucket),
+				Delete: &types.Delete{Objects: batch},
+			})
+			if err != nil {
+				return totalDeleted, err
+			}
+			totalDeleted += len(batch)
+		}
+	}
+
+	return totalDeleted, nil
 }
 
 func (s *S3FileStore) GetUploadedChunks(ctx context.Context, path string) ([]string, error) {
