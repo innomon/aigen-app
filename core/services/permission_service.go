@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	DocPermNamespace  = "aigen.core.descriptors.DocPerm"
-	UserPermNamespace = "aigen.core.descriptors.UserPerm"
+	DocPermNamespace  = "aigen.app.entities.DocPerm"
+	UserPermNamespace = "aigen.app.entities.UserPermission"
 )
 
 type PermissionService struct {

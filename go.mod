@@ -17,15 +17,15 @@ require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/graphql-go/graphql v0.8.1
-	github.com/innomon/agentic v0.6.0
+	github.com/innomon/agentic v0.7.1
 	github.com/lib/pq v1.12.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modelcontextprotocol/go-sdk v1.4.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.49.0
-	google.golang.org/adk v0.6.0
+	google.golang.org/adk v1.2.0
 	google.golang.org/api v0.272.0
-	google.golang.org/genai v1.51.0
+	google.golang.org/genai v1.57.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -41,7 +41,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.31.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.53.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.53.0 // indirect
-	github.com/a2aproject/a2a-go v0.3.12 // indirect
+	github.com/a2aproject/a2a-go v0.3.13 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.7 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.20 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.20 // indirect

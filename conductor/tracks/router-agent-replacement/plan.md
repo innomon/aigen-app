@@ -15,8 +15,9 @@
 - [x] Create integration tests for the new router agent in `core/services/chat_service_test.go`.
 - [x] Verify keyword-based routing.
 - [x] Verify stateful routing (prompting for app selection).
-- [ ] Verify LLM-based classification with a test model. (Pending model availability in tests)
+- [x] Verify LLM-based classification with a test model.
 - [x] Perform build verification.
+
 
 ## Phase 4: Cleanup (DONE)
 - [x] Remove old keyword matching logic (Integrated into new logic).

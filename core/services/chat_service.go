@@ -8,6 +8,7 @@ import (
 	"github.com/innomon/agentic/pkg/config"
 	"github.com/innomon/agentic/pkg/registry"
 	"google.golang.org/adk/agent"
+	"google.golang.org/adk/model"
 	"google.golang.org/adk/runner"
 	"google.golang.org/adk/session"
 	"google.golang.org/genai"
@@ -49,19 +50,67 @@ func NewChatService(configPath string, entityService IEntityService, schemaServi
 }
 
 func (s *ChatService) ProcessMessage(ctx context.Context, identifier string, message string) (string, error) {
-	// 1. Get History from InteractionService
-	_, err := s.InteractionService.GetHistory(ctx, identifier, 10)
+	// Map identifier to session/user IDs for ADK
+	sessionID := "session-" + identifier
+	userID := identifier
+
+	// 1. Ensure session exists
+	resp, err := s.SessionService.Get(ctx, &session.GetRequest{
+		AppName:   "AiGenCMS",
+		UserID:    userID,
+		SessionID: sessionID,
+	})
+	
+	isNewSession := false
+	var sess session.Session
 	if err != nil {
-		return "", fmt.Errorf("failed to get interaction history: %v", err)
+		createResp, err := s.SessionService.Create(ctx, &session.CreateRequest{
+			AppName:   "AiGenCMS",
+			UserID:    userID,
+			SessionID: sessionID,
+		})
+		if err != nil {
+			return "", fmt.Errorf("failed to create session: %v", err)
+		}
+		sess = createResp.Session
+		isNewSession = true
+	} else {
+		sess = resp.Session
 	}
 
-	// 2. Get Root Agent
+	// 2. If new session, populate with history from InteractionService
+	if isNewSession {
+		history, err := s.InteractionService.GetHistory(ctx, identifier, 20)
+		if err == nil && len(history) > 0 {
+			// history is desc (newest first), we need asc for AppendEvent
+			for i := len(history) - 1; i >= 0; i-- {
+				item := history[i]
+				role := "user"
+				if item.Direction == "outbound" {
+					role = "model"
+				}
+				
+				evt := &session.Event{
+					LLMResponse: model.LLMResponse{
+						Content: &genai.Content{
+							Role:  role,
+							Parts: []*genai.Part{{Text: item.Content}},
+						},
+					},
+					Timestamp: item.CreatedAt,
+				}
+				s.SessionService.AppendEvent(ctx, sess, evt)
+			}
+		}
+	}
+
+	// 3. Get Root Agent
 	rootAgent, err := s.Registry.GetRoot(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get root agent: %v", err)
 	}
 
-	// 3. Create Runner
+	// 4. Create Runner
 	rnr, err := runner.New(runner.Config{
 		AppName:        "AiGenCMS",
 		Agent:          rootAgent,
@@ -71,38 +120,11 @@ func (s *ChatService) ProcessMessage(ctx context.Context, identifier string, mes
 		return "", fmt.Errorf("failed to create runner: %v", err)
 	}
 
-	// 4. Use ADK Session Service to pre-populate history if needed
-	// For now, ADK's SessionService is in-memory and handles turns within its own logic.
-	// But we can manually inject past interactions into the userContent if we wanted to 
-	// bypass ADK's session management or sync them.
-	// ADK expects a list of Content objects for multi-turn.
-	
 	userContent := &genai.Content{
 		Role: "user",
 		Parts: []*genai.Part{
 			{Text: message},
 		},
-	}
-
-	// Map identifier to session/user IDs for ADK
-	sessionID := "session-" + identifier
-	userID := identifier
-
-	// Ensure session exists
-	_, err = s.SessionService.Get(ctx, &session.GetRequest{
-		AppName:   "AiGenCMS",
-		UserID:    userID,
-		SessionID: sessionID,
-	})
-	if err != nil {
-		_, err = s.SessionService.Create(ctx, &session.CreateRequest{
-			AppName:   "AiGenCMS",
-			UserID:    userID,
-			SessionID: sessionID,
-		})
-		if err != nil {
-			return "", fmt.Errorf("failed to create session: %v", err)
-		}
 	}
 
 	var finalResponse string

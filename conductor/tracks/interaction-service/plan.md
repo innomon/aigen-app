@@ -15,9 +15,10 @@
 
 ## Phase 3: Agent Integration (DONE)
 - [x] Update `ChatService` to optionally ingest conversation history from `InteractionService`.
-- [ ] Update `RouterAgent` (new implementation) to check `InteractionService` for stateful routing decisions. (Tracked in `router-agent-replacement`)
+- [x] Update `RouterAgent` (new implementation) to check `InteractionService` for stateful routing decisions.
 
-## Phase 4: Validation (IN PROGRESS)
+## Phase 4: Validation (DONE)
 - [x] Unit tests for `InteractionService`.
-- [ ] Integration test: Send a message via `ChannelApi` and verify it appears in `Interaction` history.
-- [ ] Mock agent test: Verify the agent can "remember" the previous interaction.
+- [x] Integration test: Send a message via `ChannelApi` and verify it appears in `Interaction` history.
+- [x] Mock agent test: Verify the agent can "remember" the previous interaction.
+
