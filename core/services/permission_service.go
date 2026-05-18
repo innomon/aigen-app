@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
@@ -182,7 +183,17 @@ func (s *PermissionService) GetFieldPermissions(ctx context.Context, entityName 
 		}
 
 		if match {
-			lvl := int(data["permlevel"].(float64))
+			var lvl int
+			switch v := data["permlevel"].(type) {
+			case float64:
+				lvl = int(v)
+			case int:
+				lvl = v
+			case json.Number:
+				val, _ := v.Int64()
+				lvl = int(val)
+			}
+
 			read := data["read"].(bool)
 			write := data["write"].(bool)
 			

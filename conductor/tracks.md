@@ -8,8 +8,8 @@ This file tracks the various development tracks for AIGenApp.
 | `multimodal-a2ui` | Multimodal A2UI Support | Completed | `./tracks/multimodal-a2ui/` |
 | `router-agent-replacement` | Router Agent Replacement | Completed | `./tracks/router-agent-replacement/` |
 | `interaction-service` | Interaction Service (Messaging E-trail) | Completed | `./tracks/interaction-service/` |
-| `rbac` | Fine-Grained RBAC | Proposed | `./tracks/rbac/` |
-| `multi-channel` | Multi-Channel Communication (A2A & MCP) | Proposed | `./tracks/multi-channel/` |
+| `rbac` | Fine-Grained RBAC | Completed | `./tracks/rbac/` |
+| `multi-channel` | Multi-Channel Communication (A2A & MCP) | Completed | `./tracks/multi-channel/` |
 | `framework-pivot` | Framework Reorganization & Pivot | In Progress | `./tracks/framework-pivot/` |
 | `advanced-auth` | Advanced Authentication (WhatsApp & Guest) | Proposed | `./tracks/advanced-auth/` |
 | `temporary-access` | Temporary File Access (TTL-based) | Completed | `./tracks/temporary-access/` |

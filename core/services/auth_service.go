@@ -9,8 +9,8 @@ import (
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/bcrypt"
-	"encoding/json"
 )
 
 const (
@@ -42,7 +42,7 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (*de
 	}
 
 	user := &descriptors.User{
-		Id:           time.Now().UnixNano(),
+		Id:           time.Now().Unix(),
 		Email:        email,
 		PasswordHash: string(hashedPassword),
 		Roles:        []string{descriptors.RoleUser},
@@ -71,8 +71,9 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 	}
 
 	var user descriptors.User
-	data, _ := json.Marshal(rec.Rec)
-	json.Unmarshal(data, &user)
+	if err := mapstructure.Decode(rec.Rec, &user); err != nil {
+		return "", fmt.Errorf("failed to decode user: %v", err)
+	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return "", fmt.Errorf("invalid password")
@@ -99,8 +100,9 @@ func (s *AuthService) Me(ctx context.Context, userId int64) (*descriptors.User, 
 	}
 
 	var user descriptors.User
-	data, _ := json.Marshal(recs[0].Rec)
-	json.Unmarshal(data, &user)
+	if err := mapstructure.Decode(recs[0].Rec, &user); err != nil {
+		return nil, fmt.Errorf("failed to decode user: %v", err)
+	}
 	return &user, nil
 }
 
@@ -138,8 +140,9 @@ func (s *AuthService) GetRoleByName(ctx context.Context, name string) (*descript
 	}
 
 	var role descriptors.Role
-	data, _ := json.Marshal(rec.Rec)
-	json.Unmarshal(data, &role)
+	if err := mapstructure.Decode(rec.Rec, &role); err != nil {
+		return nil, fmt.Errorf("failed to decode role: %v", err)
+	}
 	return &role, nil
 }
 
@@ -161,12 +164,11 @@ func (s *AuthService) LoginByChannel(ctx context.Context, channelType descriptor
 			}
 			recs, _, err := s.dao.List(ctx, UserNamespace, filters, datamodels.Pagination{Limit: func() *string { s := "1"; return &s }()}, nil)
 			if err == nil && len(recs) > 0 {
-				data, _ := json.Marshal(recs[0].Rec)
-				json.Unmarshal(data, &user)
-				
-				// Link the channel
-				s.channelService.RegisterChannel(ctx, user.Id, channelType, identifier, nil)
-				s.channelService.VerifyChannel(ctx, user.Id, channelType, "")
+				if err := mapstructure.Decode(recs[0].Rec, &user); err == nil {
+					// Link the channel
+					s.channelService.RegisterChannel(ctx, user.Id, channelType, identifier, nil)
+					s.channelService.VerifyChannel(ctx, user.Id, channelType, "")
+				}
 			}
 		}
 	}
@@ -179,8 +181,8 @@ func (s *AuthService) LoginByChannel(ctx context.Context, channelType descriptor
 
 		now := time.Now()
 		user = &descriptors.User{
-			Id:        now.UnixNano(),
-			Email:     fmt.Sprintf("user_%d@aigen.local", now.UnixNano()), // Placeholder
+			Id:        now.Unix(),
+			Email:     fmt.Sprintf("user_%d@aigen.local", now.Unix()), // Placeholder
 			Phone:     identifier,
 			Roles:     []string{descriptors.RoleUser},
 			CreatedAt: now,
@@ -277,5 +279,3 @@ func (s *AuthService) UpdateUser(ctx context.Context, user *descriptors.User) er
 	}
 	return s.dao.Save(ctx, rec)
 }
-
-

@@ -1,6 +1,7 @@
 package relationdbdao
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -37,8 +38,11 @@ func (d *MemoryDao) Save(ctx context.Context, rec datamodels.RecJSON) error {
 		if err != nil {
 			return err
 		}
+		
+		decoder := json.NewDecoder(bytes.NewReader(data))
+		decoder.UseNumber()
 		var m map[string]interface{}
-		if err := json.Unmarshal(data, &m); err != nil {
+		if err := decoder.Decode(&m); err != nil {
 			// If it's not a map (e.g. a string or number), we can't filter it as a map
 			// But we still store it.
 		} else {

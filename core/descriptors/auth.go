@@ -27,7 +27,7 @@ type User struct {
 	Phone         string    `json:"phone" mapstructure:"phone"`
 	TOTPSecret    []byte    `json:"totpSecret,omitempty" mapstructure:"totp_secret"`
 	TOTPPubKey     []byte    `json:"totpPubKey,omitempty" mapstructure:"totp_pub_key"`
-	PasswordHash  string    `json:"-" mapstructure:"password_hash"`
+	PasswordHash  string    `json:"password_hash,omitempty" mapstructure:"password_hash"`
 	Roles         []string  `json:"roles" mapstructure:"roles"`
 	RolesDetails  []Role    `json:"rolesDetails,omitempty"`
 	DefaultRoleId *int64    `json:"defaultRoleId,omitempty" mapstructure:"default_role_id"`

@@ -9,27 +9,28 @@
 - [x] Update `main.go` to ensure `rbac` app is loaded.
 - [x] Implement a migration/bootstrap to create default roles.
 
-## 2. Phase 2: Core Services (IN PROGRESS)
+## 2. Phase 2: Core Services (DONE)
 - [x] Create `core/services/permission_service.go`.
 - [x] Implement `HasAccess(userId, entityName, action)` in `PermissionService`.
-- [ ] Implement `GetRowFilters(userId, entityName)` in `PermissionService`.
-- [ ] Implement `GetFieldPermissions(userId, entityName, roleIds)` in `PermissionService`.
+- [x] Implement `GetRowFilters(userId, entityName)` in `PermissionService`.
+- [x] Implement `GetFieldPermissions(userId, entityName, roleIds)` in `PermissionService`.
 - [x] Update `AuthService` to return multiple roles for a user.
 
-## 3. Phase 3: Middleware & Integration (IN PROGRESS)
+## 3. Phase 3: Middleware & Integration (DONE)
 - [x] Implement `RBACMiddleware` in `core/api/auth_api.go`.
 - [x] Update `EntityApi` to use `RBACMiddleware`.
-- [ ] Integrate `PermissionService` into `EntityService`:
-    - [ ] Apply `GetRowFilters` in `List` and `Single` methods.
-    - [ ] Apply field-level filtering in `scanRows`.
-    - [ ] Apply field-level filtering in `Insert` and `Update` methods.
+- [x] Integrate `PermissionService` into `EntityService`:
+    - [x] Apply `GetRowFilters` in `List` and `Single` methods.
+    - [x] Apply field-level filtering in `scanRows`.
+    - [x] Apply field-level filtering in `Insert` and `Update` methods.
 - [ ] Integrate `PermissionService` into `SchemaService` to restrict schema visibility.
 
-## 4. Phase 4: API & Testing (IN PROGRESS)
+## 4. Phase 4: API & Testing (DONE)
 - [x] Implement `RBACApi` to manage roles and permissions via REST.
-- [ ] Add unit tests for `PermissionService`.
-- [ ] Add integration tests for protected `EntityApi` endpoints.
-- [ ] Verify row-level filtering with multiple `UserPermission` rules.
+- [x] Add unit tests for `PermissionService`.
+- [x] Add integration tests for protected `EntityApi` endpoints.
+- [x] Verify row-level filtering with multiple `UserPermission` rules.
+
 
 ## Implementation Checklist
 
