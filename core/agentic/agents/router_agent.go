@@ -1,3 +1,18 @@
+/*
+Package agents implements the core router agent logic.
+
+The Router Agent is responsible for directing user input to the most appropriate downstream sub-agent.
+Its execution flow is as follows:
+
+1. Input Handling: Extracts user input from the InvocationContext.
+2. State Management: Checks for existing 'pending_selection' states via IInteractionService 
+   to handle multi-turn routing decisions.
+3. Routing Analysis:
+   - Heuristic Match: Uses keyword matching against sub-agent names.
+   - LLM Classification: Falls back to an LLM model (if configured) to classify intent.
+   - User Prompting: If ambiguous, stores state and prompts the user for a selection.
+4. Target Invocation: Delegates the invocation to the selected sub-agent once a target is resolved.
+*/
 package agents
 
 import (
