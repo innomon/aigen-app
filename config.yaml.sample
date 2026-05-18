@@ -1,64 +1,30 @@
-# AIGenApp Sample Configuration
-
-# Directory where application definitions (schemas, data, docs) are stored
-apps_dir: "apps"
-
-# Directory for static assets and public files
-www_root: "wwwroot"
-
-# Database Connection String
-# For PostgreSQL: "postgres://user:password@localhost:5432/dbname?sslmode=disable"
-# For Firestore: "firestore://your-google-cloud-project-id"
-database_dsn: "postgres://user:password@localhost:5432/aigen_db?sslmode=disable"
-
-# External domain name for automatic HTTPS via autocert (optional)
-domain: ""
-
-# Port to listen on (ignored if domain is set)
+apps_dir: apps
+www_root: wwwroot
+database_dsn: "postgres://postgres:password@localhost:5432/aigen?sslmode=disable"
+domain: localhost
 port: "5000"
+agentic_config_path: agentic.yaml
 
-# Path to agentic configuration for LLM workflows
-agentic_config_path: "agentic.yaml"
-
-# Storage configuration
 storage:
-  # Driver can be "fs" (local filesystem) or "s3"
-  driver: "fs"
+  driver: fs
   fs:
-    # Root directory for file storage (relative to project root or absolute)
-    root: "wwwroot/files"
-    # URL prefix for serving files
-    url_prefix: "/files"
-  s3:
-    bucket: "my-bucket"
-    region: "us-east-1"
-    # Optional credentials (if not using IAM roles)
-    # access_key_id: "..."
-    # secret_access_key: "..."
-    # Optional endpoint for S3-compatible storage (e.g., MinIO)
-    # endpoint: "http://localhost:9000"
-  gcs:
-    bucket: "my-gcs-bucket"
-    # Optional credentials file
-    # credentials_file: "path/to/credentials.json"
-  postgres:
-    # URL for a separate postgres instance to store files (or use existing one)
-    url: "postgres://user:password@localhost:5432/file_storage?sslmode=disable"
+    root: wwwroot/files
+    url_prefix: /files
 
-# Channel configurations (optional)
-# channels:
-#   whatsapp:
-#     enabled: true
-#     gateway_url: "..."
-#   email:
-#     enabled: true
-#     smtp_server: "..."
+channels:
+  a2a_enabled: true
+  whatsapp:
+    enabled: true
+    gateway_url: "http://localhost:8080"
+    gateway_number: "+1234567890"
 
-# Temporary file access configurations (unauthenticated GET with TTL)
+mcp:
+  enabled: true
+  api_keys:
+    - key: "test-mcp-key"
+      user_id: 1
+
 temporary_access:
   - path: "tmp"
-    ttl_sec: 300
+    ttl: 300
     role: "admin"
-  - path: "reports"
-    ttl_sec: 3600
-    role: "editor"

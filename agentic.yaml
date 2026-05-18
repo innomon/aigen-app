@@ -3,8 +3,7 @@ root_agent: router_agent
 models:
   gemini_pro:
     provider: gemini
-    config:
-      model: gemini-2.5-pro
+    model_id: gemini-2.0-flash
 
 tools:
   cms_entity_list:

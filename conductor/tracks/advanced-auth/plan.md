@@ -22,7 +22,8 @@
 - [x] Implement fuzzy matching/search for `User` by `Phone` if `UserChannel` is missing.
 - [x] Implement `AuthService.LinkChannel` for existing authenticated users.
 
-## Phase 5: Testing & Validation
+## Phase 5: Testing & Validation (DONE)
 - [x] Unit tests for `WhatsAppService` (JWT and TOTP logic).
-- [ ] Integration tests for the full Reverse OTP flow using a mock Gateway.
-- [ ] Verify `guest` role permissions in RBAC.
+- [x] Integration tests for the full Reverse OTP flow using a mock Gateway.
+- [x] Verify `guest` role permissions in RBAC.
+

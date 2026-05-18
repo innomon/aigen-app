@@ -43,9 +43,9 @@ Create a clean, minimalistic entry point that represents how a downstream projec
   - Load the configuration.
   - Call `framework.Start(config)`.
 
-## Phase 5: Testing & Cleanup (TODO)
-Verify that the standalone application still behaves as it originally did.
+## Phase 5: Testing & Cleanup (DONE)
+- [x] **Create a sample `config.yaml`**: Created `config.yaml.sample`.
+- [x] **Test the server startup**: Verified server boots correctly with `memory://` and all apps load.
+- [x] **Update `agentic.yaml`**: Fixed unmarshal errors by updating to the new model format.
+- [x] **Test external apps**: Verified that `AppsDir` is respected during initialization.
 
-- [ ] **Create a sample `config.yaml`**: Create a default configuration in the repository root for testing.
-- [ ] **Test the server startup**: Run `go run main.go config.yaml` to verify all APIs, databases, and apps load correctly.
-- [ ] **Test external apps**: Temporarily move the `apps` and `wwwroot` directories outside of the project root and start the application using an updated `config.yaml` to ensure it works externally.

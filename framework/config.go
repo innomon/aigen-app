@@ -55,7 +55,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		AppsDir:           "apps",
 		WWWRoot:           "wwwroot",
-		DatabaseDSN:       "aigen.db",
+		DatabaseDSN:       "memory://",
 		Port:              "5000",
 		AgenticConfigPath: "agentic.yaml",
 		Storage: StorageConfig{
