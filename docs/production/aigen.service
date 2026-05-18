@@ -1,0 +1,23 @@
+[Unit]
+Description=AIGenApp Backend Service
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=aigen-user
+Group=aigen-user
+WorkingDirectory=/home/aigen-user/app
+# Load environment variables from a secure file
+EnvironmentFile=/etc/aigen/aigen.env
+# Path to your compiled Go binary
+ExecStart=/home/aigen-user/app/aigen-app
+Restart=always
+RestartSec=5
+
+# Security Hardening
+PrivateTmp=true
+ProtectSystem=full
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

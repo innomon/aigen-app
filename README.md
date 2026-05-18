@@ -108,6 +108,33 @@ The server will start on `http://localhost:5000`.
 | `AWS_REGION` | AWS region for S3 storage. | `us-east-1` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google Cloud service account JSON for GCS/Firestore. | `""` |
 
+### Production Best Practices
+
+#### 1. Local Production (Behind Firewall / Cloudflare)
+For deployments on a Linux VPS or On-Prem server behind a Cloudflare proxy/tunnel, use **systemd** with a restricted environment file.
+
+1.  **Create a Secure Env File**: Store your secrets in a system-protected directory (e.g., `/etc/aigen/aigen.env`) and set permissions to `600`.
+    ```bash
+    FORMCMS_DB_DSN="postgres://user:pass@localhost:5432/aigen_prod"
+    GEMINI_API_KEY="your-prod-key"
+    ```
+2.  **Configure systemd**: Create a service unit (e.g., `/etc/systemd/system/aigen.service`) that references this file:
+    ```ini
+    [Service]
+    ExecStart=/path/to/aigen-app
+    EnvironmentFile=/etc/aigen/aigen.env
+    Restart=always
+    User=aigen-user
+    ```
+
+#### 2. Cloud Native (Containerized)
+When deploying to AWS (ECS/EKS), GCP (Cloud Run/GKE), or Azure:
+
+1.  **Use Secret Managers**: Do not bake `.env` files into your Docker image. Instead, use AWS Secrets Manager or GCP Secret Manager.
+2.  **Injection**: Configure your orchestrator to inject these secrets as environment variables at runtime.
+    *   **Kubernetes**: Use `secretKeyRef` or the [External Secrets Operator](https://external-secrets.io/).
+    *   **Cloud Run**: Directly map GCP Secrets to environment variables in the service configuration.
+
 ## Static File Serving
 
 AIGenApp serves static files from two main sources:
