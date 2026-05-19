@@ -10,14 +10,28 @@ fi
 BIZDEF_DIR="bizdefs/$BIZDEF_NAME"
 mkdir -p $BIZDEF_DIR/{data,docs,migrations,schemas}
 
+# Manifest
 cat <<JSON > $BIZDEF_DIR/bizdef.json
 {
   "name": "$BIZDEF_NAME",
   "display_name": "$BIZDEF_NAME",
   "description": "New BizDef for $BIZDEF_NAME",
+  "context": "Context for $BIZDEF_NAME bizdef.",
+  "roles": ["Admin"],
   "entities": {}
 }
 JSON
+
+# Evolution Manifest
+echo "{}" > $BIZDEF_DIR/evolution.json
+
+# Evolution History
+cat <<MD > $BIZDEF_DIR/evolution.md
+# $BIZDEF_NAME Evolution History
+
+## Initial Version (v1)
+- Initial scaffold created.
+MD
 
 # Register in bizdefs.json if not present
 BIZDEFS_FILE="bizdefs/bizdefs.json"
@@ -30,4 +44,4 @@ else
     echo "Warning: $BIZDEFS_FILE not found. BizDef not registered."
 fi
 
-echo "Successfully created BizDef: $BIZDEF_NAME"
+echo "Successfully created BizDef: $BIZDEF_NAME (including evolution tracking)"

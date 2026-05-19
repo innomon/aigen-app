@@ -15,6 +15,8 @@ This skill automates the generation of a new downstream BizDef following the pro
    - `bizdefs/<bizdef-name>/docs/`
    - `bizdefs/<bizdef-name>/schemas/`
    - `bizdefs/<bizdef-name>/migrations/`
+   - `bizdefs/<bizdef-name>/evolution.json` (New: evolution manifest)
+   - `bizdefs/<bizdef-name>/evolution.md` (New: evolution history)
 3. It will generate a default `bizdef.json` template.
 4. It will register the new BizDef in `bizdefs/bizdefs.json`.
 
