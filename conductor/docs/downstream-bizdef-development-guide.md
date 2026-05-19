@@ -29,6 +29,15 @@ bizdefs/{bizdef_name}/
 
 ## 3. Step-by-Step Development Workflow
 
+### Step 0: Scaffold the BizDef
+You can automate the creation of the directory structure and initial manifest using the `create-bizdef` skill.
+
+```bash
+./skills/create-bizdef/scripts/scaffold_bizdef.sh <bizdef-name>
+```
+
+This will create the folder under `bizdefs/`, generate the subdirectories, create a template `bizdef.json`, and register it in `bizdefs/bizdefs.json`.
+
 ### Step 1: Define the BizDef Manifest (`bizdef.json`)
 Every BizDef must have a `bizdef.json` file located at its root. This manifest describes the BizDef's purpose, roles, and entities.
 

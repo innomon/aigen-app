@@ -1,5 +1,6 @@
 {
   "enabled_bizdefs": [
+    "commerce_ucp",
     "rbac",
     "erpnext_accounting",
     "crm",
