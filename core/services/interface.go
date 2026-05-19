@@ -38,6 +38,12 @@ type IEntityService interface {
 	JunctionDelete(ctx context.Context, name, id, attr string, targetIds []interface{}) error
 }
 
+type IEvolutionService interface {
+	RegisterManifest(bizdefName string, manifest descriptors.EvolutionManifest)
+	EvolveRecord(entityName string, rec map[string]interface{}, meta *datamodels.MetaData) (map[string]interface{}, bool, error)
+	ScrubEntity(ctx context.Context, entityName string, batchSize int) (int, int, error)
+}
+
 type IGraphQLService interface {
 	Query(ctx context.Context, query string, variables map[string]interface{}) (interface{}, error)
 	ExecuteStoredQuery(ctx context.Context, name string, variables map[string]interface{}) (interface{}, error)

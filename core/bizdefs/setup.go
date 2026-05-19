@@ -89,6 +89,25 @@ func SetupBizDef(ctx context.Context, bizdefsDir string, bizdefName string, sche
 	return nil
 }
 
+func SetupBizDefEvolution(ctx context.Context, bizdefsDir string, bizdefName string, evolutionService services.IEvolutionService) error {
+	filePath := filepath.Join(bizdefsDir, bizdefName, "evolution.json")
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to read evolution.json for %s: %v", bizdefName, err)
+	}
+
+	var manifest descriptors.EvolutionManifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return fmt.Errorf("failed to parse evolution.json for %s: %v", bizdefName, err)
+	}
+
+	evolutionService.RegisterManifest(bizdefName, manifest)
+	return nil
+}
+
 type TestDataEntry struct {
 	Entity   string
 	Ref      string

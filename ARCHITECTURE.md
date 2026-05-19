@@ -68,7 +68,26 @@ The **Interaction Brain** defines the intelligence behind how the system perceiv
 
 The **Execution Brain** is the technical engine that implements the "how-to" of the platform.
 - **Polymorphic**: Services like `EntityService` or `AuthService` are generic; they don't know about specific business domains but know how to enforce permissions, validate JSON, and interact with the DAO layer.
+- **Schema Evolution**: The `EvolutionService` provides a declarative mechanism for migrating data shapes without downtime. It supports JIT transformations on read/write and asynchronous batch scrubbing for large datasets.
 - **Security**: Enforces the underlying system integrity (JWT verification, namespace isolation).
+
+---
+
+## Schema Evolution
+
+AIGenApp handles the evolution of business data through a **Declarative Transformation Timeline**. Because the data is stored as JSON, changes to schemas do not require blocking SQL `ALTER TABLE` commands.
+
+### 1. The Evolution Manifest (`evolution.json`)
+Each BizDef can define an `evolution.json` file. This file acts as a machine-readable timeline of changes:
+- **Versions**: Each version is associated with a date and a set of actions.
+- **Actions**: Supported actions include `rename` (move data between keys), `add` (populate missing fields with defaults), and `drop` (cleanup obsolete data).
+
+### 2. Just-In-Time (JIT) Upgrades
+The `EntityService` automatically upgrades records "on the fly" when they are read or updated. If a record's metadata indicates it is on an older version than the manifest, the `EvolutionService` applies the necessary transformations before returning the data to the requester.
+
+### 3. Asynchronous Batch Migrations ("Scrubbing")
+For large datasets, an administrator can trigger a background "Scrubber" via the `cms_bizdef_evolve` tool. This process iterates through all records of an entity and permanently upgrades them in the database. 
+- **Integrity**: Uses **Optimistic Concurrency Control (OCC)** via a `Revision` field in metadata to ensure that background migrations never overwrite live user updates.
 
 ---
 

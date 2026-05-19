@@ -88,6 +88,7 @@ func NewApp(cfg *Config) (*App, error) {
 	systemSettings.LocalFileStoreOptions.UrlPrefix = fsCfg.FS.UrlPrefix
 
 	schemaService := services.NewSchemaService(dao)
+	evolutionService := services.NewEvolutionService(dao, schemaService)
 	permissionService := services.NewPermissionService(dao, schemaService)
 
 	enabledBizDefs, err := bizdefs.LoadBizDefsConfig(cfg.BizDefsDir)
@@ -101,9 +102,12 @@ func NewApp(cfg *Config) (*App, error) {
 		if err := bizdefs.SetupBizDef(context.Background(), cfg.BizDefsDir, bizdefName, schemaService, dao); err != nil {
 			log.Printf("Warning: failed to setup bizdef %s schemas: %v\n", bizdefName, err)
 		}
+		if err := bizdefs.SetupBizDefEvolution(context.Background(), cfg.BizDefsDir, bizdefName, evolutionService); err != nil {
+			log.Printf("Warning: failed to setup bizdef %s evolution manifests: %v\n", bizdefName, err)
+		}
 	}
 
-	entityService := services.NewEntityService(schemaService, dao, permissionService)
+	entityService := services.NewEntityService(schemaService, evolutionService, dao, permissionService)
 
 	for _, bizdefName := range enabledBizDefs {
 		log.Printf("Setting up test data for bizdef: %s", bizdefName)
@@ -129,7 +133,7 @@ func NewApp(cfg *Config) (*App, error) {
 	a2uiService := services.NewA2UIService()
 	tempAccessService := services.NewTempAccessService(cfg.TemporaryAccess, fileStore)
 
-	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, a2uiService, interactionService)
+	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, evolutionService, a2uiService, interactionService)
 	if err != nil {
 		log.Printf("Warning: failed to initialize chat service (agentic config missing or invalid): %v", err)
 	}

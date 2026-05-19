@@ -11,7 +11,7 @@ import (
 	"github.com/innomon/agentic/pkg/registry"
 )
 
-func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService, a2uiService *A2UIService) {
+func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService, evolutionService IEvolutionService, a2uiService *A2UIService) {
 	registry.RegisterToolHandler("cms_bizdef_list", func(ctx context.Context, args map[string]any) (any, error) {
 		bizdefsFile := filepath.Join("bizdefs", "bizdefs.json")
 		b, err := os.ReadFile(bizdefsFile)
@@ -189,5 +189,28 @@ func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService
 
 		a2uiService.UpdateComponent(ctx, comp)
 		return "Component updated successfully", nil
+	})
+
+	registry.RegisterToolHandler("cms_bizdef_evolve", func(ctx context.Context, args map[string]any) (any, error) {
+		entityName, ok := args["entity"].(string)
+		if !ok {
+			return nil, fmt.Errorf("missing or invalid 'entity' argument")
+		}
+
+		batchSize := 100
+		if bs, ok := args["batch_size"].(float64); ok {
+			batchSize = int(bs)
+		}
+
+		go func() {
+			upgraded, failed, err := evolutionService.ScrubEntity(context.Background(), entityName, batchSize)
+			if err != nil {
+				fmt.Printf("Background evolution failed for %s: %v\n", entityName, err)
+			} else {
+				fmt.Printf("Background evolution finished for %s: %d upgraded, %d failed\n", entityName, upgraded, failed)
+			}
+		}()
+
+		return "Background evolution started", nil
 	})
 }

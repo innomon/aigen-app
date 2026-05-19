@@ -23,8 +23,9 @@ func TestERPNextAccountingIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	schemaService := services.NewSchemaService(dao)
+	evolutionService := services.NewEvolutionService(dao, schemaService)
 	permissionService := services.NewPermissionService(dao, schemaService)
-	entityService := services.NewEntityService(schemaService, dao, permissionService)
+	entityService := services.NewEntityService(schemaService, evolutionService, dao, permissionService)
 
 	bizdefsDir := "../../bizdefs"
 	bizdefName := "erpnext_accounting"

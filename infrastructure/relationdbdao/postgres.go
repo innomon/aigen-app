@@ -48,6 +48,9 @@ func (d *PostgresDao) EnsureTable(ctx context.Context) error {
 }
 
 func (d *PostgresDao) Save(ctx context.Context, rec datamodels.RecJSON) error {
+	// Increment revision on save
+	rec.MetaData.Revision++
+
 	recJSON, err := json.Marshal(rec.Rec)
 	if err != nil {
 		return err
@@ -71,6 +74,46 @@ func (d *PostgresDao) Save(ctx context.Context, rec datamodels.RecJSON) error {
 
 	_, err = d.db.ExecContext(ctx, query, rec.Namespace, rec.Key, recJSON, metaJSON, tm)
 	return err
+}
+
+func (d *PostgresDao) SaveConditional(ctx context.Context, rec datamodels.RecJSON, expectedRevision int64) error {
+	// Increment revision
+	rec.MetaData.Revision = expectedRevision + 1
+
+	recJSON, err := json.Marshal(rec.Rec)
+	if err != nil {
+		return err
+	}
+	metaJSON, err := json.Marshal(rec.MetaData)
+	if err != nil {
+		return err
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE %s 
+		SET rec = $1, metadata = $2, tmstamp = $3
+		WHERE namespace = $4 AND key = $5 AND (metadata->>'revision')::bigint = $6;
+	`, RecordsTable)
+
+	tm := rec.Tmstamp
+	if tm.IsZero() {
+		tm = time.Now()
+	}
+
+	result, err := d.db.ExecContext(ctx, query, recJSON, metaJSON, tm, rec.Namespace, rec.Key, expectedRevision)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("optimistic concurrency conflict: expected revision %d", expectedRevision)
+	}
+
+	return nil
 }
 
 func (d *PostgresDao) Get(ctx context.Context, namespace, key string) (*datamodels.RecJSON, error) {

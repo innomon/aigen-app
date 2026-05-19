@@ -17,6 +17,7 @@ A headless CMS and dynamic application framework in Go, evolved from the FormCMS
 - **Frappe/ERPNext Integration**: Built-in support for importing and mapping Frappe Doctypes to native BizDef schemas.
 - **Advanced RBAC**: Granular Role-Based Access Control with field-level and row-level security filters managed via JSON metadata.
 - **Schema-on-Read Data Modeling**: Define entities and attributes dynamically. All data is stored in a highly flexible single-table JSON schema (`aigen_records`), making migrations a thing of the past.
+- **Declarative Schema Evolution**: Evolve business models without downtime. Supports machine-readable transformation timelines (`evolution.json`), Just-In-Time (JIT) upgrades on read/write, and asynchronous background migrations with Optimistic Concurrency Control.
 - **REST & GraphQL APIs**: Auto-generated CRUD and GraphQL endpoints.
 - **File Storage**: Local and S3 support with image processing.
 - **Temporary File Access**: Short-lived, unauthenticated URLs with TTL and optimized garbage collection. [Read More](docs/temporary_file_access.md)

@@ -44,18 +44,46 @@ func (d *FirestoreDao) EnsureTable(ctx context.Context) error {
 func (d *FirestoreDao) Save(ctx context.Context, rec datamodels.RecJSON) error {
 	docID := fmt.Sprintf("%s:%s", rec.Namespace, rec.Key)
 	
-	data := map[string]interface{}{
-		"namespace": rec.Namespace,
-		"key":       rec.Key,
-		"rec":       rec.Rec,
-		"metadata":  rec.MetaData,
-		"tmstamp":   rec.Tmstamp,
-	}
+	// Increment revision
+	rec.MetaData.Revision++
+
 	if rec.Tmstamp.IsZero() {
-		data["tmstamp"] = time.Now()
+		rec.Tmstamp = time.Now()
 	}
 
-	_, err := d.client.Collection(RecordsTable).Doc(docID).Set(ctx, data)
+	_, err := d.client.Collection(RecordsTable).Doc(docID).Set(ctx, rec)
+	return err
+}
+
+func (d *FirestoreDao) SaveConditional(ctx context.Context, rec datamodels.RecJSON, expectedRevision int64) error {
+	docID := fmt.Sprintf("%s:%s", rec.Namespace, rec.Key)
+	
+	// Increment revision
+	rec.MetaData.Revision = expectedRevision + 1
+
+	if rec.Tmstamp.IsZero() {
+		rec.Tmstamp = time.Now()
+	}
+
+	err := d.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		docRef := d.client.Collection(RecordsTable).Doc(docID)
+		doc, err := tx.Get(docRef)
+		if err != nil {
+			return err
+		}
+
+		var existing datamodels.RecJSON
+		if err := doc.DataTo(&existing); err != nil {
+			return err
+		}
+
+		if existing.MetaData.Revision != expectedRevision {
+			return fmt.Errorf("optimistic concurrency conflict: expected revision %d, got %d", expectedRevision, existing.MetaData.Revision)
+		}
+
+		return tx.Set(docRef, rec)
+	})
+	
 	return err
 }
 

@@ -12,6 +12,7 @@ const RecordsTable = "aigen_records"
 
 type IPrimaryDao interface {
 	Save(ctx context.Context, rec datamodels.RecJSON) error
+	SaveConditional(ctx context.Context, rec datamodels.RecJSON, expectedRevision int64) error
 	Get(ctx context.Context, namespace, key string) (*datamodels.RecJSON, error)
 	Delete(ctx context.Context, namespace, key string) error
 	List(ctx context.Context, namespace string, filters []datamodels.Filter, pagination datamodels.Pagination, sorts []datamodels.Sort) ([]datamodels.RecJSON, int64, error)

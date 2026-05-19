@@ -16,8 +16,9 @@ func TestRBACIntegration(t *testing.T) {
 	dao.EnsureTable(ctx)
 	
 	schemaSvc := NewSchemaService(dao)
+	evolutionSvc := NewEvolutionService(dao, schemaSvc)
 	permSvc := NewPermissionService(dao, schemaSvc)
-	entitySvc := NewEntityService(schemaSvc, dao, permSvc)
+	entitySvc := NewEntityService(schemaSvc, evolutionSvc, dao, permSvc)
 
 	// 1. Setup Schemas
 	companySchema := &descriptors.Entity{

@@ -1,0 +1,12 @@
+{
+  "crm_lead": {
+    "v2": {
+      "date": "2024-05-19T10:00:00Z",
+      "description": "Renamed status field and added lead scoring",
+      "actions": [
+        { "action": "rename", "from": "old_status", "to": "status" },
+        { "action": "add", "field": "lead_score", "default": 0 }
+      ]
+    }
+  }
+}

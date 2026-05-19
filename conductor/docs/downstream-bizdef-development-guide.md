@@ -16,6 +16,8 @@ bizdefs/{bizdef_name}/
 ├── schemas/             # Entity JSON definitions
 │   ├── {entity_1}.json
 │   └── {entity_2}.json
+├── evolution.json       # Machine-readable schema changes
+├── evolution.md         # Human-readable evolution history
 ├── docs/                # Extended business context (Markdown)
 │   ├── {entity_1}.md
 │   └── {entity_2}.md
@@ -147,7 +149,41 @@ Add your BizDef's folder name to the `enabled_bizdefs` array in `bizdefs/bizdefs
 }
 ```
 
-## 4. Best Practices
+## 4. Handling Schema Evolution
+
+When you need to change the structure of an existing entity (e.g., rename a field or add a required field), you must define the transformation in the `evolution.json` and `evolution.md` files at the root of your BizDef.
+
+### 1. Define the Manifest (`evolution.json`)
+The manifest contains a timeline of versions. Each version must have a unique key (e.g., `v2`), a `date`, and a list of `actions`.
+
+#### Supported Actions:
+- **`rename`**: Moves data from an old field name to a new one.
+- **`add`**: Adds a new field with a default value if it's missing.
+- **`drop`**: Removes a field that is no longer needed.
+
+#### Example:
+```json
+{
+  "my_entity": {
+    "v2": {
+      "date": "2024-05-19T10:00:00Z",
+      "description": "Migration to cleaner field names",
+      "actions": [
+        { "action": "rename", "from": "old_name", "to": "full_name" },
+        { "action": "add", "field": "is_active", "default": true }
+      ]
+    }
+  }
+}
+```
+
+### 2. Document the Changes (`evolution.md`)
+Provide a natural language explanation of *why* the schema changed. This is used by AI agents to explain data discrepancies to users.
+
+### 3. Execution
+The system automatically applies these changes via **Just-In-Time (JIT)** upgrades whenever a record is accessed. For large-scale cleanup, use the `cms_bizdef_evolve` tool to trigger a background batch migration.
+
+## 5. Best Practices
 
 1. **Analyze First**: When tasked with creating a new BizDef or documenting an existing one, use `codebase_investigator` to review schemas and logic.
 2. **Naming Conventions**: Use `snake_case` for `bizdef_name`, `TableName`, and `Field`. Use `PascalCase` for entity `Name`.

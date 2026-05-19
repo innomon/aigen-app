@@ -18,15 +18,16 @@ type ChatService struct {
 	Registry           *registry.Registry
 	EntityService      IEntityService
 	SchemaService      *SchemaService
+	EvolutionService   IEvolutionService
 	A2UIService        *A2UIService
 	InteractionService IInteractionService
 	SessionService     session.Service
 }
 
-func NewChatService(configPath string, entityService IEntityService, schemaService *SchemaService, a2uiService *A2UIService, interactionService IInteractionService) (*ChatService, error) {
+func NewChatService(configPath string, entityService IEntityService, schemaService *SchemaService, evolutionService IEvolutionService, a2uiService *A2UIService, interactionService IInteractionService) (*ChatService, error) {
 	// Register custom types and tools
 	agents.RegisterRouterAgent(interactionService)
-	RegisterCMSTools(entityService, schemaService, a2uiService)
+	RegisterCMSTools(entityService, schemaService, evolutionService, a2uiService)
 
 	// Load agentic config
 	cfg, err := config.Load(configPath)
@@ -41,6 +42,7 @@ func NewChatService(configPath string, entityService IEntityService, schemaServi
 		Registry:           reg,
 		EntityService:      entityService,
 		SchemaService:      schemaService,
+		EvolutionService:   evolutionService,
 		A2UIService:        a2uiService,
 		InteractionService: interactionService,
 		SessionService:     session.InMemoryService(),

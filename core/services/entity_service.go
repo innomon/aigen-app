@@ -14,13 +14,15 @@ import (
 
 type EntityService struct {
 	schemaService     ISchemaService
+	evolutionService  IEvolutionService
 	dao               relationdbdao.IPrimaryDao
 	permissionService IPermissionService
 }
 
-func NewEntityService(schemaService ISchemaService, dao relationdbdao.IPrimaryDao, permissionService IPermissionService) *EntityService {
+func NewEntityService(schemaService ISchemaService, evolutionService IEvolutionService, dao relationdbdao.IPrimaryDao, permissionService IPermissionService) *EntityService {
 	return &EntityService{
 		schemaService:     schemaService,
+		evolutionService:  evolutionService,
 		dao:               dao,
 		permissionService: permissionService,
 	}
@@ -46,6 +48,12 @@ func (s *EntityService) List(ctx context.Context, name string, pagination datamo
 	var results []datamodels.Record
 	for _, r := range recs {
 		recData := r.Rec.(map[string]interface{})
+
+		// JIT Evolution
+		if _, _, err := s.evolutionService.EvolveRecord(name, recData, &r.MetaData); err != nil {
+			// Log error but continue with original data
+		}
+
 		filteredRec := make(datamodels.Record)
 		for k, v := range recData {
 			if p, ok := fieldPerms[k]; ok && !p["read"] {
@@ -69,10 +77,17 @@ func (s *EntityService) Single(ctx context.Context, name string, id interface{})
 		return nil, fmt.Errorf("record not found")
 	}
 
+	// JIT Evolution
+	recData := rec.Rec.(map[string]interface{})
+	if _, modified, err := s.evolutionService.EvolveRecord(name, recData, &rec.MetaData); err == nil && modified {
+		rec.Rec = recData
+		// We don't save back here to avoid write penalty on read, 
+		// but we use the evolved data for the current request.
+	}
+
 	roles, _ := ctx.Value("roles").([]string)
 	fieldPerms, _ := s.permissionService.GetFieldPermissions(ctx, name, roles)
 
-	recData := rec.Rec.(map[string]interface{})
 	filteredRec := make(datamodels.Record)
 	for k, v := range recData {
 		if p, ok := fieldPerms[k]; ok && !p["read"] {
@@ -118,9 +133,9 @@ func (s *EntityService) Insert(ctx context.Context, name string, data datamodels
 	cleanData["created_at"] = time.Now()
 	cleanData["updated_at"] = time.Now()
 
-	metadata := map[string]interface{}{
-		"roles": roles,
-		"owner": ctx.Value("userId"),
+	metadata := datamodels.MetaData{
+		Roles: roles,
+		Owner: ctx.Value("userId"),
 	}
 
 	rec := datamodels.RecJSON{
@@ -145,22 +160,29 @@ func (s *EntityService) Update(ctx context.Context, name string, data datamodels
 	}
 
 	id := data[entity.PrimaryKey]
-	existing, err := s.Single(ctx, name, id)
+	key := fmt.Sprintf("%v", id)
+	rec, err := s.dao.Get(ctx, s.getNamespace(name), key)
 	if err != nil {
 		return nil, err
 	}
+	if rec == nil {
+		return nil, fmt.Errorf("record not found")
+	}
 
+	// JIT Evolution before update
+	recData := rec.Rec.(map[string]interface{})
+	s.evolutionService.EvolveRecord(name, recData, &rec.MetaData)
+	rec.Rec = recData
+
+	existing := rec.Rec.(map[string]interface{})
 	roles, _ := ctx.Value("roles").([]string)
 	fieldPerms, _ := s.permissionService.GetFieldPermissions(ctx, name, roles)
 
 	for k, v := range data {
-		if k == entity.PrimaryKey {
-			continue
-		}
 		if p, ok := fieldPerms[k]; ok && !p["write"] {
 			continue
 		}
-		
+
 		val := v
 		if name == "User" && k == "password_hash" {
 			if str, ok := v.(string); ok && str != "" {
@@ -175,20 +197,11 @@ func (s *EntityService) Update(ctx context.Context, name string, data datamodels
 
 	existing["updated_at"] = time.Now()
 
-	metadata := map[string]interface{}{
-		"roles": roles,
-		"owner": ctx.Value("userId"),
-	}
+	rec.Rec = existing
+	rec.Tmstamp = time.Now()
+	// Metadata is preserved and will be incremented by Dao.Save
 
-	rec := datamodels.RecJSON{
-		Namespace: s.getNamespace(name),
-		Key:       fmt.Sprintf("%v", id),
-		Rec:       existing,
-		MetaData:  metadata,
-		Tmstamp:   time.Now(),
-	}
-
-	if err := s.dao.Save(ctx, rec); err != nil {
+	if err := s.dao.Save(ctx, *rec); err != nil {
 		return nil, err
 	}
 

@@ -26,10 +26,11 @@ func TestA2AIntegration(t *testing.T) {
 	dao.EnsureTable(ctx)
 	
 	schemaSvc := services.NewSchemaService(dao)
+	evolutionSvc := services.NewEvolutionService(dao, schemaSvc)
 	permSvc := services.NewPermissionService(dao, schemaSvc)
-	entitySvc := services.NewEntityService(schemaSvc, dao, permSvc)
+	entitySvc := services.NewEntityService(schemaSvc, evolutionSvc, dao, permSvc)
 	intSvc := services.NewInteractionService(dao)
-	chatSvc, _ := services.NewChatService("", entitySvc, schemaSvc, services.NewA2UIService(), intSvc)
+	chatSvc, _ := services.NewChatService("", entitySvc, schemaSvc, evolutionSvc, services.NewA2UIService(), intSvc)
 	
 	a2aSvc := services.NewA2AService(chatSvc, "localhost")
 	
@@ -76,8 +77,9 @@ func TestMCPIntegration(t *testing.T) {
 	dao.EnsureTable(ctx)
 	
 	schemaSvc := services.NewSchemaService(dao)
+	evolutionSvc := services.NewEvolutionService(dao, schemaSvc)
 	permSvc := services.NewPermissionService(dao, schemaSvc)
-	entitySvc := services.NewEntityService(schemaSvc, dao, permSvc)
+	entitySvc := services.NewEntityService(schemaSvc, evolutionSvc, dao, permSvc)
 	authSvc := services.NewAuthService(dao, "secret", nil, nil)
 
 	// Setup MCP User with role MCP

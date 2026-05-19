@@ -67,6 +67,19 @@ tools:
         description: Name of the BizDef
         required: true
 
+  cms_bizdef_evolve:
+    type: builtin
+    description: Trigger a background schema evolution for all records of a specific entity. Use this when a schema has changed and you need to modernize old data.
+    parameters:
+      entity:
+        type: string
+        description: Name of the entity to evolve
+        required: true
+      batch_size:
+        type: number
+        description: Number of records to process in each batch (default 100)
+        required: false
+
   cms_a2ui_update:
     type: builtin
     description: Update a component in the A2UI dashboard
@@ -120,6 +133,7 @@ agents:
       - cms_schema_list
       - cms_bizdef_list
       - cms_bizdef_get
+      - cms_bizdef_evolve
 
   ui_agent:
     type: llm
