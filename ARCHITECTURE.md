@@ -43,6 +43,33 @@ APIs handle the "outer shell" of the application.
 - **Handling**: APIs parse HTTP requests (JSON, Multipart, Query params), enforce basic authentication (JWT Middleware), and delegate work to Services.
 - **MCP API**: A specialized management API for administrative tasks (like clearing caches or managing temporary files).
 
+## Business Logic & The "Brain"
+
+Business logic in AIGenApp is not centralized in a single layer; it is distributed across three distinct "brains" that separate domain rules, interaction strategies, and technical execution.
+
+### 1. The Domain Brain (The "What")
+**Location**: `bizdefs/{bizdef_name}/` (Manifests, Schemas, and Markdown Docs)
+
+The **Domain Brain** defines the fundamental rules of the business (e.g., "A Lead must have an email," "A Deal belongs to an Organization").
+- **Declarative**: Rules are defined via JSON schemas and natural language documentation (`docs/*.md`).
+- **Persistence-Agnostic**: These rules exist independently of the AI or the database.
+- **Introspection**: AI agents use tools to "read" this brain to understand the domain they are operating in.
+
+### 2. The Interaction Brain (The "How")
+**Location**: `agentic.yaml` (Agent Graph and Orchestration)
+
+The **Interaction Brain** defines the intelligence behind how the system perceives user intent and routes tasks.
+- **Orchestration**: It defines the hierarchy of agents (Router -> CMS -> UI).
+- **Strategy**: It decides which sub-agent should handle a request and which tools are available to them.
+- **Reasoning**: It translates natural language intent into structured system actions.
+
+### 3. The Execution Brain (The "Engine")
+**Location**: `core/services/` (Go Services)
+
+The **Execution Brain** is the technical engine that implements the "how-to" of the platform.
+- **Polymorphic**: Services like `EntityService` or `AuthService` are generic; they don't know about specific business domains but know how to enforce permissions, validate JSON, and interact with the DAO layer.
+- **Security**: Enforces the underlying system integrity (JWT verification, namespace isolation).
+
 ---
 
 ## Architectural Layers
@@ -50,22 +77,19 @@ APIs handle the "outer shell" of the application.
 ```mermaid
 graph TD
     User((User/Client)) --> API[API Layer: chi Router]
-    API --> Service[Service Layer: Business Logic]
+    API --> Service[Service Layer: Execution Brain]
     Service --> DAO[DAO Layer: Database Abstraction]
     Service --> Filestore[Filestore Layer: S3/GCS/Local]
     DAO --> Postgres[(PostgreSQL)]
     DAO --> Firestore[(Firestore)]
-    Filestore --> Cloud[(Cloud Storage)]
     
-    subgraph Core Concepts
-        BizDef[BizDef Manifests]
-        Schema[JSON Schemas]
-        Channel[Communication Channels]
+    subgraph Logic & Intelligence
+        BizDef[Domain Brain: BizDefs]
+        Agentic[Interaction Brain: agentic.yaml]
     end
     
     Service -.-> BizDef
-    Service -.-> Schema
-    Service -.-> Channel
+    Service -.-> Agentic
 ```
 
 ### Infrastructure Abstraction
@@ -98,6 +122,30 @@ BizDefs (like `bizdefs/crm`) are not standalone executables, but rather collecti
 3. **Data Modeling**: The system registers these entities into memory, allowing the `EntityService` to perform CRUD operations on the BizDef's entities using the standard JSON store pattern.
 4. **Agent-Awareness**: The `cms_agent` is "BizDef-aware." When a user asks a question, the agent uses tools like `cms_bizdef_list` and `cms_bizdef_get` to introspect the registered BizDef manifests, allowing it to understand the business domain and translate natural language into specific entity queries.
 5. **Polymorphic Execution**: Because the backend uses a single-table architecture, BizDef "invocation" is effectively the dynamic routing of requests through the `EntityService` to the appropriate entity table as defined in the BizDef's schema.
+
+## Agentic Introspection & Reasoning
+
+Agents in AIGenApp (defined in `agentic.yaml`) do not have hardcoded knowledge of specific business domains. Instead, they use a cycle of **Discovery**, **Introspection**, and **In-Context Learning** to understand and enforce business logic.
+
+### 1. Discovery (Identification)
+When a user provides a prompt, the `router_agent` or a sub-agent uses the `cms_bizdef_list` tool. This provides a high-level catalog of available business domains (e.g., CRM, Accounting, RBAC).
+
+### 2. Introspection (Reading the Brain)
+Once a domain is identified, the agent invokes the `cms_bizdef_get` tool. This tool (implemented in `core/services/cms_tools.go`) performs a deep scan of the BizDef directory:
+- It parses the `bizdef.json` manifest for entity names and roles.
+- It reads all associated Markdown files (`docs/*.md`) referenced in the manifest.
+- It returns a unified JSON payload containing the **full text** of these documents.
+
+### 3. In-Context Learning (Reasoning)
+The agent (e.g., `gemini_pro`) receives the documentation text as part of its conversational context. It reads the Markdown to understand:
+- **Business Rules**: "Leads must have an email address."
+- **Workflows**: "A Lead becomes a Deal after the status is set to 'Qualified'."
+- **Constraints**: "Only Managers can delete financial records."
+
+### 4. Informed Action (Execution)
+Equipped with this knowledge, the agent uses its CRUD tools (`cms_entity_create`, `cms_entity_update`) to carry out the user's request. It ensures that its actions align with the documentation it just read, providing a "self-correcting" layer of logic that bridges natural language and structured data.
+
+---
 
 ## Agentic Interaction
 

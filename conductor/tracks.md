@@ -14,3 +14,4 @@ This file tracks the various development tracks for AIGenApp.
 | `advanced-auth` | Advanced Authentication (WhatsApp & Guest) | Completed | `./tracks/advanced-auth/` |
 | `temporary-access` | Temporary File Access (TTL-based) | Completed | `./tracks/temporary-access/` |
 | `bizdef-rename` | Rename App to BizDef | Completed | `./tracks/bizdef-rename/` |
+| `bizdef-evolution` | BizDef Schema Evolution | Active | `./tracks/bizdef-evolution/` |
