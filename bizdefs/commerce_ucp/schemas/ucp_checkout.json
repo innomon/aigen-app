@@ -1,0 +1,39 @@
+{
+  "Name": "UcpCheckout",
+  "DisplayName": "UCP Checkout",
+  "TableName": "ucp_checkout",
+  "Attributes": [
+    {
+      "Field": "buyer_id",
+      "Header": "Buyer ID",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "total",
+      "Header": "Total",
+      "DataType": "Float",
+      "DisplayType": "Number"
+    },
+    {
+      "Field": "currency",
+      "Header": "Currency",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "status",
+      "Header": "Status",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "active\ncompleted\ncancelled"
+    },
+    {
+      "Field": "intent_mandate",
+      "Header": "Intent Mandate",
+      "DataType": "Lookup",
+      "DisplayType": "Lookup",
+      "Options": "Ap2Mandate"
+    }
+  ]
+}

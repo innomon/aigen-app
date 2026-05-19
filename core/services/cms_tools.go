@@ -11,7 +11,91 @@ import (
 	"github.com/innomon/agentic/pkg/registry"
 )
 
-func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService, evolutionService IEvolutionService, a2uiService *A2UIService) {
+func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService, evolutionService IEvolutionService, a2uiService *A2UIService, commerceService ICommerceService) {
+	registry.RegisterToolHandler("cms_commerce_search", func(ctx context.Context, args map[string]any) (any, error) {
+		query, _ := args["query"].(string)
+		products, err := commerceService.SearchProducts(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		// Map to A2UI UcpProductCard components
+		var components []A2UIComponent
+		for _, p := range products {
+			id := fmt.Sprintf("product-%v", p["id"])
+			comp := A2UIComponent{
+				ID:   id,
+				Type: "UcpProductCard",
+				Attributes: map[string]interface{}{
+					"product_id":  fmt.Sprintf("%v", p["id"]),
+					"name":        p["name"],
+					"description": p["description"],
+					"price":       p["price"],
+					"currency":    p["currency"],
+					"image":       p["images"],
+				},
+			}
+			components = append(components, comp)
+			a2uiService.UpdateComponent(ctx, comp)
+		}
+
+		// Update root to show these products
+		var children []string
+		for _, c := range components {
+			children = append(children, c.ID)
+		}
+
+		root := A2UIComponent{
+			ID:       "root",
+			Type:     "Row",
+			Children: children,
+		}
+		a2uiService.UpdateComponent(ctx, root)
+
+		return products, nil
+	})
+
+	registry.RegisterToolHandler("cms_commerce_checkout", func(ctx context.Context, args map[string]any) (any, error) {
+		buyerId, ok := args["buyer_id"].(string)
+		if !ok {
+			return nil, fmt.Errorf("missing 'buyer_id'")
+		}
+		
+		var productIds []string
+		if pids, ok := args["product_ids"].([]interface{}); ok {
+			for _, pid := range pids {
+				if s, ok := pid.(string); ok {
+					productIds = append(productIds, s)
+				}
+			}
+		}
+
+		checkout, err := commerceService.CreateCheckout(ctx, buyerId, productIds)
+		if err != nil {
+			return nil, err
+		}
+
+		// Show checkout summary in A2UI
+		comp := A2UIComponent{
+			ID:   "checkout-summary",
+			Type: "UcpCheckoutSummary",
+			Attributes: map[string]interface{}{
+				"buyer_id": checkout["buyer_id"],
+				"total":    checkout["total"],
+				"currency": checkout["currency"],
+				"status":   checkout["status"],
+				// In a real app we'd fetch item details too
+				"items": []map[string]interface{}{
+					{"name": "Items", "quantity": len(productIds), "price": checkout["total"]},
+				},
+			},
+		}
+		a2uiService.UpdateComponent(ctx, comp)
+		a2uiService.UpdateComponent(ctx, A2UIComponent{ID: "root", Type: "Column", Children: []string{"checkout-summary"}})
+
+		return checkout, nil
+	})
+
 	registry.RegisterToolHandler("cms_bizdef_list", func(ctx context.Context, args map[string]any) (any, error) {
 		bizdefsFile := filepath.Join("bizdefs", "bizdefs.json")
 		b, err := os.ReadFile(bizdefsFile)

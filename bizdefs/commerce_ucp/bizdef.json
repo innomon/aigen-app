@@ -1,6 +1,21 @@
 {
   "name": "commerce_ucp",
-  "display_name": "commerce_ucp",
-  "description": "New BizDef for commerce_ucp",
-  "entities": {}
+  "display_name": "Commerce UCP & AP2",
+  "description": "Integration with Universal Commerce Protocol and Agent Payments Protocol.",
+  "context": "The Commerce UCP BizDef enables agent-native commerce workflows. It allows for product discovery via UCP, checkout management with cryptographic authorizations via AP2, and order tracking. This BizDef serves as the foundation for the AiGenApp commerce layer.",
+  "roles": ["Merchant", "Buyer", "Agent"],
+  "entities": {
+    "ucp_product": {
+      "description": "A product available in the UCP catalog."
+    },
+    "ucp_checkout": {
+      "description": "An active shopping session with UCP items and optional AP2 mandates."
+    },
+    "ucp_order": {
+      "description": "A finalized commerce transaction."
+    },
+    "ap2_mandate": {
+      "description": "A cryptographic mandate used for authorizing intents and carts in the AP2 protocol."
+    }
+  }
 }

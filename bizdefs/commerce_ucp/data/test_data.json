@@ -1,0 +1,35 @@
+[
+  {
+    "Entity": "Ap2Mandate",
+    "Ref": "Mandate_1",
+    "Data": {
+      "type": "intent",
+      "payload": "eyJhY3Rpb24iOiJjaGVja291dCIsImFtb3VudCI6MTk5OX0=",
+      "signature": "some-base64-signature",
+      "public_key": "some-base64-public-key"
+    }
+  },
+  {
+    "Entity": "UcpProduct",
+    "Ref": "Prod_1",
+    "Data": {
+      "name": "AiGen Pro Token",
+      "description": "Premium tokens for high-priority agent execution.",
+      "price": 19.99,
+      "currency": "USD",
+      "seller_id": "aigen-main",
+      "images": "https://example.com/token.png"
+    }
+  },
+  {
+    "Entity": "UcpCheckout",
+    "Ref": "Check_1",
+    "Data": {
+      "buyer_id": "user_123",
+      "total": 19.99,
+      "currency": "USD",
+      "status": "active",
+      "intent_mandate": "$Ref:Mandate_1"
+    }
+  }
+]

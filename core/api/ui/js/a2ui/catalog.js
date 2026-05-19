@@ -108,5 +108,97 @@ export const componentCatalog = {
             });
         }, 0);
         return container;
+    },
+    "UcpProductCard": (attributes, children, dispatch) => {
+        const card = document.createElement('div');
+        card.className = 'card h-100 ucp-product-card shadow-sm';
+        
+        const img = document.createElement('img');
+        img.src = attributes.image || 'https://via.placeholder.com/150';
+        img.className = 'card-img-top p-3';
+        img.style.maxHeight = '200px';
+        img.style.objectFit = 'contain';
+        card.appendChild(img);
+
+        const body = document.createElement('div');
+        body.className = 'card-body d-flex flex-column';
+        
+        const title = document.createElement('h5');
+        title.className = 'card-title';
+        title.textContent = attributes.name;
+        body.appendChild(title);
+
+        const desc = document.createElement('p');
+        desc.className = 'card-text small text-muted flex-grow-1';
+        desc.textContent = attributes.description;
+        body.appendChild(desc);
+
+        const priceRow = document.createElement('div');
+        priceRow.className = 'd-flex justify-content-between align-items-center mt-3';
+        
+        const price = document.createElement('span');
+        price.className = 'h5 mb-0 text-primary';
+        price.textContent = `${attributes.currency} ${attributes.price}`;
+        priceRow.appendChild(price);
+
+        const buyBtn = document.createElement('button');
+        buyBtn.className = 'btn btn-sm btn-success';
+        buyBtn.innerHTML = '<i class="bi bi-cart-plus"></i> Buy Now';
+        buyBtn.onclick = () => dispatch('buy', { product_id: attributes.product_id });
+        priceRow.appendChild(buyBtn);
+
+        body.appendChild(priceRow);
+        card.appendChild(body);
+        return card;
+    },
+    "UcpCheckoutSummary": (attributes, children, dispatch) => {
+        const div = document.createElement('div');
+        div.className = 'list-group shadow-sm';
+        
+        const header = document.createElement('div');
+        header.className = 'list-group-item active d-flex justify-content-between align-items-center';
+        header.innerHTML = `<span><i class="bi bi-cart-check"></i> Checkout Summary</span> <span class="badge bg-light text-dark">${attributes.status}</span>`;
+        div.appendChild(header);
+
+        (attributes.items || []).forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'list-group-item d-flex justify-content-between align-items-center';
+            row.innerHTML = `<div><div class="fw-bold">${item.name}</div><small class="text-muted">Qty: ${item.quantity}</small></div> <span>${attributes.currency} ${item.price}</span>`;
+            div.appendChild(row);
+        });
+
+        const totalRow = document.createElement('div');
+        totalRow.className = 'list-group-item list-group-item-secondary d-flex justify-content-between align-items-center fw-bold';
+        totalRow.innerHTML = `<span>Total</span> <span>${attributes.currency} ${attributes.total}</span>`;
+        div.appendChild(totalRow);
+
+        if (attributes.status === 'active') {
+            const footer = document.createElement('div');
+            footer.className = 'list-group-item';
+            const payBtn = document.createElement('button');
+            payBtn.className = 'btn btn-primary w-100';
+            payBtn.textContent = 'Authorize Payment (AP2)';
+            payBtn.onclick = () => dispatch('authorize');
+            footer.appendChild(payBtn);
+            div.appendChild(footer);
+        }
+
+        return div;
+    },
+    "Ap2MandateBanner": (attributes) => {
+        const div = document.createElement('div');
+        const isValid = attributes.verified === true;
+        div.className = `alert alert-${isValid ? 'success' : 'warning'} d-flex align-items-center shadow-sm`;
+        div.role = 'alert';
+        
+        const icon = document.createElement('i');
+        icon.className = `bi bi-${isValid ? 'shield-check' : 'shield-exclamation'} me-3 h4 mb-0`;
+        div.appendChild(icon);
+
+        const content = document.createElement('div');
+        content.innerHTML = `<strong>AP2 Mandate ${isValid ? 'Verified' : 'Unverified'}</strong><br><small class="text-break">Key: ${attributes.public_key}</small>`;
+        div.appendChild(content);
+
+        return div;
     }
 };

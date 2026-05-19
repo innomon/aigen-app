@@ -1,0 +1,38 @@
+{
+  "Name": "UcpOrder",
+  "DisplayName": "UCP Order",
+  "TableName": "ucp_order",
+  "Attributes": [
+    {
+      "Field": "checkout_id",
+      "Header": "Checkout ID",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "buyer_id",
+      "Header": "Buyer ID",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "total",
+      "Header": "Total",
+      "DataType": "Float",
+      "DisplayType": "Number"
+    },
+    {
+      "Field": "currency",
+      "Header": "Currency",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "status",
+      "Header": "Status",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "pending\npaid\nshipped\ndelivered\nrefunded"
+    }
+  ]
+}

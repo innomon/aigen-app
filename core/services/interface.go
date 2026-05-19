@@ -143,3 +143,9 @@ type ITempAccessService interface {
 	IsExpired(ctx context.Context, path string, filename string) (bool, error)
 	CleanupExpired(ctx context.Context, path string) (int, error)
 }
+
+type ICommerceService interface {
+	SearchProducts(ctx context.Context, query string) ([]datamodels.Record, error)
+	CreateCheckout(ctx context.Context, buyerId string, productIds []string) (datamodels.Record, error)
+	VerifyMandate(ctx context.Context, mandateId string) (bool, error)
+}

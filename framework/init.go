@@ -132,8 +132,9 @@ func NewApp(cfg *Config) (*App, error) {
 	pageService := services.NewPageService(schemaService, graphqlService)
 	a2uiService := services.NewA2UIService()
 	tempAccessService := services.NewTempAccessService(cfg.TemporaryAccess, fileStore)
+	commerceService := services.NewCommerceService(entityService)
 
-	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, evolutionService, a2uiService, interactionService)
+	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, evolutionService, a2uiService, interactionService, commerceService)
 	if err != nil {
 		log.Printf("Warning: failed to initialize chat service (agentic config missing or invalid): %v", err)
 	}

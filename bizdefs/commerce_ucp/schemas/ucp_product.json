@@ -1,0 +1,43 @@
+{
+  "Name": "UcpProduct",
+  "DisplayName": "UCP Product",
+  "TableName": "ucp_product",
+  "Attributes": [
+    {
+      "Field": "name",
+      "Header": "Name",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "description",
+      "Header": "Description",
+      "DataType": "String",
+      "DisplayType": "RichText"
+    },
+    {
+      "Field": "price",
+      "Header": "Price",
+      "DataType": "Float",
+      "DisplayType": "Number"
+    },
+    {
+      "Field": "currency",
+      "Header": "Currency",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "seller_id",
+      "Header": "Seller ID",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "images",
+      "Header": "Images",
+      "DataType": "String",
+      "DisplayType": "Collection"
+    }
+  ]
+}

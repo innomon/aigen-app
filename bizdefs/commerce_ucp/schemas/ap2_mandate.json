@@ -1,0 +1,32 @@
+{
+  "Name": "Ap2Mandate",
+  "DisplayName": "AP2 Mandate",
+  "TableName": "ap2_mandate",
+  "Attributes": [
+    {
+      "Field": "type",
+      "Header": "Type",
+      "DataType": "String",
+      "DisplayType": "Select",
+      "Options": "intent\ncart"
+    },
+    {
+      "Field": "payload",
+      "Header": "Payload",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "signature",
+      "Header": "Signature",
+      "DataType": "String",
+      "DisplayType": "Text"
+    },
+    {
+      "Field": "public_key",
+      "Header": "Public Key",
+      "DataType": "String",
+      "DisplayType": "Text"
+    }
+  ]
+}
