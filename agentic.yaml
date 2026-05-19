@@ -53,18 +53,18 @@ tools:
     description: List all schemas
     parameters: {}
 
-  cms_app_list:
+  cms_bizdef_list:
     type: builtin
-    description: List all available CMS apps and their descriptions.
+    description: List all available CMS BizDefs and their descriptions.
     parameters: {}
 
-  cms_app_get:
+  cms_bizdef_get:
     type: builtin
-    description: Get the detailed definition and context for a specific CMS app, including roles and entity descriptions.
+    description: Get the detailed definition and context for a specific CMS BizDef, including roles and entity descriptions.
     parameters:
       name:
         type: string
-        description: Name of the app
+        description: Name of the BizDef
         required: true
 
   cms_a2ui_update:
@@ -98,10 +98,10 @@ agents:
     classifier:
       model: gemma4_26b
       prompt: |
-        Classify the user's intent to one of the following apps: ${options}.
+        Classify the user's intent to one of the following BizDefs: ${options}.
         User message: "${userInput}"
-        Output ONLY the app name.
-      fallback_message: "I'm not sure which app you want to use. Please select from the options provided."
+        Output ONLY the BizDef name.
+      fallback_message: "I'm not sure which BizDef you want to use. Please select from the options provided."
     selection_prompt: |
       I'm not sure which assistant to use. Please select one:
       ${options}
@@ -118,8 +118,8 @@ agents:
       - cms_entity_get
       - cms_entity_create
       - cms_schema_list
-      - cms_app_list
-      - cms_app_get
+      - cms_bizdef_list
+      - cms_bizdef_get
 
   ui_agent:
     type: llm

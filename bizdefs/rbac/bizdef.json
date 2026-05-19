@@ -2,7 +2,7 @@
   "name": "rbac",
   "display_name": "Role-Based Access Control",
   "description": "Core system for managing users, roles, and granular entity permissions.",
-  "context": "The RBAC app is foundational to the AiGen CMS ecosystem. It defines system users, assigns them to multiple roles, and controls what entities (documents) those roles can interact with via doc_perms. It also provides row-level security mechanisms through user_perms.",
+  "context": "The RBAC BizDef is foundational to the AiGen CMS ecosystem. It defines system users, assigns them to multiple roles, and controls what entities (documents) those roles can interact with via doc_perms. It also provides row-level security mechanisms through user_perms.",
   "roles": [
     "Administrator",
     "SuperUser",

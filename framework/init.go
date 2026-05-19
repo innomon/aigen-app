@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/innomon/aigen-app/core/api"
-	"github.com/innomon/aigen-app/core/apps"
+	"github.com/innomon/aigen-app/core/bizdefs"
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/core/services"
 	"github.com/innomon/aigen-app/infrastructure/filestore"
@@ -90,25 +90,25 @@ func NewApp(cfg *Config) (*App, error) {
 	schemaService := services.NewSchemaService(dao)
 	permissionService := services.NewPermissionService(dao, schemaService)
 
-	enabledApps, err := apps.LoadAppsConfig(cfg.AppsDir)
+	enabledBizDefs, err := bizdefs.LoadBizDefsConfig(cfg.BizDefsDir)
 	if err != nil {
-		log.Printf("Warning: failed to load apps config from %s: %v", cfg.AppsDir, err)
-		enabledApps = []string{} // Proceed without apps if failed
+		log.Printf("Warning: failed to load bizdefs config from %s: %v", cfg.BizDefsDir, err)
+		enabledBizDefs = []string{} // Proceed without bizdefs if failed
 	}
 
-	for _, appName := range enabledApps {
-		log.Printf("Setting up app schemas: %s", appName)
-		if err := apps.SetupApp(context.Background(), cfg.AppsDir, appName, schemaService, dao); err != nil {
-			log.Printf("Warning: failed to setup app %s schemas: %v\n", appName, err)
+	for _, bizdefName := range enabledBizDefs {
+		log.Printf("Setting up bizdef schemas: %s", bizdefName)
+		if err := bizdefs.SetupBizDef(context.Background(), cfg.BizDefsDir, bizdefName, schemaService, dao); err != nil {
+			log.Printf("Warning: failed to setup bizdef %s schemas: %v\n", bizdefName, err)
 		}
 	}
 
 	entityService := services.NewEntityService(schemaService, dao, permissionService)
 
-	for _, appName := range enabledApps {
-		log.Printf("Setting up test data for app: %s", appName)
-		if err := apps.SetupAppTestData(context.Background(), cfg.AppsDir, appName, entityService); err != nil {
-			log.Printf("Warning: failed to setup test data for app %s: %v\n", appName, err)
+	for _, bizdefName := range enabledBizDefs {
+		log.Printf("Setting up test data for bizdef: %s", bizdefName)
+		if err := bizdefs.SetupBizDefTestData(context.Background(), cfg.BizDefsDir, bizdefName, entityService); err != nil {
+			log.Printf("Warning: failed to setup test data for bizdef %s: %v\n", bizdefName, err)
 		}
 	}
 

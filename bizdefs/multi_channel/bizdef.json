@@ -2,7 +2,7 @@
   "name": "multi_channel",
   "display_name": "Multi-Channel Management",
   "description": "Manages MCP API keys, A2A trusted agents, and user communication identities.",
-  "context": "The Multi-Channel Management app is the central hub for governing how external agents and users interact with the CMS through various protocols. It manages API keys for the Model Context Protocol (MCP), registers and verifies identities for Agent2Agent (A2A) communication, and maintains a comprehensive e-trail (audit log) for non-repudiation. This app ensures secure, authenticated, and traceable interactions across WhatsApp, Email, Signal, Telegram, and social platforms like X.com and Bluesky.",
+  "context": "The Multi-Channel Management BizDef is the central hub for governing how external agents and users interact with the CMS through various protocols. It manages API keys for the Model Context Protocol (MCP), registers and verifies identities for Agent2Agent (A2A) communication, and maintains a comprehensive e-trail (audit log) for non-repudiation. This BizDef ensures secure, authenticated, and traceable interactions across WhatsApp, Email, Signal, Telegram, and social platforms like X.com and Bluesky.",
   "roles": [
     "channel_admin",
     "MCP"

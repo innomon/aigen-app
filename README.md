@@ -6,15 +6,15 @@ A headless CMS and dynamic application framework in Go, evolved from the FormCMS
 
 - **Agentic Workflows**: Integrated multi-agent system powered by Gemini models for orchestrating tasks.
   - **Router Agent**: Intelligently routes user requests between specialized sub-agents.
-  - **App Agent**: Manages and queries app data and schemas autonomously.
+  - **BizDef Agent**: Manages and queries BizDef data and schemas autonomously.
   - **UI Agent**: Dynamically updates the A2UI dashboard components based on user interactions and data changes.
-- **App Capability Discovery**: Built-in `app_def.json` and context file framework allowing LLM agents to dynamically discover app purpose, roles, and entity relationships.
+- **BizDef Capability Discovery**: Built-in `bizdef.json` and context file framework allowing LLM agents to dynamically discover BizDef purpose, roles, and entity relationships.
 - **A2UI Protocol**: Real-time Agent-to-User Interface for streaming backend-driven UI updates (SSE) using a high-performance adjacency list model.
 - **Multi-Channel Communication**: Seamlessly interact with users via WhatsApp, Email, Signal, Telegram, X.com, and Bluesky.
   - **Authenticated Channels**: Link verified platform identities to user profiles.
   - **E-trail Logging**: Secure audit logs with IP and User Agent for non-repudiation.
   - **Guest Support**: Configurable guest access across different channels.
-- **Frappe/ERPNext Integration**: Built-in support for importing and mapping Frappe Doctypes to native app schemas.
+- **Frappe/ERPNext Integration**: Built-in support for importing and mapping Frappe Doctypes to native BizDef schemas.
 - **Advanced RBAC**: Granular Role-Based Access Control with field-level and row-level security filters managed via JSON metadata.
 - **Schema-on-Read Data Modeling**: Define entities and attributes dynamically. All data is stored in a highly flexible single-table JSON schema (`aigen_records`), making migrations a thing of the past.
 - **REST & GraphQL APIs**: Auto-generated CRUD and GraphQL endpoints.
@@ -35,9 +35,9 @@ AIGenApp is a reusable Go framework. To use it, create a new Go project and impo
 
 1. **Initialize a new Go module:**
 ```bash
-mkdir my-app
-cd my-app
-go mod init my-app
+mkdir my-bizdef
+cd my-bizdef
+go mod init my-bizdef
 ```
 
 2. **Create a `main.go` file:**
@@ -70,7 +70,7 @@ func main() {
 
 3. **Create a `config.yaml` file:**
 ```yaml
-apps_dir: "apps"
+bizdefs_dir: "bizdefs"
 www_root: "wwwroot"
 database_dsn: "postgres://user:pass@localhost:5432/aigen_db"
 domain: ""
@@ -94,7 +94,7 @@ The server will start on `http://localhost:5000`.
 | `DOMAIN` | Your external domain name (e.g., `example.com`). If set, enables automatic HTTPS via `autocert`. | `""` |
 | `PORT` | The port to listen on for HTTP. Ignored if `DOMAIN` is set. | `5000` |
 | `FORMCMS_WWW_ROOT` | The directory for serving static files and storing uploaded assets. | `wwwroot` |
-| `FORMCMS_APPS_DIR` | The directory where app definitions and data are located. | `apps` |
+| `FORMCMS_BIZDEFS_DIR` | The directory where BizDef definitions and data are located. | `bizdefs` |
 | `FORMCMS_DB_DSN` | Database connection string (e.g., `postgres://user:pass@host:port/db`). | `""` |
 | `FORMCMS_CONFIG_PATH` | Path to the YAML/JSON configuration file. | `""` |
 | `FORMCMS_AGENTIC_CONFIG_PATH` | Path to the `agentic.yaml` configuration for LLM workflows. | `agentic.yaml` |
@@ -156,7 +156,7 @@ The root route (`/`) is dynamically handled by the `PageApi` and follows a tiere
 ## Framework Structure
 
 - `framework`: The main entry point `Start()` function to initialize the application.
-- `apps`: Pre-packaged data models, test data, and UI logic that load dynamically.
+- `bizdefs`: Pre-packaged data models, test data, and UI logic that load dynamically.
 - `core/api`: HTTP handlers and routing.
 - `core/descriptors`: Data models and schema definitions.
 - `core/services`: Business logic and orchestration.

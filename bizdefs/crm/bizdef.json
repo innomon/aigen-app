@@ -2,7 +2,7 @@
   "name": "crm",
   "display_name": "Customer Relationship Management",
   "description": "Manages leads, organizations, deals, and tasks throughout the sales lifecycle.",
-  "context": "The CRM app provides a comprehensive suite for tracking sales pipelines. It starts with Leads, which can be qualified and converted into Organizations and Deals. It also manages the Product catalog and Tasks for sales reps.",
+  "context": "The CRM BizDef provides a comprehensive suite for tracking sales pipelines. It starts with Leads, which can be qualified and converted into Organizations and Deals. It also manages the Product catalog and Tasks for sales reps.",
   "roles": [
     "Sales Manager",
     "Sales Representative"

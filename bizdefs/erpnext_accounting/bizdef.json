@@ -1,8 +1,8 @@
 {
   "name": "erpnext_accounting",
   "display_name": "ERPNext Accounting",
-  "description": "Comprehensive accounting and financial management app.",
-  "context": "The ERPNext Accounting app provides a full suite of tools to manage accounts, journal entries, general ledger entries, cost centers, fiscal years, and currencies. It models the core accounting functionality from ERPNext.",
+  "description": "Comprehensive accounting and financial management BizDef ",
+  "context": "The ERPNext Accounting BizDef provides a full suite of tools to manage accounts, journal entries, general ledger entries, cost centers, fiscal years, and currencies. It models the core accounting functionality from ERPNext.",
   "roles": ["System Manager", "Accounts Manager", "Accounts User", "Auditor"],
   "entities": {
     "account": {

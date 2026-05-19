@@ -1,5 +1,5 @@
 {
-  "enabled_apps": [
+  "enabled_bizdefs": [
     "rbac",
     "erpnext_accounting",
     "crm",

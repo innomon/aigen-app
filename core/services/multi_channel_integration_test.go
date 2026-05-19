@@ -138,6 +138,9 @@ func TestMCPIntegration(t *testing.T) {
 	})
 
 	t.Run("MCP Authentication Failure (No MCP Role)", func(t *testing.T) {
+		// Ensure different ID
+		time.Sleep(1100 * time.Millisecond)
+
 		// Create another user without MCP role
 		_, err := authSvc.Register(ctx, "no-mcp@test.com", "password")
 		assert.NoError(t, err)

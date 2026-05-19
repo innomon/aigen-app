@@ -39,7 +39,7 @@ type StorageConfig struct {
 }
 
 type Config struct {
-	AppsDir           string                     `yaml:"apps_dir" json:"apps_dir"`
+	BizDefsDir        string                     `yaml:"bizdefs_dir" json:"bizdefs_dir"`
 	WWWRoot           string                     `yaml:"www_root" json:"www_root"`
 	DatabaseDSN       string                     `yaml:"database_dsn" json:"database_dsn"`
 	Domain            string                     `yaml:"domain" json:"domain"`
@@ -53,7 +53,7 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		AppsDir:           "apps",
+		BizDefsDir:        "bizdefs",
 		WWWRoot:           "wwwroot",
 		DatabaseDSN:       "memory://",
 		Port:              "5000",
@@ -97,8 +97,8 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	// Environment variable overrides
-	if appsDir := os.Getenv("FORMCMS_APPS_DIR"); appsDir != "" {
-		config.AppsDir = appsDir
+	if bizdefsDir := os.Getenv("FORMCMS_BIZDEFS_DIR"); bizdefsDir != "" {
+		config.BizDefsDir = bizdefsDir
 	}
 	if wwwRoot := os.Getenv("FORMCMS_WWW_ROOT"); wwwRoot != "" {
 		config.WWWRoot = wwwRoot

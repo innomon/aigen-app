@@ -12,32 +12,32 @@ import (
 )
 
 func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService, a2uiService *A2UIService) {
-	registry.RegisterToolHandler("cms_app_list", func(ctx context.Context, args map[string]any) (any, error) {
-		appsFile := filepath.Join("apps", "apps.json")
-		b, err := os.ReadFile(appsFile)
+	registry.RegisterToolHandler("cms_bizdef_list", func(ctx context.Context, args map[string]any) (any, error) {
+		bizdefsFile := filepath.Join("bizdefs", "bizdefs.json")
+		b, err := os.ReadFile(bizdefsFile)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read apps.json: %w", err)
+			return nil, fmt.Errorf("failed to read bizdefs.json: %w", err)
 		}
-		var appsConfig struct {
-			EnabledApps []string `json:"enabled_apps"`
+		var bizdefsConfig struct {
+			EnabledBizDefs []string `json:"enabled_bizdefs"`
 		}
-		if err := json.Unmarshal(b, &appsConfig); err != nil {
-			return nil, fmt.Errorf("failed to parse apps.json: %w", err)
+		if err := json.Unmarshal(b, &bizdefsConfig); err != nil {
+			return nil, fmt.Errorf("failed to parse bizdefs.json: %w", err)
 		}
 
-		type AppSummary struct {
+		type BizDefSummary struct {
 			Name        string `json:"name"`
 			DisplayName string `json:"display_name,omitempty"`
 			Description string `json:"description,omitempty"`
 		}
-		var summaries []AppSummary
+		var summaries []BizDefSummary
 
-		for _, appName := range appsConfig.EnabledApps {
-			defFile := filepath.Join("apps", appName, "app_def.json")
+		for _, bizdefName := range bizdefsConfig.EnabledBizDefs {
+			defFile := filepath.Join("bizdefs", bizdefName, "bizdef.json")
 			defBytes, err := os.ReadFile(defFile)
 			if err != nil {
-				// app_def.json is optional, just add the name if missing
-				summaries = append(summaries, AppSummary{Name: appName})
+				// bizdef.json is optional, just add the name if missing
+				summaries = append(summaries, BizDefSummary{Name: bizdefName})
 				continue
 			}
 			var def struct {
@@ -47,44 +47,44 @@ func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService
 			}
 			if err := json.Unmarshal(defBytes, &def); err == nil {
 				if def.Name == "" {
-					def.Name = appName
+					def.Name = bizdefName
 				}
-				summaries = append(summaries, AppSummary{
+				summaries = append(summaries, BizDefSummary{
 					Name:        def.Name,
 					DisplayName: def.DisplayName,
 					Description: def.Description,
 				})
 			} else {
-				summaries = append(summaries, AppSummary{Name: appName})
+				summaries = append(summaries, BizDefSummary{Name: bizdefName})
 			}
 		}
 
 		return summaries, nil
 	})
 
-	registry.RegisterToolHandler("cms_app_get", func(ctx context.Context, args map[string]any) (any, error) {
+	registry.RegisterToolHandler("cms_bizdef_get", func(ctx context.Context, args map[string]any) (any, error) {
 		name, ok := args["name"].(string)
 		if !ok {
 			return nil, fmt.Errorf("missing or invalid 'name' argument")
 		}
 
-		defFile := filepath.Join("apps", name, "app_def.json")
+		defFile := filepath.Join("bizdefs", name, "bizdef.json")
 		defBytes, err := os.ReadFile(defFile)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read app definition for %s: %w", name, err)
+			return nil, fmt.Errorf("failed to read bizdef definition for %s: %w", name, err)
 		}
 
-		var appDef map[string]any
-		if err := json.Unmarshal(defBytes, &appDef); err != nil {
-			return nil, fmt.Errorf("failed to parse app definition for %s: %w", name, err)
+		var bizdefDef map[string]any
+		if err := json.Unmarshal(defBytes, &bizdefDef); err != nil {
+			return nil, fmt.Errorf("failed to parse bizdef definition for %s: %w", name, err)
 		}
 
 		// Try to read context files for entities
-		if entities, ok := appDef["entities"].(map[string]any); ok {
+		if entities, ok := bizdefDef["entities"].(map[string]any); ok {
 			for entityName, entityDataRaw := range entities {
 				if entityData, ok := entityDataRaw.(map[string]any); ok {
 					if contextFile, ok := entityData["context_file"].(string); ok && contextFile != "" {
-						ctxFilePath := filepath.Join("apps", name, contextFile)
+						ctxFilePath := filepath.Join("bizdefs", name, contextFile)
 						ctxBytes, err := os.ReadFile(ctxFilePath)
 						if err == nil {
 							entityData["context_content"] = string(ctxBytes)
@@ -95,10 +95,10 @@ func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService
 				}
 				entities[entityName] = entityDataRaw
 			}
-			appDef["entities"] = entities
+			bizdefDef["entities"] = entities
 		}
 
-		return appDef, nil
+		return bizdefDef, nil
 	})
 
 	registry.RegisterToolHandler("cms_entity_list", func(ctx context.Context, args map[string]any) (any, error) {

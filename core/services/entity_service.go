@@ -27,7 +27,7 @@ func NewEntityService(schemaService ISchemaService, dao relationdbdao.IPrimaryDa
 }
 
 func (s *EntityService) getNamespace(entityName string) string {
-	return fmt.Sprintf("aigen.app.entities.%s", entityName)
+	return fmt.Sprintf("aigen.bizdef.entities.%s", entityName)
 }
 
 func (s *EntityService) List(ctx context.Context, name string, pagination datamodels.Pagination, filters []datamodels.Filter, sorts []datamodels.Sort) ([]datamodels.Record, int64, error) {

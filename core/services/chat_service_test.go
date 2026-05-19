@@ -90,19 +90,19 @@ func TestChatServiceAndRouter(t *testing.T) {
 		Agents: map[string]registry.AgentEntry{
 			"router": {
 				Type: "router",
-				SubAgents: []string{"app1", "app2"},
+				SubAgents: []string{"bizdef1", "bizdef2"},
 				Config: &agents.RouterAgentConfig{
 					Description:     "Root Router",
 					SelectionPrompt: "Choose: ${options}",
 				},
 			},
-			"app1": {
+			"bizdef1": {
 				Type: "mock",
-				Config: &MockConfig{Response: "Hello from App 1"},
+				Config: &MockConfig{Response: "Hello from BizDef 1"},
 			},
-			"app2": {
+			"bizdef2": {
 				Type: "mock",
-				Config: &MockConfig{Response: "Hello from App 2"},
+				Config: &MockConfig{Response: "Hello from BizDef 2"},
 			},
 		},
 	}
@@ -133,8 +133,8 @@ func TestChatServiceAndRouter(t *testing.T) {
 		resp, err := chatSvc.ProcessMessage(ctx, "user1", "I need help")
 		assert.NoError(t, err)
 		assert.Contains(t, resp, "Choose:")
-		assert.Contains(t, resp, "app1")
-		assert.Contains(t, resp, "app2")
+		assert.Contains(t, resp, "bizdef1")
+		assert.Contains(t, resp, "bizdef2")
 
 		// Verify state key
 		stateKey := "router:user1:state"
@@ -150,7 +150,7 @@ func TestChatServiceAndRouter(t *testing.T) {
 			Options []string `json:"options"`
 		}{
 			Status:  "pending_selection",
-			Options: []string{"app1", "app2"},
+			Options: []string{"bizdef1", "bizdef2"},
 		}
 		stateData, _ := json.Marshal(state)
 		intSvc.Log(ctx, &descriptors.Interaction{
@@ -162,17 +162,17 @@ func TestChatServiceAndRouter(t *testing.T) {
 
 		resp, err := chatSvc.ProcessMessage(ctx, "user1", "1")
 		assert.NoError(t, err)
-		assert.Equal(t, "Hello from App 1", resp)
+		assert.Equal(t, "Hello from BizDef 1", resp)
 	})
 
 	t.Run("Direct keyword match", func(t *testing.T) {
-		resp, err := chatSvc.ProcessMessage(ctx, "user2", "Go to app2")
+		resp, err := chatSvc.ProcessMessage(ctx, "user2", "Go to bizdef2")
 		assert.NoError(t, err)
-		assert.Equal(t, "Hello from App 2", resp)
+		assert.Equal(t, "Hello from BizDef 2", resp)
 	})
 
 	t.Run("LLM-based classification", func(t *testing.T) {
-		mockMdl := &mockLLM{response: "app1"}
+		mockMdl := &mockLLM{response: "bizdef1"}
 
 		// Wait, ChatService uses registry.New(cfg).
 		// I'll create a new ChatService for this test case.
@@ -187,7 +187,7 @@ func TestChatServiceAndRouter(t *testing.T) {
 			Agents: map[string]registry.AgentEntry{
 				"router": {
 					Type: "router",
-					SubAgents: []string{"app1"},
+					SubAgents: []string{"bizdef1"},
 					Config: &agents.RouterAgentConfig{
 						Classifier: agents.ClassifierConfig{
 							Model: "mock_mdl",
@@ -195,9 +195,9 @@ func TestChatServiceAndRouter(t *testing.T) {
 						},
 					},
 				},
-				"app1": {
+				"bizdef1": {
 					Type: "mock",
-					Config: &MockConfig{Response: "Classified to App 1"},
+					Config: &MockConfig{Response: "Classified to BizDef 1"},
 				},
 			},
 		}
@@ -215,7 +215,7 @@ func TestChatServiceAndRouter(t *testing.T) {
 		
 		resp, err := chatSvcClassify.ProcessMessage(ctx, "user3", "Something vague")
 		assert.NoError(t, err)
-		assert.Equal(t, "Classified to App 1", resp)
+		assert.Equal(t, "Classified to BizDef 1", resp)
 	})
 
 	t.Run("Agent memory from InteractionService", func(t *testing.T) {

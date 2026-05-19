@@ -7,21 +7,21 @@ This document describes the high-level architecture of AIGenApp, its core concep
 Unlike traditional CMS or ERP systems that create physical database tables for each entity, AIGenApp uses a **Single-Table JSON Store** approach. 
 
 - **Persistence Layer**: All data is stored in a single table (e.g., `aigen_records` in Postgres or a single collection in Firestore).
-- **Structure**: Each record consists of a Namespace (App), a Key (Unique ID), a JSON blob (`Rec`), and Metadata.
+- **Structure**: Each record consists of a Namespace (BizDef), a Key (Unique ID), a JSON blob (`Rec`), and Metadata.
 - **Flexibility**: Changes to schemas do not require SQL migrations. The application logic interprets the JSON data based on dynamic definitions.
 
 ---
 
 ## Key Concepts
 
-### 1. Apps
-An **App** in AIGenApp is a logical container for business logic, schemas, and data.
-- **Discovery**: Defined in `apps/` directories via an `app_def.json` manifest.
-- **Components**: An app includes its own schemas, default data, UI configurations, and documentation.
-- **Isolation**: Roles and permissions are typically scoped to an App namespace.
+### 1. BizDefs (Business Definitions)
+A **BizDef** in AIGenApp is a logical container for business logic, schemas, and data.
+- **Discovery**: Defined in `bizdefs/` directories via a `bizdef.json` manifest.
+- **Components**: A BizDef includes its own schemas, default data, UI configurations, and documentation.
+- **Isolation**: Roles and permissions are typically scoped to a BizDef namespace.
 
 ### 2. Entities & Schemas
-Data within an App is organized into **Entities**.
+Data within a BizDef is organized into **Entities**.
 - **Schema**: Defined in JSON files (e.g., `crm_lead.json`). These schemas describe attributes, data types, validation rules, and UI hints (e.g., "this field is an email").
 - **Dynamic Modeling**: Entities are "realized" at runtime. The `SchemaService` parses these definitions to provide CRUD operations and GraphQL types.
 
@@ -58,12 +58,12 @@ graph TD
     Filestore --> Cloud[(Cloud Storage)]
     
     subgraph Core Concepts
-        App[App Manifests]
+        BizDef[BizDef Manifests]
         Schema[JSON Schemas]
         Channel[Communication Channels]
     end
     
-    Service -.-> App
+    Service -.-> BizDef
     Service -.-> Schema
     Service -.-> Channel
 ```
@@ -84,24 +84,24 @@ AIGenApp is designed to be cloud-agnostic:
 
 ## Extension Points
 
-- **Downstream Apps**: Add new business domains by creating a folder in `apps/`.
+- **Downstream BizDefs**: Add new business domains by creating a folder in `bizdefs/`.
 - **Custom Tools**: Extend the agentic capabilities by adding tools to `core/agentic/tools/`.
 - **New Channels**: Implement the `ChannelService` patterns for new messaging platforms.
 
-## App Integration & Invocation
+## BizDef Integration & Invocation
 
-Apps (like `apps/crm`) are not standalone executables, but rather collections of business logic, schemas, and metadata managed by the system's core services.
+BizDefs (like `bizdefs/crm`) are not standalone executables, but rather collections of business logic, schemas, and metadata managed by the system's core services.
 
 ### Integration Flow
-1. **Manifest Registration**: Each app defines its capabilities, entities, and context in an `app_def.json` manifest.
-2. **Schema Discovery**: Upon initialization, the `SchemaService` automatically scans the `apps/` directory to discover these manifests and their associated JSON schemas (e.g., `apps/crm/schemas/crm_lead.json`).
-3. **Data Modeling**: The system registers these entities into memory, allowing the `EntityService` to perform CRUD operations on the app's entities using the standard JSON store pattern.
-4. **Agent-Awareness**: The `cms_agent` is "app-aware." When a user asks a question, the agent uses tools like `cms_app_list` and `cms_app_get` to introspect the registered app manifests, allowing it to understand the business domain and translate natural language into specific entity queries.
-5. **Polymorphic Execution**: Because the backend uses a single-table architecture, app "invocation" is effectively the dynamic routing of requests through the `EntityService` to the appropriate entity table as defined in the app's schema.
+1. **Manifest Registration**: Each BizDef defines its capabilities, entities, and context in a `bizdef.json` manifest.
+2. **Schema Discovery**: Upon initialization, the `SchemaService` automatically scans the `bizdefs/` directory to discover these manifests and their associated JSON schemas (e.g., `bizdefs/crm/schemas/crm_lead.json`).
+3. **Data Modeling**: The system registers these entities into memory, allowing the `EntityService` to perform CRUD operations on the BizDef's entities using the standard JSON store pattern.
+4. **Agent-Awareness**: The `cms_agent` is "BizDef-aware." When a user asks a question, the agent uses tools like `cms_bizdef_list` and `cms_bizdef_get` to introspect the registered BizDef manifests, allowing it to understand the business domain and translate natural language into specific entity queries.
+5. **Polymorphic Execution**: Because the backend uses a single-table architecture, BizDef "invocation" is effectively the dynamic routing of requests through the `EntityService` to the appropriate entity table as defined in the BizDef's schema.
 
 ## Agentic Interaction
 
-Users interact with the AI-driven agentic framework through the `Chat API` endpoint. This allows for natural language interaction with defined downstream apps and tools.
+Users interact with the AI-driven agentic framework through the `Chat API` endpoint. This allows for natural language interaction with defined downstream BizDefs and tools.
 
 ### Interaction Flow
 1. **Request**: A user sends a POST request to `/api/chat/message` with their prompt.

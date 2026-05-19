@@ -1,7 +1,8 @@
-package apps
+package bizdefs
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/innomon/aigen-app/core/services"
@@ -25,15 +26,15 @@ func TestERPNextAccountingIntegration(t *testing.T) {
 	permissionService := services.NewPermissionService(dao, schemaService)
 	entityService := services.NewEntityService(schemaService, dao, permissionService)
 
-	appsDir := "../../apps"
-	appName := "erpnext_accounting"
+	bizdefsDir := "../../bizdefs"
+	bizdefName := "erpnext_accounting"
 
 	// 1. Setup Schemas
-	err = SetupApp(ctx, appsDir, appName, schemaService, dao)
+	err = SetupBizDef(ctx, bizdefsDir, bizdefName, schemaService, dao)
 	assert.NoError(t, err)
 
 	// 2. Setup Test Data
-	err = SetupAppTestData(ctx, appsDir, appName, entityService)
+	err = SetupBizDefTestData(ctx, bizdefsDir, bizdefName, entityService)
 	assert.NoError(t, err)
 
 	// 3. Verify Data
@@ -78,7 +79,8 @@ func TestERPNextAccountingIntegration(t *testing.T) {
 		assert.NotEmpty(t, jes)
 
 		je := jes[0]
-		assert.Equal(t, 50000.0, je["total_debit"])
+		debit, _ := je["total_debit"].(json.Number).Float64()
+		assert.Equal(t, 50000.0, debit)
 
 		// Check child records
 		children, _, err := entityService.CollectionList(ctx, "JournalEntry", je["id"].(string), "accounts", datamodels.Pagination{}, nil, nil)

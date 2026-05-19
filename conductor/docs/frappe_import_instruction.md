@@ -28,7 +28,7 @@ This document serves as the Standard Operating Procedure (SOP) and execution pla
    Read the Frappe JSON to understand the fields, data types, mandatory constraints, and relational links (`options` targeting other DocTypes).
 
 ### Phase 2: Schema Translation (JSON Creation)
-Create a new JSON file in `apps/<module_name>/schemas/<doctype_snake_case>.json`.
+Create a new JSON file in `bizdefs/<module_name>/schemas/<doctype_snake_case>.json`.
 
 **Translation Rules:**
 * **DocType -> Entity:** Map the DocType name directly to the `Entity` name (e.g., "Journal Entry" -> "JournalEntry").
@@ -43,7 +43,7 @@ Create a new JSON file in `apps/<module_name>/schemas/<doctype_snake_case>.json`
   * Frappe `Link` ➔ FormCMS DataType: `Lookup`, Options: `<TargetEntityName>`
   * Frappe `Table` ➔ FormCMS DataType: `Collection`, Options: `<ChildEntityName>|<ParentLinkField>`
 
-**Example Schema (`apps/<module_name>/schemas/currency.json`):**
+**Example Schema (`bizdefs/<module_name>/schemas/currency.json`):**
 ```json
 {
   "Name": "Currency",
@@ -58,13 +58,13 @@ Create a new JSON file in `apps/<module_name>/schemas/<doctype_snake_case>.json`
 ```
 
 ### Phase 3: (Optional) SQL Migration Generation
-While AiGen CMS uses a single-table JSON architecture, you can optionally generate standard SQL migration files (e.g., `apps/<module_name>/migrations/001_initial_schema.sql`) for external documentation or reporting purposes. 
+While AiGen CMS uses a single-table JSON architecture, you can optionally generate standard SQL migration files (e.g., `bizdefs/<module_name>/migrations/001_initial_schema.sql`) for external documentation or reporting purposes. 
 1. Write the `CREATE TABLE` statements equivalent to the JSON schemas for PostgreSQL and SQLite.
 2. Include system columns: `id`, `created_at`, `updated_at`, `deleted`.
 3. Generate `INSERT INTO` statements containing baseline production data (if applicable, e.g., default Indian states, tax categories).
 
 ### Phase 4: Test Data Generation (Indian Locale)
-Create a JSON file in `apps/<module_name>/data/test_data.json`.
+Create a JSON file in `bizdefs/<module_name>/data/test_data.json`.
 1. **Locale Requirements:** Use INR (`₹`), Indian addresses (Mumbai, Delhi), Indian tax logic (GST, SGST, CGST), and standard Indian corporate names.
 2. **Relational Data Mapping:** Use the application's built-in reference resolver to manage foreign keys in test data. Prefix referenced keys with `$Ref:`.
 
@@ -92,13 +92,13 @@ Create a JSON file in `apps/<module_name>/data/test_data.json`.
 
 ### Phase 5: Implementation & Wiring (Configuration)
 The `AiGen CMS` framework utilizes a fully configuration-driven initialization system for apps.
-1. Place the generated application module inside `apps/<module_name>`.
-2. Add the `<module_name>` to the `enabled_apps` array inside `apps/apps.json` so the core system knows to load the schemas, run migrations (if applicable), and process the test data during startup. Do NOT modify the Go source code.
+1. Place the generated application module inside `bizdefs/<module_name>`.
+2. Add the `<module_name>` to the `enabled_bizdefs` array inside `bizdefs/bizdefs.json` so the core system knows to load the schemas, run migrations (if applicable), and process the test data during startup. Do NOT modify the Go source code.
 
-**Example Configuration (`apps/apps.json`):**
+**Example Configuration (`bizdefs/bizdefs.json`):**
 ```json
 {
-  "enabled_apps": [
+  "enabled_bizdefs": [
     "erpnext_accounting",
     "crm",
     "<module_name>"
@@ -113,5 +113,5 @@ The `AiGen CMS` framework utilizes a fully configuration-driven initialization s
 2. Are all monetary values, companies, and date structures conforming to the **Indian locale**?
 3. Did I map the DocType correctly to the single-table JSON schema?
 4. Is the Frappe source code appropriately isolated in `.gemini/tmp/temp_repos/`?
-5. Did I update `apps/apps.json` to enable the new module?
+5. Did I update `bizdefs/bizdefs.json` to enable the new module?
 6. Does the test server boot up and seed the configuration data without errors?

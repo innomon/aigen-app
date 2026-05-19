@@ -13,3 +13,4 @@ This file tracks the various development tracks for AIGenApp.
 | `framework-pivot` | Framework Reorganization & Pivot | Completed | `./tracks/framework-pivot/` |
 | `advanced-auth` | Advanced Authentication (WhatsApp & Guest) | Completed | `./tracks/advanced-auth/` |
 | `temporary-access` | Temporary File Access (TTL-based) | Completed | `./tracks/temporary-access/` |
+| `bizdef-rename` | Rename App to BizDef | Completed | `./tracks/bizdef-rename/` |

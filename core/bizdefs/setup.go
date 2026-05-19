@@ -1,4 +1,4 @@
-package apps
+package bizdefs
 
 import (
 	"context"
@@ -14,33 +14,33 @@ import (
 	"github.com/innomon/aigen-app/utils/datamodels"
 )
 
-type AppsConfig struct {
-	EnabledApps []string `json:"enabled_apps"`
+type BizDefsConfig struct {
+	EnabledBizDefs []string `json:"enabled_bizdefs"`
 }
 
-func LoadAppsConfig(appsDir string) ([]string, error) {
-	data, err := os.ReadFile(filepath.Join(appsDir, "apps.json"))
+func LoadBizDefsConfig(bizdefsDir string) ([]string, error) {
+	data, err := os.ReadFile(filepath.Join(bizdefsDir, "bizdefs.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	var cfg AppsConfig
+	var cfg BizDefsConfig
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
-	return cfg.EnabledApps, nil
+	return cfg.EnabledBizDefs, nil
 }
 
-func SetupApp(ctx context.Context, appsDir string, appName string, schemaService *services.SchemaService, dao relationdbdao.IPrimaryDao) error {
-	schemasDir := filepath.Join(appsDir, appName, "schemas")
+func SetupBizDef(ctx context.Context, bizdefsDir string, bizdefName string, schemaService *services.SchemaService, dao relationdbdao.IPrimaryDao) error {
+	schemasDir := filepath.Join(bizdefsDir, bizdefName, "schemas")
 	files, err := os.ReadDir(schemasDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return fmt.Errorf("failed to read %s schemas directory: %w", appName, err)
+		return fmt.Errorf("failed to read %s schemas directory: %w", bizdefName, err)
 	}
 
 	for _, file := range files {
@@ -83,7 +83,7 @@ func SetupApp(ctx context.Context, appsDir string, appName string, schemaService
 			return fmt.Errorf("failed to save schema %s: %w", entity.Name, err)
 		}
 
-		fmt.Printf("Registered schema: %s (App: %s)\n", entity.Name, appName)
+		fmt.Printf("Registered schema: %s (BizDef: %s)\n", entity.Name, bizdefName)
 	}
 
 	return nil
@@ -96,17 +96,17 @@ type TestDataEntry struct {
 	Children map[string][]map[string]interface{}
 }
 
-func SetupAppTestData(ctx context.Context, appsDir string, appName string, entityService services.IEntityService) error {
-	filePath := filepath.Join(appsDir, appName, "data", "test_data.json")
+func SetupBizDefTestData(ctx context.Context, bizdefsDir string, bizdefName string, entityService services.IEntityService) error {
+	filePath := filepath.Join(bizdefsDir, bizdefName, "data", "test_data.json")
 	dataBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return fmt.Errorf("failed to read test_data.json for %s: %v", appName, err)
+		return fmt.Errorf("failed to read test_data.json for %s: %v", bizdefName, err)
 	}
 
-	fmt.Printf("Setting up test data for %s from JSON...\n", appName)
+	fmt.Printf("Setting up test data for %s from JSON...\n", bizdefName)
 
 	var entries []TestDataEntry
 	if err := json.Unmarshal(dataBytes, &entries); err != nil {
@@ -120,7 +120,7 @@ func SetupAppTestData(ctx context.Context, appsDir string, appName string, entit
 			return fmt.Errorf("failed to list %s: %v", entries[0].Entity, err)
 		}
 		if len(records) > 0 {
-			fmt.Printf("Test data already exists for %s, skipping.\n", appName)
+			fmt.Printf("Test data already exists for %s, skipping.\n", bizdefName)
 			return nil
 		}
 	}
@@ -163,6 +163,6 @@ func SetupAppTestData(ctx context.Context, appsDir string, appName string, entit
 		}
 	}
 
-	fmt.Printf("Test data successfully created for %s.\n", appName)
+	fmt.Printf("Test data successfully created for %s.\n", bizdefName)
 	return nil
 }

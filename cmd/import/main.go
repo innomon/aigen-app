@@ -135,7 +135,7 @@ func importData(ctx context.Context, dao relationdbdao.IPrimaryDao, schemaServic
 			}
 
 			rec := datamodels.RecJSON{
-				Namespace: "aigen.app.entities." + schemaName,
+				Namespace: "aigen.bizdef.entities." + schemaName,
 				Key:       fmt.Sprintf("%v", idVal),
 				Rec:       record,
 				Tmstamp:   time.Now(),

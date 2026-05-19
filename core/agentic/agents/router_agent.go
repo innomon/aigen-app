@@ -38,12 +38,12 @@ type ClassifierConfig struct {
 }
 
 type RouterAgentConfig struct {
-	Type        string           `yaml:"type"`
-	Description string           `yaml:"description"`
-	DefaultApp  string           `yaml:"default_app"`
-	SubAgents   []string         `yaml:"sub_agents"`
-	Classifier  ClassifierConfig `yaml:"classifier"`
-	SelectionPrompt string       `yaml:"selection_prompt"`
+	Type            string           `yaml:"type"`
+	Description     string           `yaml:"description"`
+	DefaultBizDef   string           `yaml:"default_bizdef"`
+	SubAgents       []string         `yaml:"sub_agents"`
+	Classifier      ClassifierConfig `yaml:"classifier"`
+	SelectionPrompt string           `yaml:"selection_prompt"`
 }
 
 type IInteractionService interface {
@@ -77,15 +77,15 @@ func RegisterRouterAgent(svc IInteractionService) {
 						return
 					}
 
-					// 2. Resolve Available Apps for User
+					// 2. Resolve Available BizDefs for User
 					// For now, we assume all sub-agents are available
-					availableApps := []string{}
+					availableBizDefs := []string{}
 					for _, a := range sub {
-						availableApps = append(availableApps, a.Name())
+						availableBizDefs = append(availableBizDefs, a.Name())
 					}
 
-					if len(availableApps) == 0 {
-						yield(textEvent(ic, "I'm sorry, I don't have any apps configured to handle your request."), nil)
+					if len(availableBizDefs) == 0 {
+						yield(textEvent(ic, "I'm sorry, I don't have any BizDefs configured to handle your request."), nil)
 						return
 					}
 
@@ -102,22 +102,22 @@ func RegisterRouterAgent(svc IInteractionService) {
 						json.Unmarshal([]byte(history[0].Content), &state)
 					}
 
-					targetApp := ""
+					targetBizDef := ""
 
 					if state.Status == "pending_selection" {
 						// Match by number or name
-						appIndex := -1
+						bizdefIndex := -1
 						cleanInput := strings.TrimSpace(strings.ToLower(userInput))
 						
 						for i, opt := range state.Options {
 							if cleanInput == fmt.Sprintf("%d", i+1) || strings.Contains(strings.ToLower(opt), cleanInput) {
-								appIndex = i
+								bizdefIndex = i
 								break
 							}
 						}
 
-						if appIndex >= 0 {
-							targetApp = state.Options[appIndex]
+						if bizdefIndex >= 0 {
+							targetBizDef = state.Options[bizdefIndex]
 							// Clear state
 							svc.Log(ctx, &descriptors.Interaction{
 								Identifier: stateKey,
@@ -130,26 +130,26 @@ func RegisterRouterAgent(svc IInteractionService) {
 						}
 					} else {
 						// 4. Perform Initial Routing
-						if len(availableApps) == 1 {
-							targetApp = availableApps[0]
+						if len(availableBizDefs) == 1 {
+							targetBizDef = availableBizDefs[0]
 						} else {
 							// Simple Keyword Match first
 							lowerInput := strings.ToLower(userInput)
-							for _, appName := range availableApps {
-								if strings.Contains(lowerInput, strings.ToLower(appName)) {
-									targetApp = appName
+							for _, bizdefName := range availableBizDefs {
+								if strings.Contains(lowerInput, strings.ToLower(bizdefName)) {
+									targetBizDef = bizdefName
 									break
 								}
 							}
 
 							// If no simple match, use LLM or Ask User
-							if targetApp == "" {
+							if targetBizDef == "" {
 								// Try LLM classification if configured
 								if cfg.Classifier.Model != "" {
 									m, err := models.Get(ctx, cfg.Classifier.Model)
 									if err == nil {
 										prompt := strings.ReplaceAll(cfg.Classifier.Prompt, "${userInput}", userInput)
-										prompt = strings.ReplaceAll(prompt, "${options}", strings.Join(availableApps, ", "))
+										prompt = strings.ReplaceAll(prompt, "${options}", strings.Join(availableBizDefs, ", "))
 										
 										request := &model.LLMRequest{
 											Contents: []*genai.Content{
@@ -169,10 +169,10 @@ func RegisterRouterAgent(svc IInteractionService) {
 
 										if llmOutput != "" {
 											llmOutput = strings.TrimSpace(strings.ToLower(llmOutput))
-											// Look for app name in output
-											for _, appName := range availableApps {
-												if strings.Contains(llmOutput, strings.ToLower(appName)) {
-													targetApp = appName
+											// Look for bizdef name in output
+											for _, bizdefName := range availableBizDefs {
+												if strings.Contains(llmOutput, strings.ToLower(bizdefName)) {
+													targetBizDef = bizdefName
 													break
 												}
 											}
@@ -181,9 +181,9 @@ func RegisterRouterAgent(svc IInteractionService) {
 								}
 
 								// If still no target, ask the user
-								if targetApp == "" {
+								if targetBizDef == "" {
 									state.Status = "pending_selection"
-									state.Options = availableApps
+									state.Options = availableBizDefs
 									stateData, _ := json.Marshal(state)
 									
 									svc.Log(ctx, &descriptors.Interaction{
@@ -195,12 +195,12 @@ func RegisterRouterAgent(svc IInteractionService) {
 									})
 
 									optionsText := ""
-									for i, opt := range availableApps {
+									for i, opt := range availableBizDefs {
 										optionsText += fmt.Sprintf("\n%d. %s", i+1, opt)
 									}
 									prompt := strings.ReplaceAll(cfg.SelectionPrompt, "${options}", optionsText)
 									if prompt == "" {
-										prompt = "Please select an app:" + optionsText
+										prompt = "Please select a BizDef:" + optionsText
 									}
 									yield(textEvent(ic, prompt), nil)
 									return
@@ -210,10 +210,10 @@ func RegisterRouterAgent(svc IInteractionService) {
 					}
 
 					// 5. Route to Target Agent
-					if targetApp != "" {
+					if targetBizDef != "" {
 						var target agent.Agent
 						for _, a := range sub {
-							if a.Name() == targetApp {
+							if a.Name() == targetBizDef {
 								target = a
 								break
 							}
@@ -226,7 +226,7 @@ func RegisterRouterAgent(svc IInteractionService) {
 								}
 							}
 						} else {
-							yield(textEvent(ic, "Failed to route to app: "+targetApp), nil)
+							yield(textEvent(ic, "Failed to route to BizDef: "+targetBizDef), nil)
 						}
 					}
 				}
