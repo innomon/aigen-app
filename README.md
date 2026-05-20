@@ -97,6 +97,7 @@ The server will start on `http://localhost:5000`.
 | `PORT` | The port to listen on for HTTP. Ignored if `DOMAIN` is set. | `5000` |
 | `FORMCMS_WWW_ROOT` | The directory for serving static files and storing uploaded assets. | `wwwroot` |
 | `FORMCMS_BIZDEFS_DIR` | The directory where BizDef definitions and data are located. | `bizdefs` |
+| `FORMCMS_PLUGINS_DIR` | The directory where Applet plugin `.jar` files are loaded from. | `plugins` |
 | `FORMCMS_DB_DSN` | Database connection string (e.g., `postgres://user:pass@host:port/db`). | `""` |
 | `FORMCMS_CONFIG_PATH` | Path to the YAML/JSON configuration file. | `""` |
 | `FORMCMS_AGENTIC_CONFIG_PATH` | Path to the `agentic.yaml` configuration for LLM workflows. | `agentic.yaml` |

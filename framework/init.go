@@ -143,7 +143,7 @@ func NewApp(cfg *Config) (*App, error) {
 		log.Printf("Warning: failed to initialize chat service (agentic config missing or invalid): %v", err)
 	}
 
-	pluginService := plugins.NewPluginService("plugins", schemaService, evolutionService, chatService, entityService, a2uiService, auditService)
+	pluginService := plugins.NewPluginService(cfg.PluginsDir, schemaService, evolutionService, chatService, entityService, a2uiService, auditService)
 	if err := pluginService.Start(context.Background()); err != nil {
 		log.Printf("Warning: failed to start plugin service: %v", err)
 	}

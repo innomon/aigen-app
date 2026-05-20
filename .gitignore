@@ -33,6 +33,8 @@ firebase-debug.log
 .gemini/tmp/
 .antigravitycli/
 
+# dev test dir
+staging/
 
 # Exports/Imports (Environment specific)
 exports/

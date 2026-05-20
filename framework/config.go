@@ -47,6 +47,7 @@ type Config struct {
 	AgenticConfigPath string                     `yaml:"agentic_config_path" json:"agentic_config_path"`
 	Channels          descriptors.ChannelsConfig `yaml:"channels" json:"channels"`
 	MCP               descriptors.MCPConfig      `yaml:"mcp" json:"mcp"`
+	PluginsDir        string                     `yaml:"plugins_dir" json:"plugins_dir"`
 	Storage           StorageConfig              `yaml:"storage" json:"storage"`
 	TemporaryAccess   []descriptors.TemporaryAccessConfig `yaml:"temporary_access" json:"temporary_access"`
 }
@@ -54,6 +55,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		BizDefsDir:        "bizdefs",
+		PluginsDir:        "plugins",
 		WWWRoot:           "wwwroot",
 		DatabaseDSN:       "memory://",
 		Port:              "5000",
@@ -97,6 +99,9 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	// Environment variable overrides
+	if pluginsDir := os.Getenv("FORMCMS_PLUGINS_DIR"); pluginsDir != "" {
+		config.PluginsDir = pluginsDir
+	}
 	if bizdefsDir := os.Getenv("FORMCMS_BIZDEFS_DIR"); bizdefsDir != "" {
 		config.BizDefsDir = bizdefsDir
 	}

@@ -153,7 +153,7 @@ To maintain system integrity, Applets follow a strict trust protocol:
 
 ### 3. Dynamic Lifecycle
 Plugins are managed via the **Plugin Management API**:
-- **Discovery**: The `PluginService` automatically detects new JAR files in the `/plugins` directory.
+- **Discovery**: The `PluginService` automatically detects new JAR files in the configured plugins directory (defaults to `plugins` or `./plugins`, and can be customized via `plugins_dir` in configuration or the `FORMCMS_PLUGINS_DIR` environment variable).
 - **Mounting**: When activated, the plugin's BizDefs are registered with the `SchemaService`, and its agents are merged into the `ChatService` registry on-the-fly.
 - **Hot-Swapping**: Functionality can be added or updated without restarting the primary AIGenApp process.
 

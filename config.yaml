@@ -1,6 +1,7 @@
 # AIGenApp Configuration
 
 apps_dir: "apps"
+plugins_dir: "plugins"
 www_root: "wwwroot"
 database_dsn: "aigen.db"
 domain: ""
