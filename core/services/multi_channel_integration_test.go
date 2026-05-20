@@ -30,7 +30,9 @@ func TestA2AIntegration(t *testing.T) {
 	permSvc := services.NewPermissionService(dao, schemaSvc)
 	entitySvc := services.NewEntityService(schemaSvc, evolutionSvc, dao, permSvc)
 	intSvc := services.NewInteractionService(dao)
-	chatSvc, _ := services.NewChatService("", entitySvc, schemaSvc, evolutionSvc, services.NewA2UIService(), intSvc)
+	commSvc := services.NewCommerceService(entitySvc)
+	chatSvc, err := services.NewChatService("", entitySvc, schemaSvc, evolutionSvc, services.NewA2UIService(), intSvc, commSvc)
+	assert.NoError(t, err)
 	
 	a2aSvc := services.NewA2AService(chatSvc, "localhost")
 	

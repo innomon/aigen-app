@@ -31,9 +31,15 @@ func NewChatService(configPath string, entityService IEntityService, schemaServi
 	RegisterCMSTools(entityService, schemaService, evolutionService, a2uiService, commerceService)
 
 	// Load agentic config
-	cfg, err := config.Load(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load agentic config: %w", err)
+	var cfg *config.Config
+	var err error
+	if configPath != "" {
+		cfg, err = config.Load(configPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load agentic config: %w", err)
+		}
+	} else {
+		cfg = &config.Config{}
 	}
 
 	// Initialize registry
