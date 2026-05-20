@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/innomon/aigen-app/core/agentic/agents"
 	"github.com/innomon/aigen-app/core/api"
 	"github.com/innomon/aigen-app/core/bizdefs"
 	"github.com/innomon/aigen-app/core/descriptors"
