@@ -1,6 +1,6 @@
 {
   "id": "plugin-routing-vault",
   "title": "Plugin-Aware Routing & Secure Vault",
-  "status": "active",
+  "status": "completed",
   "description": "Integration of RouterAgent with dynamic plugins and secure sandbox permission management."
 }

@@ -94,9 +94,38 @@ func RegisterCMSTools(entityService IEntityService, schemaService *SchemaService
 		a2uiService.UpdateComponent(ctx, A2UIComponent{ID: "root", Type: "Column", Children: []string{"checkout-summary"}})
 
 		return checkout, nil
-	})
+		})
 
-	registry.RegisterToolHandler("cms_bizdef_list", func(ctx context.Context, args map[string]any) (any, error) {
+		registry.RegisterToolHandler("cms_commerce_verify_mandate", func(ctx context.Context, args map[string]any) (any, error) {
+		mandateId, ok := args["mandate_id"].(string)
+		if !ok {
+		        return nil, fmt.Errorf("missing 'mandate_id'")
+		}
+
+		verified, err := commerceService.VerifyMandate(ctx, mandateId)
+		if err != nil {
+		        return nil, err
+		}
+
+		// Show mandate verification in A2UI
+		comp := A2UIComponent{
+		        ID:   "mandate-banner",
+		        Type: "Ap2MandateBanner",
+		        Attributes: map[string]interface{}{
+		                "mandate_id": mandateId,
+		                "verified":   verified,
+		                "public_key": "dummy-public-key", // In a real app, this comes from the mandate record
+		        },
+		}
+		a2uiService.UpdateComponent(ctx, comp)
+		// Append to root if not already there, or show as a notification
+		a2uiService.UpdateComponent(ctx, A2UIComponent{ID: "root", Type: "Column", Children: []string{"checkout-summary", "mandate-banner"}})
+
+		return map[string]any{"verified": verified}, nil
+		})
+
+		registry.RegisterToolHandler("cms_bizdef_list", func(ctx context.Context, args map[string]any) (any, error) {
+
 		bizdefsFile := filepath.Join("bizdefs", "bizdefs.json")
 		b, err := os.ReadFile(bizdefsFile)
 		if err != nil {

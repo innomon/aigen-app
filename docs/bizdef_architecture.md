@@ -1,6 +1,6 @@
-# AiGen CMS App Architecture & Lifecycle
+# AiGen CMS BizDef Architecture & Lifecycle
 
-This document provides a comprehensive overview of the architecture, data structures, and lifecycle of applications ("apps") within the AiGen CMS ecosystem. It also serves as a guide on how to create, deploy, and modify these apps.
+This document provides a comprehensive overview of the architecture, data structures, and lifecycle of BizDefs within the AiGen CMS ecosystem. It also serves as a guide on how to create, deploy, and modify these BizDefs.
 
 ## 1. Architecture Overview
 
@@ -13,25 +13,25 @@ AiGen CMS is a headless Content Management System written in Go (migrated from C
 - **GraphQL**: `graphql-go/graphql` for dynamic API endpoints based on schemas.
 - **Templating**: `aymerick/raymond` (Handlebars template engine) for dynamic page rendering.
 
-### What is an "App" in AiGen CMS?
-An "App" in AiGen CMS is essentially a bundle of predefined entity schemas and optional test data. These apps provide out-of-the-box functionality for specific domains (e.g., CRM, RBAC, ERPNext Accounting). Instead of writing complex migration scripts, an app developer defines their data model in JSON, and the CMS engine automatically handles the underlying database structure and CRUD/GraphQL APIs.
+### What is a "BizDef"?
+A "BizDef" in AiGen CMS is essentially a bundle of predefined entity schemas and optional test data. These BizDefs provide out-of-the-box functionality for specific domains (e.g., CRM, RBAC, ERPNext Accounting). Instead of writing complex migration scripts, a BizDef developer defines their data model in JSON, and the CMS engine automatically handles the underlying database structure and CRUD/GraphQL APIs.
 
 ## 2. Data Structure
 
-Apps reside in the `apps/` directory at the project root.
+BizDefs reside in the `bizdefs/` directory at the project root.
 
 ### Directory Layout
 ```text
-apps/
-├── apps.json                    # Registry of currently enabled apps
-├── crm/                         # Example App: CRM
+bizdefs/
+├── bizdefs.json                    # Registry of currently enabled BizDefs
+├── crm/                         # Example BizDef: CRM
 │   ├── data/
-│   │   └── test_data.json       # Seed data for the app
-│   └── schemas/                 # Entity schemas defining the app's structure
+│   │   └── test_data.json       # Seed data for the BizDef
+│   └── schemas/                 # Entity schemas defining the BizDef's structure
 │       ├── crm_lead.json
 │       ├── crm_deal.json
 │       └── ...
-└── rbac/                        # Example App: Role-Based Access Control
+└── rbac/                        # Example BizDef: Role-Based Access Control
     ├── data/
     │   └── test_data.json
     └── schemas/
@@ -42,41 +42,41 @@ apps/
 A schema defines an entity (which maps to a database table). It describes attributes (columns), relationships (lookups, junctions, collections), and UI metadata.
 
 ### Test Data (`data/test_data.json`)
-A JSON array specifying seed records to insert upon app deployment. It supports reference linking (using `$Ref:<key>`) to handle relationships between newly inserted records.
+A JSON array specifying seed records to insert upon BizDef deployment. It supports reference linking (using `$Ref:<key>`) to handle relationships between newly inserted records.
 
 ---
 
-## 3. App Lifecycle
+## 3. BizDef Lifecycle
 
-The lifecycle of an app is managed by the core CMS initialization process (specifically inside `main.go` and `core/apps/setup.go`).
+The lifecycle of a BizDef is managed by the core CMS initialization process (specifically inside `main.go` and `core/bizdefs/setup.go`).
 
 1. **Discovery & Configuration**: 
-   Upon startup, the server reads `apps/apps.json` to determine which apps are enabled.
-2. **Schema Setup (`SetupApp`)**:
-   For each enabled app, the CMS scans the `apps/<app_name>/schemas/` directory.
+   Upon startup, the server reads `bizdefs/bizdefs.json` to determine which BizDefs are enabled.
+2. **Schema Setup (`SetupBizDef`)**:
+   For each enabled BizDef, the CMS scans the `bizdefs/<bizdef_name>/schemas/` directory.
    - Parses each `.json` file into an `Entity` descriptor.
    - Registers the schema definition for dynamic API generation.
    - Saves the schema definition as a JSON record in the core `aigen_records` table, marking it as `Published`.
-3. **Data Seeding (`SetupAppTestData`)**:
-   After schemas are registered, the CMS reads `apps/<app_name>/data/test_data.json`.
+3. **Data Seeding (`SetupBizDefTestData`)**:
+   After schemas are registered, the CMS reads `bizdefs/<bizdef_name>/data/test_data.json`.
    - It checks if data already exists to prevent duplicate seeding.
    - Inserts the records, dynamically resolving any `$Ref` cross-references between records.
 
 ---
 
-## 4. How to Create an App
+## 4. How to Create a BizDef
 
-To create a new app (e.g., `inventory`), follow these steps:
+To create a new BizDef (e.g., `inventory`), follow these steps:
 
 1. **Create the Directory Structure**:
-   Create a new folder in the `apps` directory:
+   Create a new folder in the `bizdefs` directory:
    ```bash
-   mkdir -p apps/inventory/schemas
-   mkdir -p apps/inventory/data
+   mkdir -p bizdefs/inventory/schemas
+   mkdir -p bizdefs/inventory/data
    ```
 
 2. **Define Entity Schemas**:
-   Create JSON schema files for your entities inside `apps/inventory/schemas/`. 
+   Create JSON schema files for your entities inside `bizdefs/inventory/schemas/`. 
    For example, `product.json`:
    ```json
    {
@@ -91,7 +91,7 @@ To create a new app (e.g., `inventory`), follow these steps:
    ```
 
 3. **(Optional) Provide Seed Data**:
-   Create `apps/inventory/data/test_data.json`:
+   Create `bizdefs/inventory/data/test_data.json`:
    ```json
    [
      {
@@ -108,15 +108,15 @@ To create a new app (e.g., `inventory`), follow these steps:
 
 ---
 
-## 5. How to Deploy an App
+## 5. How to Deploy a BizDef
 
-Deploying an app simply involves enabling it so the CMS picks it up on the next startup.
+Deploying a BizDef simply involves enabling it so the CMS picks it up on the next startup.
 
-1. Open `apps/apps.json`.
-2. Add your app's directory name to the `enabled_apps` array:
+1. Open `bizdefs/bizdefs.json`.
+2. Add your BizDef's directory name to the `enabled_bizdefs` array:
    ```json
    {
-     "enabled_apps": [
+     "enabled_bizdefs": [
        "rbac",
        "crm",
        "inventory"
@@ -127,22 +127,22 @@ Deploying an app simply involves enabling it so the CMS picks it up on the next 
 
 ---
 
-## 6. How to Modify an App
+## 6. How to Modify a BizDef
 
-Modifying an app's structure or behavior depends on what phase the modification occurs in.
+Modifying a BizDef's structure or behavior depends on what phase the modification occurs in.
 
 **Modifying via Codebase (Pre-deployment or Development):**
-- You can add new `.json` schemas to the app's `schemas/` directory. On the next restart, the CMS will detect the new schemas and register them.
+- You can add new `.json` schemas to the BizDef's `schemas/` directory. On the next restart, the CMS will detect the new schemas and register them.
 - Because all data is stored in the single `aigen_records` JSON table, altering existing attributes directly via JSON files requires no physical database migrations; schema-on-read handles it natively.
 
 **Modifying via CMS (Post-deployment):**
-- Once deployed, the app's schemas are saved in the internal `aigen_records` table. 
+- Once deployed, the BizDef's schemas are saved in the internal `aigen_records` table. 
 - You can use the CMS admin interface to dynamically add new columns, modify pages, or adjust Handlebars templates. These modifications are persisted to the database and take effect immediately via the dynamic `squirrel` query builder and `raymond` templating engine.
-- Note: UI modifications currently exist in the database and would need to be exported back to `.json` files if you want to bundle them into the persistent app source code. You can use the `cmd/export` utility for this.
+- Note: UI modifications currently exist in the database and would need to be exported back to `.json` files if you want to bundle them into the persistent BizDef source code. You can use the `cmd/export` utility for this.
 
 ---
 
-## 7. Exporting App Modifications
+## 7. Exporting BizDef Modifications
 
 Since UI modifications and dynamically created data live in the database (e.g., in the single `aigen_records` table), you can use the built-in export utility to export these modifications back into JSON files. This allows you to bundle them into your source control as part of your application.
 
@@ -167,9 +167,9 @@ go run cmd/export/main.go --db="postgres://..." --out=./my-export-dir
 
 ---
 
-## 8. Importing App Modifications
+## 8. Importing BizDef Modifications
 
-You can restore your exported app modifications (both schemas and data) into any database using the `cmd/import` utility. This is extremely useful for migrating modifications across environments, resetting test databases, or seeding production instances.
+You can restore your exported BizDef modifications (both schemas and data) into any database using the `cmd/import` utility. This is extremely useful for migrating modifications across environments, resetting test databases, or seeding production instances.
 
 ### Using the Import Utility
 

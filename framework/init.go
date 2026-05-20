@@ -93,6 +93,7 @@ func NewApp(cfg *Config) (*App, error) {
 	schemaService := services.NewSchemaService(dao)
 	evolutionService := services.NewEvolutionService(dao, schemaService)
 	permissionService := services.NewPermissionService(dao, schemaService)
+	schemaService.SetPermissionService(permissionService)
 
 	enabledBizDefs, err := bizdefs.LoadBizDefsConfig(cfg.BizDefsDir)
 	if err != nil {
@@ -166,6 +167,7 @@ func NewApp(cfg *Config) (*App, error) {
 	notificationApi := api.NewNotificationApi(notificationService, authApi)
 	auditApi := api.NewAuditApi(auditService, authApi)
 	channelApi := api.NewChannelApi(channelService, authApi)
+	commerceApi := api.NewCommerceApi(commerceService, authApi)
 	a2aApi := api.NewA2AApi(a2aService, authService, cfg.Channels)
 	mcpApi := api.NewMCPApi(mcpService, authApi, tempAccessService, fileStore)
 	tempAccessApi := api.NewTempAccessApi(cfg.TemporaryAccess, tempAccessService, fileStore)
@@ -198,6 +200,7 @@ func NewApp(cfg *Config) (*App, error) {
 	rbacApi.Register(r)
 	notificationApi.Register(r)
 	auditApi.Register(r)
+	commerceApi.Register(r)
 	channelApi.Register(r)
 	a2aApi.Register(r)
 	mcpApi.Register(r)

@@ -15,11 +15,16 @@ import (
 const SchemaNamespace = "aigen.core.descriptors.Schema"
 
 type SchemaService struct {
-	dao relationdbdao.IPrimaryDao
+	dao               relationdbdao.IPrimaryDao
+	permissionService IPermissionService
 }
 
 func NewSchemaService(dao relationdbdao.IPrimaryDao) *SchemaService {
 	return &SchemaService{dao: dao}
+}
+
+func (s *SchemaService) SetPermissionService(ps IPermissionService) {
+	s.permissionService = ps
 }
 
 func (s *SchemaService) All(ctx context.Context, schemaType *descriptors.SchemaType, names []string, status *descriptors.PublicationStatus) ([]*descriptors.Schema, error) {
@@ -74,11 +79,24 @@ func (s *SchemaService) All(ctx context.Context, schemaType *descriptors.SchemaT
 	}
 
 	var results []*descriptors.Schema
+	userId, _ := ctx.Value("userId").(int64)
+	roles, _ := ctx.Value("roles").([]string)
+
 	for _, r := range recs {
 		schema, err := descriptors.RecordToSchema(r.Rec.(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}
+
+		// Filter based on permissions
+		if s.permissionService != nil && userId != 0 {
+			// Resource name for schemas is its name (e.g. "Lead", "Role", "top-menu-bar")
+			allowed, _ := s.permissionService.HasAccess(ctx, userId, roles, schema.Name, "read")
+			if !allowed {
+				continue
+			}
+		}
+
 		results = append(results, schema)
 	}
 

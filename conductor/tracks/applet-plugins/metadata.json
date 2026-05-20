@@ -1,6 +1,6 @@
 {
   "id": "applet-plugins",
   "title": "Signed Applet Plugin System",
-  "status": "active",
+  "status": "completed",
   "description": "Dynamic extension system using signed JARs with polyglot sandbox support."
 }

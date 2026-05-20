@@ -60,6 +60,16 @@ checkUser(async () => {
                         </div>
                     </div>
                 </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <i class="fas fa-plug fa-3x mb-3 text-info"></i>
+                            <h5 class="card-title">Plugin Management</h5>
+                            <p class="card-text">Manage and configure signed Applet plugins.</p>
+                            <a href="./plugins.html" class="btn btn-info text-white">Go to Plugins</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }

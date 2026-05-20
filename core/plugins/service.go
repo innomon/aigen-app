@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/innomon/aigen-app/core/bizdefs"
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/core/services"
@@ -220,8 +221,44 @@ func (s *PluginService) Start(ctx context.Context) error {
 		log.Printf("Error during initial plugin scan: %v", err)
 	}
 
-	// TODO: Implement watcher (fsnotify)
-	
+	// 2. Start Watcher
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return fmt.Errorf("failed to create watcher: %w", err)
+	}
+
+	go func() {
+		defer watcher.Close()
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
+					if filepath.Ext(event.Name) == ".jar" {
+						log.Printf("Detected plugin change: %s", event.Name)
+						// Debounce slightly to allow file to be fully written
+						time.Sleep(500 * time.Millisecond)
+						s.Scan()
+					}
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Printf("Plugin watcher error: %v", err)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	if err := watcher.Add(s.pluginsDir); err != nil {
+		return fmt.Errorf("failed to add directory to watcher: %w", err)
+	}
+
+	log.Printf("Plugin service started, watching %s", s.pluginsDir)
 	return nil
 }
 

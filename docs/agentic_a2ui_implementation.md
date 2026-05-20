@@ -85,26 +85,27 @@ The integration between the Frontend (Renderer), Backend (Agent), and Database (
 
 ### 4.4. Security and RBAC
 The A2UI layer is "security-aware". When the Agent fetches data to populate an A2UI component (like a `DataTable`), it executes through the `EntityService` using the user's authenticated context. This ensures that all Role-Based Access Control (RBAC), row-level filters, and field-level permissions are strictly enforced before the data ever reaches the UI generation phase. Client-side execution of arbitrary code is prevented by restricting rendering to a pre-defined, trusted component catalog.
+- `cms_bizdef_list`, `cms_bizdef_get`: For exploring installed BizDefs, their definitions, roles, and entity contexts.
+- `cms_a2ui_update`: For modifying the frontend A2UI state.
 
----
+### 2.2. The Router Agent (`router_agent.go`)
+...
+### 5. Multi-Agent Context Injection
 
-## 5. App Capability Discovery
-
-To allow the Agent to dynamically discover and understand the purpose, roles, and entities of installed applications, AiGen CMS utilizes an expanded App Definition framework.
-
-### 5.1. The `app_def.json` Specification
-Each application can define an `app_def.json` file in its root directory (e.g., `apps/erpnext_accounting/app_def.json`). This file acts as a manifest that provides the LLM with deep context:
-- `name`: The system name of the app.
+### 5.1. The `bizdef.json` Specification
+Each BizDef can define a `bizdef.json` file in its root directory (e.g., `bizdefs/erpnext_accounting/bizdef.json`). This file acts as a manifest that provides the LLM with deep context:
+- `name`: The system name of the BizDef.
 - `display_name`: Human-readable name.
-- `description`: A short summary of the app's purpose.
-- `context`: A longer, detailed explanation of the app's business domain and usage.
-- `roles`: An array of applicable roles for the app (e.g., `["System Manager", "Auditor"]`).
+- `description`: A short summary of the BizDef's purpose.
+- `context`: A longer, detailed explanation of the BizDef's business domain and usage.
+- `roles`: An array of applicable roles for the BizDef (e.g., `["System Manager", "Auditor"]`).
 - `entities`: A mapping of entity schemas to their descriptions and, optionally, a `context_file`.
 
 ### 5.2. Context Files
-Entities defined in `app_def.json` can point to external Markdown context files via the `context_file` property (e.g., `docs/account.md`). These files contain detailed business rules, relationships, or specific instructions on how to handle the entity, which is directly injected into the LLM's context window.
+Entities defined in `bizdef.json` can point to external Markdown context files via the `context_file` property (e.g., `docs/account.md`). These files contain detailed business rules, relationships, or specific instructions on how to handle the entity, which is directly injected into the LLM's context window.
 
 ### 5.3. Discovery Tools
 The Agent discovers this information through two primary tools:
-1. **`cms_app_list`**: Reads the global `apps.json` to find enabled apps, then parses each app's `app_def.json` to return a summarized list of available applications.
-2. **`cms_app_get`**: Retrieves the full definition of a specific app. Crucially, this tool automatically traverses the `entities` mapping, reads any referenced `context_file`s from the disk, and embeds their raw text directly into the response payload. This allows the LLM to acquire comprehensive entity knowledge in a single tool call without manual file system navigation.
+1. **`cms_bizdef_list`**: Reads the global `bizdefs.json` to find enabled BizDefs, then parses each BizDef's `bizdef.json` to return a summarized list of available BizDefs.
+2. **`cms_bizdef_get`**: Retrieves the full definition of a specific BizDef. Crucially, this tool automatically traverses the `entities` mapping, reads any referenced `context_file`s from the disk, and embeds their raw text directly into the response payload. This allows the LLM to acquire comprehensive entity knowledge in a single tool call without manual file system navigation.
+

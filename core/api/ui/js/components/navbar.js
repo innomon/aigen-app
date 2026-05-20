@@ -33,6 +33,7 @@ export async function loadNavBar(container) {
             <a class="nav-item nav-link border-item" href="./edit.html?type=menu&name=top-menu-bar">MenuItems</a>
             <a class="nav-item nav-link border-item" href="./entity_list.html?name=User">Users</a>
             <a class="nav-item nav-link border-item" href="./entity_list.html?name=Role">Roles</a>
+            <a class="nav-item nav-link border-item" href="./plugins.html">Plugins</a>
             <a class="nav-item nav-link border-item" href="../admin">Admin Panel</a>`;
     }
 
