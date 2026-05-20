@@ -19,6 +19,7 @@ func NewPluginApi(service *plugins.PluginService, auth *AuthApi) *PluginApi {
 
 func (a *PluginApi) Register(r chi.Router) {
 	r.Route("/api/plugins", func(r chi.Router) {
+		r.Use(a.Auth.JWTMiddleware)
 		r.Use(a.Auth.RequireAdmin)
 		r.Get("/", a.listPlugins)
 		r.Post("/{id}/mount", a.mountPlugin)

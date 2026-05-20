@@ -356,6 +356,24 @@ func (a *AuthApi) DoLoginByChannel(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
+func (a *AuthApi) RequireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		roles, _ := r.Context().Value("roles").([]string)
+		isAdmin := false
+		for _, role := range roles {
+			if role == descriptors.RoleSa || role == descriptors.RoleAdmin {
+				isAdmin = true
+				break
+			}
+		}
+		if !isAdmin {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (a *AuthApi) RBACMiddleware(action string, explicitResource ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
