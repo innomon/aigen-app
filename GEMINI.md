@@ -27,6 +27,8 @@ You are evolving `AIGenApp` (formerly `aigen-cms` / `FormCMS`) backend in Go (Go
 - Ensure secure JSON path construction and query building to prevent injection. Use parameterized values with squirrel.
 - Concurrency and background workers should be handled using standard goroutines and channels, rather than heavy background worker frameworks unless necessary.
 - Store static assets and embedded files (like the admin panel frontend) using Go `//go:embed`.
+- Always use the "conductor" track hierarchy (creating `spec.md`, `plan.md`, and registering in `conductor/tracks.md`) for organizing tasks, planning, and specifications.
+
 
 ## Downstream BizDef Development
 When tasked with creating a new downstream app (e.g., in `bizdefs/`), refer to the [Downstream BizDef Development Guide](conductor/downstream-app-development-guide.md) for step-by-step instructions on manifests, schemas, and test data.

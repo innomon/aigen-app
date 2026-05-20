@@ -18,3 +18,4 @@ This file tracks the various development tracks for AIGenApp.
 | `commerce-ucp` | Commerce UCP & AP2 Integration | Completed | `./tracks/commerce-ucp/` |
 | `applet-plugins` | Signed Applet Plugin System | Completed | `./tracks/applet-plugins/` |
 | `plugin-routing-vault` | Plugin-Aware Routing & Secure Vault | Completed | `./tracks/plugin-routing-vault/` |
+| `admin-bootstrapping` | Secure Admin User Bootstrapping | In Progress | `./tracks/admin-bootstrapping/` |

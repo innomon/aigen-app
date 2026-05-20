@@ -38,6 +38,11 @@ type StorageConfig struct {
 	Postgres PostgresStorageConfig `yaml:"postgres" json:"postgres"`
 }
 
+type AdminConfig struct {
+	Email    string `yaml:"email" json:"email"`
+	Password string `yaml:"password" json:"password"`
+}
+
 type Config struct {
 	BizDefsDir        string                     `yaml:"bizdefs_dir" json:"bizdefs_dir"`
 	WWWRoot           string                     `yaml:"www_root" json:"www_root"`
@@ -50,6 +55,7 @@ type Config struct {
 	PluginsDir        string                     `yaml:"plugins_dir" json:"plugins_dir"`
 	Storage           StorageConfig              `yaml:"storage" json:"storage"`
 	TemporaryAccess   []descriptors.TemporaryAccessConfig `yaml:"temporary_access" json:"temporary_access"`
+	Admin             AdminConfig                `yaml:"admin" json:"admin"`
 }
 
 func DefaultConfig() *Config {
@@ -74,6 +80,10 @@ func DefaultConfig() *Config {
 				Role: "admin",
 			},
 		},
+		Admin: AdminConfig{
+			Email:    "",
+			Password: "",
+		},
 	}
 }
 
@@ -84,6 +94,8 @@ func LoadConfig(path string) (*Config, error) {
 	if path == "" {
 		if envPath := os.Getenv("FORMCMS_CONFIG_PATH"); envPath != "" {
 			path = envPath
+		} else if _, err := os.Stat("config.yaml"); err == nil {
+			path = "config.yaml"
 		}
 	}
 
@@ -119,6 +131,12 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if agenticPath := os.Getenv("FORMCMS_AGENTIC_CONFIG_PATH"); agenticPath != "" {
 		config.AgenticConfigPath = agenticPath
+	}
+	if adminEmail := os.Getenv("AIGEN_ADMIN_EMAIL"); adminEmail != "" {
+		config.Admin.Email = adminEmail
+	}
+	if adminPass := os.Getenv("AIGEN_ADMIN_PASSWORD"); adminPass != "" {
+		config.Admin.Password = adminPass
 	}
 
 	return config, nil

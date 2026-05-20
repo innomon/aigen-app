@@ -1,6 +1,6 @@
 # AIGenApp Configuration
 
-apps_dir: "apps"
+bizdefs_dir: "bizdefs"
 plugins_dir: "plugins"
 www_root: "wwwroot"
 database_dsn: "aigen.db"

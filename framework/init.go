@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/innomon/aigen-app/core/agentic/agents"
@@ -132,6 +133,13 @@ func NewApp(cfg *Config) (*App, error) {
 	}
 	channelService := services.NewChannelService(dao, cfg.Channels, interactionService, assetService)
 	authService := services.NewAuthService(dao, "your-secret-key", channelService, whatsappService)
+
+	// Bootstrap administrator account
+	isTestEnv := cfg.DatabaseDSN == "memory://" || os.Getenv("FORMCMS_ENV") == "test"
+	if err := authService.BootstrapAdmin(context.Background(), cfg.Admin.Email, cfg.Admin.Password, isTestEnv); err != nil {
+		log.Printf("Warning: failed to bootstrap admin user: %v", err)
+	}
+
 	auditService := services.NewAuditService(dao)
 	pageService := services.NewPageService(schemaService, graphqlService)
 	a2uiService := services.NewA2UIService()

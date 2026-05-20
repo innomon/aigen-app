@@ -111,6 +111,9 @@ The server will start on `http://localhost:5000`.
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 storage. | `""` |
 | `AWS_REGION` | AWS region for S3 storage. | `us-east-1` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google Cloud service account JSON for GCS/Firestore. | `""` |
+| `AIGEN_ADMIN_EMAIL` | Custom email address override for the bootstrapped admin account. | `""` |
+| `AIGEN_ADMIN_PASSWORD` | Custom password override for the bootstrapped admin account. | `""` |
+
 
 ### Production Best Practices
 
@@ -155,6 +158,21 @@ The root route (`/`) is dynamically handled by the `PageApi` and follows a tiere
 1.  **Dynamic "Home" Page**: It first looks for a page entity in the database specifically named `home`. If found, it renders this page using the application's Handlebars-based template engine.
 2.  **Role-Based Dashboard**: If no `home` page exists, the system checks the current user's role (or the `guest` role if not authenticated). If that role has a `DashboardPageId` configured, it renders that specific page.
 3.  **Admin Redirect**: If neither of the above is found, the system redirects the user to the admin interface (`/admin/list.html`).
+
+## CLI Utilities
+
+AIGenApp provides a built-in handcrafted CLI command tool for direct system administration (e.g. creating super-admins or resetting passwords directly in the database):
+
+```bash
+# Build the administrative tool
+go build -o aigen-admin cmd/admin/main.go
+
+# Create a new super-admin user
+./aigen-admin create -db="postgres://user:pass@host:5432/db" -email="admin@my-company.com" -password="secure-password"
+
+# Reset an existing user's password
+./aigen-admin reset-pass -db="postgres://user:pass@host:5432/db" -email="admin@my-company.com" -password="new-secure-password"
+```
 
 ## Framework Structure
 

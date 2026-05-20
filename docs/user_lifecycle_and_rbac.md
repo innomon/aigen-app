@@ -139,3 +139,82 @@ The `EntityService` integrates deeply with `PermissionService`:
 * **List/Single Queries:** Calls `GetRowFilters` before executing the underlying `squirrel` SQL builder to ensure Row-Level security.
 * **Data Scanning:** Uses `GetFieldPermissions` to strip unauthorized fields from the JSON response.
 * **Data Mutations (Insert/Update):** Strips unauthorized fields from the incoming JSON payload before constructing the SQL INSERT/UPDATE statements.
+
+---
+
+## 6. Administrator Account Bootstrapping & CLI Management
+
+To ensure an out-of-the-box experience while maintaining maximum production security, AIGenApp features a secure, database-agnostic administrator account bootstrapping system and a dedicated handcrafted CLI administration utility.
+
+### 6.1. Bootstrapping Lifecycle
+
+On server startup, after database initialization, the framework automatically scans for any existing users with administrative privileges (`admin` or `sa` roles) in the user records. 
+
+* **Skip Condition:** If at least one administrative user is found, the bootstrapping sequence is completely skipped. This guarantees that existing administrative setups and credentials are never overwritten or altered.
+* **First-Time Boot:** If no administrative users are found in the system, a new super-admin account is generated based on the environment type.
+
+### 6.2. Environment-Specific Behavior
+
+The bootstrapping behavior adapts dynamically to the environment configuration:
+
+#### A. In-Memory & Test Runs (`memory://` or `FORMCMS_ENV=test`)
+When running locally with an in-memory database or in test mode, the system assumes a developer/test environment and auto-seeds standard credentials for immediate access:
+* **Default Email:** `admin@aigen.local`
+* **Default Password:** `adminpassword`
+* **Assigned Roles:** `sa` (Super Admin), `admin`, `user`
+
+#### B. Production & Persistent Database Runs (`postgres://...`)
+For live databases (such as PostgreSQL), security-first policies are enforced:
+
+1. **Configured Overrides:** The system checks the environment variables:
+   * `AIGEN_ADMIN_EMAIL`
+   * `AIGEN_ADMIN_PASSWORD`
+   
+   If these are set, they take absolute precedence. You can also specify them inside the YAML configuration file under:
+   ```yaml
+   admin:
+     email: "admin@company.com"
+     password: "super-secure-password"
+   ```
+
+2. **Secure Auto-Generation Fallback:** If no environment overrides or YAML configurations are provided, and no admins exist:
+   * A high-entropy 16-character password is generated using Go's cryptographically secure random generator `crypto/rand`.
+   * A super-admin account with the email `admin@aigen.local` is registered.
+   * A highly visible stdout warning banner is printed to the console containing the generated password:
+     ```
+     ========================================================================
+     [WARNING] FIRST TIME STARTUP DETECTED: NO ADMIN ACCOUNT FOUND.
+     We have safely bootstrapped a super-admin account for you:
+
+       Username/Email: admin@aigen.local
+       Password:       [16-character-random-password]
+
+     Please log in and CHANGE this password immediately inside the admin panel!
+     ========================================================================
+     ```
+
+---
+
+### 6.3. Handcrafted CLI Management Tool (`aigen-admin`)
+
+For direct administrative intervention on host environments, the project provides a dedicated Cobra-free/Pflag-free CLI tool compiled from `cmd/admin/main.go`. This utility operates directly on the underlying database schema utilizing standard Go flag parsing.
+
+#### Building the Utility
+```bash
+go build -o aigen-admin cmd/admin/main.go
+```
+
+#### Subcommands
+
+##### 1. `create`
+Manually registers a new super-admin user directly into the database.
+```bash
+./aigen-admin create -db="postgres://user:pass@host:5432/db" -email="admin@my-company.com" -password="secure-password"
+```
+
+##### 2. `reset-pass`
+Resets the password of any existing user inside the database.
+```bash
+./aigen-admin reset-pass -db="postgres://user:pass@host:5432/db" -email="admin@my-company.com" -password="new-secure-password"
+```
+

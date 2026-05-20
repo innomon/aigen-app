@@ -2,7 +2,11 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
+	"log"
+	"math/big"
+	"os"
 	"time"
 
 	"github.com/innomon/aigen-app/core/descriptors"
@@ -278,4 +282,125 @@ func (s *AuthService) UpdateUser(ctx context.Context, user *descriptors.User) er
 		Tmstamp:   user.UpdatedAt,
 	}
 	return s.dao.Save(ctx, rec)
+}
+
+func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultPassword string, isTestEnv bool) error {
+	// 1. Scan for existing admin users in a database-agnostic way
+	recs, _, err := s.dao.List(ctx, UserNamespace, nil, datamodels.Pagination{Limit: func() *string { limitStr := "100"; return &limitStr }()}, nil)
+	if err != nil {
+		return fmt.Errorf("failed to scan for existing users: %w", err)
+	}
+
+	adminExists := false
+	for _, rec := range recs {
+		var user descriptors.User
+		if err := mapstructure.Decode(rec.Rec, &user); err == nil {
+			for _, role := range user.Roles {
+				if role == descriptors.RoleAdmin || role == descriptors.RoleSa {
+					adminExists = true
+					break
+				}
+			}
+		}
+		if adminExists {
+			break
+		}
+	}
+
+	// If admin already exists, skip bootstrapping
+	if adminExists {
+		return nil
+	}
+
+	// 2. Select credentials to use
+	email := defaultEmail
+	password := defaultPassword
+
+	// Environment variable overrides take precedence
+	if envEmail := os.Getenv("AIGEN_ADMIN_EMAIL"); envEmail != "" {
+		email = envEmail
+	}
+	if envPass := os.Getenv("AIGEN_ADMIN_PASSWORD"); envPass != "" {
+		password = envPass
+	}
+
+	// Default fallback email
+	if email == "" {
+		email = "admin@aigen.local"
+	}
+
+	isRandom := false
+	if password == "" {
+		if isTestEnv {
+			password = "adminpassword"
+		} else {
+			randPass, err := generateSecurePassword(16)
+			if err != nil {
+				return fmt.Errorf("failed to generate secure random password: %w", err)
+			}
+			password = randPass
+			isRandom = true
+		}
+	}
+
+	// 3. Register the super-admin user
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	now := time.Now()
+	user := &descriptors.User{
+		Id:           now.Unix(),
+		Email:        email,
+		PasswordHash: string(hashedPassword),
+		Roles:        []string{descriptors.RoleSa, descriptors.RoleAdmin, descriptors.RoleUser},
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	}
+
+	rec := datamodels.RecJSON{
+		Namespace: UserNamespace,
+		Key:       email,
+		Rec:       user,
+		Tmstamp:   now,
+	}
+
+	if err := s.dao.Save(ctx, rec); err != nil {
+		return fmt.Errorf("failed to save bootstrapped admin user: %w", err)
+	}
+
+	// 4. Log or display output
+	if isRandom {
+		printAdminBanner(email, password)
+	} else {
+		log.Printf("[INFO] Bootstrapped administrator user account: %s", email)
+	}
+
+	return nil
+}
+
+func generateSecurePassword(length int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+"
+	result := make([]byte, length)
+	for i := 0; i < length; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		result[i] = charset[num.Int64()]
+	}
+	return string(result), nil
+}
+
+func printAdminBanner(email, password string) {
+	fmt.Println("========================================================================")
+	fmt.Println("[WARNING] FIRST TIME STARTUP DETECTED: NO ADMIN ACCOUNT FOUND.")
+	fmt.Println("We have safely bootstrapped a super-admin account for you:")
+	fmt.Println("")
+	fmt.Printf("  Username/Email: %s\n", email)
+	fmt.Printf("  Password:       %s\n", password)
+	fmt.Println("")
+	fmt.Println("Please log in and CHANGE this password immediately inside the admin panel!")
+	fmt.Println("========================================================================")
 }
