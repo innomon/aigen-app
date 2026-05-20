@@ -157,6 +157,22 @@ Plugins are managed via the **Plugin Management API**:
 - **Mounting**: When activated, the plugin's BizDefs are registered with the `SchemaService`, and its agents are merged into the `ChatService` registry on-the-fly.
 - **Hot-Swapping**: Functionality can be added or updated without restarting the primary AIGenApp process.
 
+### 4. Plugin-Aware Routing
+The **RouterAgent** is natively aware of activated plugins. 
+- **Doc Analysis**: The router introspects plugin metadata and documentation to understand their capabilities.
+- **Agent Transfer**: If a user's intent matches a plugin's domain, the router loads the plugin's `agentic.yaml` and delegates the conversation to its `root_agent`.
+
+### 5. Permission Management & Secure Vault
+Applets operate under a **Least Privilege** model:
+- **Manifest-Based Permissions**: Plugins must declare required permissions (e.g., `http`, `bizdef`) in their manifest.
+- **Admin Authorization**: Sensitive permissions (like external network access) must be explicitly authorized by an administrator. All grants are logged in the **Audit Log**.
+- **Secure Vault**: Sensitive credentials (API keys, secrets) are stored in an encrypted vault. Plugins can only access keys they have explicitly declared in their manifest.
+
+### 6. Plugin Schema Evolution
+Data consistency across plugin updates is maintained via the **EvolutionService**:
+- **Automatic JIT Evolution**: When a plugin is updated, any existing data is automatically evolved "on-the-fly" using the plugin's new `evolution.json` manifest during read/write operations.
+- **Data Integrity**: This ensures that data created by version 1.0 of a plugin remains accessible and valid when the system is upgraded to version 2.0.
+
 ## BizDef Integration & Invocation
 
 BizDefs (like `bizdefs/crm`) are not standalone executables, but rather collections of business logic, schemas, and metadata managed by the system's core services.
