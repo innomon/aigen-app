@@ -120,7 +120,7 @@ func TestChatServiceAndRouter(t *testing.T) {
 	})
 
 	// We need to register "router" too, ChatService.NewChatService calls agents.RegisterRouterAgent
-	agents.RegisterRouterAgent(intSvc)
+	agents.RegisterRouterAgent(intSvc, nil)
 
 	reg := registry.New(cfg)
 	chatSvc := &ChatService{

@@ -31,26 +31,137 @@ type PluginService struct {
 	SchemaService    *services.SchemaService
 	EvolutionService services.IEvolutionService
 	ChatService      *services.ChatService
-	
+	AuditService     services.IAuditService
+
 	// Sandbox
 	Dispatcher *SandboxDispatcher
+
+	// Persistence for permissions and vault (simplified for POC)
+	grants []PermissionGrant
+	vault  []VaultEntry
 }
 
-func NewPluginService(pluginsDir string, schemaService *services.SchemaService, evolutionService services.IEvolutionService, chatService *services.ChatService, entityService services.IEntityService, a2uiService services.IA2UIService) *PluginService {
+func NewPluginService(pluginsDir string, schemaService *services.SchemaService, evolutionService services.IEvolutionService, chatService *services.ChatService, entityService services.IEntityService, a2uiService services.IA2UIService, auditService services.IAuditService) *PluginService {
 	hostAPI := &AIGenHostAPI{
 		EntityService: entityService,
 		A2UIService:   a2uiService,
 	}
 	
-	return &PluginService{
+	svc := &PluginService{
 		pluginsDir:       pluginsDir,
 		plugins:          make(map[string]*PluginInfo),
 		trustedKeys:      make(map[string]*rsa.PublicKey),
 		SchemaService:    schemaService,
 		EvolutionService: evolutionService,
 		ChatService:      chatService,
+		AuditService:     auditService,
 		Dispatcher:       NewSandboxDispatcher(hostAPI),
 	}
+	svc.Dispatcher.PluginService = svc
+	return svc
+}
+
+func (s *PluginService) GetRoutingDocs() map[string]string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	docs := make(map[string]string)
+	for id, info := range s.plugins {
+		if info.Status == StatusActive {
+			docs[id] = info.Manifest.Description
+		}
+	}
+	return docs
+}
+
+func (s *PluginService) LoadAgenticConfig(id string) ([]byte, error) {
+	s.mu.RLock()
+	info, ok := s.plugins[id]
+	s.mu.RUnlock()
+
+	if !ok {
+		return nil, fmt.Errorf("plugin %s not found", id)
+	}
+
+	r, err := zip.OpenReader(info.Path)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	agenticPath := "agentic/agentic.yaml"
+	if info.Manifest.EntryPoints != nil {
+		if p, ok := info.Manifest.EntryPoints["agentic"]; ok {
+			agenticPath = p
+		}
+	}
+
+	f, err := r.Open(agenticPath)
+	if err != nil {
+		return nil, fmt.Errorf("agentic.yaml not found in %s: %w", id, err)
+	}
+	defer f.Close()
+
+	return io.ReadAll(f)
+}
+
+func (s *PluginService) AuthorizePermission(ctx context.Context, pluginID string, req PermissionRequirement, adminID string) error {
+	s.mu.Lock()
+	grant := PermissionGrant{
+		PluginID:  pluginID,
+		Type:      req.Type,
+		Value:     req.Value,
+		GrantedBy: adminID,
+		GrantedAt: time.Now(),
+	}
+	s.grants = append(s.grants, grant)
+	s.mu.Unlock()
+
+	if s.AuditService != nil {
+		s.AuditService.Log(ctx, &descriptors.Audit{
+			Action:    "plugin_permission_granted",
+			TargetID:  pluginID,
+			ActorID:   adminID,
+			MetaData:  fmt.Sprintf("Type: %s, Value: %s", req.Type, req.Value),
+			CreatedAt: time.Now(),
+		})
+	}
+
+	return nil
+}
+
+func (s *PluginService) SetSecret(pluginID, key, value string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	found := false
+	for i, entry := range s.vault {
+		if entry.PluginID == pluginID && entry.Key == key {
+			s.vault[i].Value = value
+			s.vault[i].UpdatedAt = time.Now()
+			found = true
+			break
+		}
+	}
+	if !found {
+		s.vault = append(s.vault, VaultEntry{
+			PluginID:  pluginID,
+			Key:       key,
+			Value:     value,
+			UpdatedAt: time.Now(),
+		})
+	}
+}
+
+func (s *PluginService) GetSecret(pluginID, key string) (string, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, entry := range s.vault {
+		if entry.PluginID == pluginID && entry.Key == key {
+			return entry.Value, true
+		}
+	}
+	return "", false
 }
 
 func (s *PluginService) MountPlugin(ctx context.Context, id string) error {

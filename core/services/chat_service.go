@@ -27,7 +27,6 @@ type ChatService struct {
 
 func NewChatService(configPath string, entityService IEntityService, schemaService *SchemaService, evolutionService IEvolutionService, a2uiService *A2UIService, interactionService IInteractionService, commerceService ICommerceService) (*ChatService, error) {
 	// Register custom types and tools
-	agents.RegisterRouterAgent(interactionService)
 	RegisterCMSTools(entityService, schemaService, evolutionService, a2uiService, commerceService)
 
 	// Load agentic config

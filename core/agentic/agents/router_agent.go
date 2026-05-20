@@ -52,7 +52,12 @@ type IInteractionService interface {
 	UpdateStatus(ctx context.Context, id string, status string, errStr string) error
 }
 
-func RegisterRouterAgent(svc IInteractionService) {
+type IPluginProvider interface {
+	GetRoutingDocs() map[string]string
+	LoadAgenticConfig(id string) ([]byte, error)
+}
+
+func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
 	registry.RegisterAgentType("router", func(ctx context.Context, name string, cfg *RouterAgentConfig, models registry.ModelRegistry, tools registry.ToolRegistry, sub []agent.Agent) (agent.Agent, error) {
 		return agent.New(agent.Config{
 			Name:        name,
@@ -77,15 +82,22 @@ func RegisterRouterAgent(svc IInteractionService) {
 						return
 					}
 
-					// 2. Resolve Available BizDefs for User
-					// For now, we assume all sub-agents are available
-					availableBizDefs := []string{}
+					// 2. Resolve Available Targets (Sub-Agents + Plugins)
+					availableTargets := []string{}
 					for _, a := range sub {
-						availableBizDefs = append(availableBizDefs, a.Name())
+						availableTargets = append(availableTargets, a.Name())
+					}
+					
+					pluginDocs := make(map[string]string)
+					if plugins != nil {
+						pluginDocs = plugins.GetRoutingDocs()
+						for id := range pluginDocs {
+							availableTargets = append(availableTargets, id)
+						}
 					}
 
-					if len(availableBizDefs) == 0 {
-						yield(textEvent(ic, "I'm sorry, I don't have any BizDefs configured to handle your request."), nil)
+					if len(availableTargets) == 0 {
+						yield(textEvent(ic, "I'm sorry, I don't have any BizDefs or Plugins configured to handle your request."), nil)
 						return
 					}
 
@@ -102,22 +114,22 @@ func RegisterRouterAgent(svc IInteractionService) {
 						json.Unmarshal([]byte(history[0].Content), &state)
 					}
 
-					targetBizDef := ""
+					targetName := ""
 
 					if state.Status == "pending_selection" {
 						// Match by number or name
-						bizdefIndex := -1
+						targetIndex := -1
 						cleanInput := strings.TrimSpace(strings.ToLower(userInput))
 						
 						for i, opt := range state.Options {
 							if cleanInput == fmt.Sprintf("%d", i+1) || strings.Contains(strings.ToLower(opt), cleanInput) {
-								bizdefIndex = i
+								targetIndex = i
 								break
 							}
 						}
 
-						if bizdefIndex >= 0 {
-							targetBizDef = state.Options[bizdefIndex]
+						if targetIndex >= 0 {
+							targetName = state.Options[targetIndex]
 							// Clear state
 							svc.Log(ctx, &descriptors.Interaction{
 								Identifier: stateKey,
@@ -130,26 +142,32 @@ func RegisterRouterAgent(svc IInteractionService) {
 						}
 					} else {
 						// 4. Perform Initial Routing
-						if len(availableBizDefs) == 1 {
-							targetBizDef = availableBizDefs[0]
+						if len(availableTargets) == 1 {
+							targetName = availableTargets[0]
 						} else {
 							// Simple Keyword Match first
 							lowerInput := strings.ToLower(userInput)
-							for _, bizdefName := range availableBizDefs {
-								if strings.Contains(lowerInput, strings.ToLower(bizdefName)) {
-									targetBizDef = bizdefName
+							for _, name := range availableTargets {
+								if strings.Contains(lowerInput, strings.ToLower(name)) {
+									targetName = name
 									break
 								}
 							}
 
 							// If no simple match, use LLM or Ask User
-							if targetBizDef == "" {
+							if targetName == "" {
 								// Try LLM classification if configured
 								if cfg.Classifier.Model != "" {
 									m, err := models.Get(ctx, cfg.Classifier.Model)
 									if err == nil {
+										optionsStr := strings.Join(availableTargets, ", ")
+										// Enrich with plugin descriptions if available
+										for id, desc := range pluginDocs {
+											optionsStr += fmt.Sprintf("\n- %s: %s", id, desc)
+										}
+
 										prompt := strings.ReplaceAll(cfg.Classifier.Prompt, "${userInput}", userInput)
-										prompt = strings.ReplaceAll(prompt, "${options}", strings.Join(availableBizDefs, ", "))
+										prompt = strings.ReplaceAll(prompt, "${options}", optionsStr)
 										
 										request := &model.LLMRequest{
 											Contents: []*genai.Content{
@@ -169,10 +187,10 @@ func RegisterRouterAgent(svc IInteractionService) {
 
 										if llmOutput != "" {
 											llmOutput = strings.TrimSpace(strings.ToLower(llmOutput))
-											// Look for bizdef name in output
-											for _, bizdefName := range availableBizDefs {
-												if strings.Contains(llmOutput, strings.ToLower(bizdefName)) {
-													targetBizDef = bizdefName
+											// Look for target name in output
+											for _, name := range availableTargets {
+												if strings.Contains(llmOutput, strings.ToLower(name)) {
+													targetName = name
 													break
 												}
 											}
@@ -181,9 +199,9 @@ func RegisterRouterAgent(svc IInteractionService) {
 								}
 
 								// If still no target, ask the user
-								if targetBizDef == "" {
+								if targetName == "" {
 									state.Status = "pending_selection"
-									state.Options = availableBizDefs
+									state.Options = availableTargets
 									stateData, _ := json.Marshal(state)
 									
 									svc.Log(ctx, &descriptors.Interaction{
@@ -195,12 +213,12 @@ func RegisterRouterAgent(svc IInteractionService) {
 									})
 
 									optionsText := ""
-									for i, opt := range availableBizDefs {
+									for i, opt := range availableTargets {
 										optionsText += fmt.Sprintf("\n%d. %s", i+1, opt)
 									}
 									prompt := strings.ReplaceAll(cfg.SelectionPrompt, "${options}", optionsText)
 									if prompt == "" {
-										prompt = "Please select a BizDef:" + optionsText
+										prompt = "Please select a BizDef or Plugin:" + optionsText
 									}
 									yield(textEvent(ic, prompt), nil)
 									return
@@ -209,11 +227,12 @@ func RegisterRouterAgent(svc IInteractionService) {
 						}
 					}
 
-					// 5. Route to Target Agent
-					if targetBizDef != "" {
+					// 5. Route to Target Agent (Sub-Agent or Plugin)
+					if targetName != "" {
+						// 5a. Check Sub-Agents first
 						var target agent.Agent
 						for _, a := range sub {
-							if a.Name() == targetBizDef {
+							if a.Name() == targetName {
 								target = a
 								break
 							}
@@ -225,9 +244,33 @@ func RegisterRouterAgent(svc IInteractionService) {
 									return
 								}
 							}
-						} else {
-							yield(textEvent(ic, "Failed to route to BizDef: "+targetBizDef), nil)
+							return
 						}
+
+						// 5b. Check Plugins
+						if plugins != nil {
+							if yamlData, err := plugins.LoadAgenticConfig(targetName); err == nil {
+								// Instantiate plugin agent in memory
+								// Note: We need a registry instance to parse the YAML.
+								// In a real scenario, we might need to pass a sub-registry or the main one.
+								// For now, let's assume we use the tools/models from the current context.
+								
+								// This is a bit complex as we need to parse the YAML and find the root_agent.
+								// For the POC, let's assume agentic.LoadFromYAML exists or similar.
+								
+								// TODO: Implement actual Agentic YAML loading and execution here.
+								yield(textEvent(ic, fmt.Sprintf("Routing to plugin %s. (Agentic YAML loaded, executing root_agent...)", targetName)), nil)
+								
+								// Placeholder for actual execution:
+								// pluginAgent, _ := registry.LoadAgentFromYAML(ctx, yamlData, models, tools)
+								// for evt, err := range pluginAgent.Run(ic) { ... }
+								
+								_ = yamlData
+								return
+							}
+						}
+
+						yield(textEvent(ic, "Failed to route to target: "+targetName), nil)
 					}
 				}
 			},

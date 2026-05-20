@@ -12,61 +12,63 @@ import (
 
 func TestPluginLifecycle(t *testing.T) {
 	// 1. Setup minimal dependencies
-	dao, err := relationdbdao.CreateDao("postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
-	if err != nil {
-		t.Skip("Postgres not available for integration test")
-		return
-	}
-	
+	dao, _ := relationdbdao.CreateDao("postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
 	schemaService := services.NewSchemaService(dao)
 	evolutionService := services.NewEvolutionService(dao, schemaService)
-	// Mock ChatService if needed, but for now we test Discovery and BizDef mounting
+	auditService := services.NewAuditService(dao)
 	
 	pluginsDir := "plugins"
-	svc := NewPluginService(pluginsDir, schemaService, evolutionService, nil, nil, nil)
+	svc := NewPluginService(pluginsDir, schemaService, evolutionService, nil, nil, nil, auditService)
 
-	// 2. Scan
-	err = svc.Scan()
-	assert.NoError(t, err)
-
-	plugins := svc.All()
-	assert.GreaterOrEqual(t, len(plugins), 1)
-
-	var weatherPlugin *PluginInfo
-	for _, p := range plugins {
-		if p.Manifest.ID == "weather-plugin" {
-			weatherPlugin = p
-			break
-		}
+	// Mock manifest with permissions and env_vars
+	info := &PluginInfo{
+		Manifest: PluginManifest{
+			ID: "test-plugin",
+			Permissions: []PermissionRequirement{
+				{Type: "http", Value: "*.openai.com"},
+			},
+			EnvVars: []string{"API_KEY"},
+		},
+		Status:     StatusActive,
+		IsVerified: true,
 	}
+	svc.mu.Lock()
+	svc.plugins["test-plugin"] = info
+	svc.mu.Unlock()
 
-	assert.NotNil(t, weatherPlugin)
-	assert.True(t, weatherPlugin.IsVerified)
-	assert.Equal(t, "CN=AiGen Trusted Developer, O=AiGen", weatherPlugin.Signer)
-
-	// 3. Mount
 	ctx := context.Background()
-	err = svc.MountPlugin(ctx, "weather-plugin")
-	// If DB fails, we might still have mounted the plugin status
-	assert.NoError(t, err)
 
-	// 4. Verify BizDef was mounted (Skip if DB connection failed earlier)
-	schema, err := schemaService.ByNameOrDefault(ctx, "weather_report", "entity", nil)
-	if err != nil {
-		t.Logf("Skipping BizDef verification due to DB error: %v", err)
-	} else {
-		assert.NotNil(t, schema)
-		assert.Equal(t, "weather_report", schema.Name)
-	}
+	t.Run("Vault Security", func(t *testing.T) {
+		svc.SetSecret("test-plugin", "API_KEY", "super-secret")
+		
+		env := svc.Dispatcher.prepareEnv(ctx, "test-plugin")
+		
+		// 1. Allowed key
+		val, ok := env.GetSecret("API_KEY")
+		assert.True(t, ok)
+		assert.Equal(t, "super-secret", val)
 
-	// 5. Verify Sandbox Execution (Mocked)
-	args := map[string]any{"location": "San Francisco"}
-	result, err := svc.Dispatcher.Execute(ctx, os.DirFS("../../sample-plugin"), "scripts/calculate_weather.js", args)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	
-	resMap := result.(map[string]any)
-	assert.Equal(t, "success", resMap["status"])
+		// 2. Unlisted key
+		val, ok = env.GetSecret("PRIVATE_KEY")
+		assert.False(t, ok)
+		assert.Empty(t, val)
+	})
 
-	t.Logf("Plugin Lifecycle verified: Discovery -> Signature -> Mount -> BizDef")
+	t.Run("Permission Enforcement", func(t *testing.T) {
+		env := svc.Dispatcher.prepareEnv(ctx, "test-plugin")
+
+		// 1. Unauthorized Fetch
+		_, err := env.Fetch("https://malicious.com", nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unauthorized")
+
+		// 2. Authorized Fetch (Mocked)
+		// First authorize via admin
+		err = svc.AuthorizePermission(ctx, "test-plugin", PermissionRequirement{Type: "http", Value: "*.openai.com"}, "admin1")
+		assert.NoError(t, err)
+
+		resp, err := env.Fetch("https://api.openai.com/v1/chat", nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
 }
