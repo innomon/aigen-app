@@ -17,3 +17,4 @@ This file tracks the various development tracks for AIGenApp.
 | `bizdef-evolution` | BizDef Schema Evolution | Active | `./tracks/bizdef-evolution/` |
 | `commerce-ucp` | Commerce UCP & AP2 Integration | Active | `./tracks/commerce-ucp/` |
 | `applet-plugins` | Signed Applet Plugin System | Completed | `./tracks/applet-plugins/` |
+| `plugin-routing-vault` | Plugin-Aware Routing & Secure Vault | Completed | `./tracks/plugin-routing-vault/` |

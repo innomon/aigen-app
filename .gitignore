@@ -27,6 +27,7 @@ certs/
 
 # Logs & Temporary Files
 *.log
+*.tmp
 firebase-debug.log
 .firebase/
 .gemini/tmp/

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/innomon/aigen-app/core/agentic/agents"
 	"github.com/innomon/agentic/pkg/config"
 	"github.com/innomon/agentic/pkg/registry"
 	"google.golang.org/adk/agent"
@@ -79,7 +78,7 @@ func (s *ChatService) ProcessMessage(ctx context.Context, identifier string, mes
 		UserID:    userID,
 		SessionID: sessionID,
 	})
-	
+
 	isNewSession := false
 	var sess session.Session
 	if err != nil {
@@ -108,7 +107,7 @@ func (s *ChatService) ProcessMessage(ctx context.Context, identifier string, mes
 				if item.Direction == "outbound" {
 					role = "model"
 				}
-				
+
 				evt := &session.Event{
 					LLMResponse: model.LLMResponse{
 						Content: &genai.Content{

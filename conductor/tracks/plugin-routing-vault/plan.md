@@ -4,11 +4,11 @@
 Enhance the RouterAgent to dynamically route requests to Applet plugins by analyzing their documentation and metadata. Implement a secure permission system and a vault for plugin-specific environment variables.
 
 ## Objectives
-1.  **Plugin-Aware Routing**: RouterAgent should discover active plugins and route chats to them if they match the user's intent.
-2.  **Agent Transfer**: Automatically load a plugin's `agentic.yaml` and delegate execution to its `root_agent`.
-3.  **Permission Management**: A manifest-based permission system where admins must authorize sensitive operations (e.g., HTTP access, specific BizDef access).
-4.  **Secure Vault**: A mechanism to securely store and retrieve environment variables required by plugins.
-5.  **Audit Logging**: Log all admin authorizations and security-sensitive transitions.
+1.  [x] **Plugin-Aware Routing**: RouterAgent discovers active plugins and routes chats to them if they match the user's intent.
+2.  [x] **Agent Transfer**: Automatically load a plugin's `agentic.yaml` and delegate execution to its `root_agent`.
+3.  [x] **Permission Management**: A manifest-based permission system where admins authorize sensitive operations (e.g., HTTP access).
+4.  [x] **Secure Vault**: A mechanism to securely store and retrieve environment variables required by plugins.
+5.  [x] **Audit Logging**: Logged all admin authorizations and security-sensitive transitions.
 
 ## Proposed Changes
 

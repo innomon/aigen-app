@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/innomon/aigen-app/core/bizdefs"
+	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/core/services"
 )
 
@@ -118,11 +119,11 @@ func (s *PluginService) AuthorizePermission(ctx context.Context, pluginID string
 	s.mu.Unlock()
 
 	if s.AuditService != nil {
-		s.AuditService.Log(ctx, &descriptors.Audit{
-			Action:    "plugin_permission_granted",
-			TargetID:  pluginID,
-			ActorID:   adminID,
-			MetaData:  fmt.Sprintf("Type: %s, Value: %s", req.Type, req.Value),
+		s.AuditService.Log(ctx, &descriptors.AuditLog{
+			Action:    descriptors.ActionType("plugin_permission_granted"),
+			RecordId:  pluginID,
+			UserId:    adminID,
+			Payload:   map[string]interface{}{"type": req.Type, "value": req.Value},
 			CreatedAt: time.Now(),
 		})
 	}

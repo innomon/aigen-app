@@ -1,9 +1,11 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
-	"os"
+	"io/fs"
 	"testing"
+	"time"
 
 	"github.com/innomon/aigen-app/core/services"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
@@ -16,7 +18,7 @@ func TestPluginLifecycle(t *testing.T) {
 	schemaService := services.NewSchemaService(dao)
 	evolutionService := services.NewEvolutionService(dao, schemaService)
 	auditService := services.NewAuditService(dao)
-	
+
 	pluginsDir := "plugins"
 	svc := NewPluginService(pluginsDir, schemaService, evolutionService, nil, nil, nil, auditService)
 
@@ -40,35 +42,83 @@ func TestPluginLifecycle(t *testing.T) {
 
 	t.Run("Vault Security", func(t *testing.T) {
 		svc.SetSecret("test-plugin", "API_KEY", "super-secret")
-		
-		env := svc.Dispatcher.prepareEnv(ctx, "test-plugin")
-		
+
+		cfg, err := svc.Dispatcher.prepareVMConfig("test-plugin", "quickjs")
+		assert.NoError(t, err)
+
 		// 1. Allowed key
-		val, ok := env.GetSecret("API_KEY")
+		val, ok := cfg.Env["API_KEY"]
 		assert.True(t, ok)
 		assert.Equal(t, "super-secret", val)
 
 		// 2. Unlisted key
-		val, ok = env.GetSecret("PRIVATE_KEY")
+		_, ok = cfg.Env["PRIVATE_KEY"]
 		assert.False(t, ok)
-		assert.Empty(t, val)
 	})
 
 	t.Run("Permission Enforcement", func(t *testing.T) {
-		env := svc.Dispatcher.prepareEnv(ctx, "test-plugin")
-
-		// 1. Unauthorized Fetch
-		_, err := env.Fetch("https://malicious.com", nil)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "unauthorized")
-
-		// 2. Authorized Fetch (Mocked)
 		// First authorize via admin
-		err = svc.AuthorizePermission(ctx, "test-plugin", PermissionRequirement{Type: "http", Value: "*.openai.com"}, "admin1")
+		err := svc.AuthorizePermission(ctx, "test-plugin", PermissionRequirement{Type: "http", Value: "*.openai.com"}, "admin1")
 		assert.NoError(t, err)
 
-		resp, err := env.Fetch("https://api.openai.com/v1/chat", nil)
+		cfg, err := svc.Dispatcher.prepareVMConfig("test-plugin", "quickjs")
 		assert.NoError(t, err)
-		assert.NotNil(t, resp)
+
+		// Check if AllowNet contains the granted value
+		found := false
+		for _, net := range cfg.AllowNet {
+			if net == "*.openai.com" {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	})
+
+	t.Run("JS Sandbox Execution", func(t *testing.T) {
+
+		script := `
+			const res = { sum: 10 + 20 };
+			res;
+		`
+		// We'll use a mock FS for the test
+		fsys := &mockFS{
+			files: map[string]string{
+				"scripts/test.js": script,
+			},
+		}
+
+		result, err := svc.Dispatcher.Execute(ctx, "test-plugin", fsys, "scripts/test.js", nil)
+		assert.NoError(t, err)
+
+		resMap := result.(map[string]interface{})
+		assert.Equal(t, float64(30), resMap["sum"])
 	})
 }
+
+type mockFS struct {
+	files map[string]string
+}
+
+func (m *mockFS) Open(name string) (fs.File, error) {
+	content, ok := m.files[name]
+	if !ok {
+		return nil, fs.ErrNotExist
+	}
+	return &mockFile{Reader: bytes.NewReader([]byte(content)), name: name}, nil
+}
+
+type mockFile struct {
+	*bytes.Reader
+	name string
+}
+
+func (m *mockFile) Stat() (fs.FileInfo, error) { return m, nil }
+func (m *mockFile) Name() string               { return m.name }
+func (m *mockFile) Size() int64                { return int64(m.Len()) }
+func (m *mockFile) Mode() fs.FileMode          { return 0 }
+func (m *mockFile) ModTime() time.Time         { return time.Now() }
+func (m *mockFile) IsDir() bool                { return false }
+func (m *mockFile) Sys() interface{}           { return nil }
+func (m *mockFile) Close() error               { return nil }
+

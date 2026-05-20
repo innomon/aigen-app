@@ -1,16 +1,18 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/fs"
-	"log"
 	"path/filepath"
 
+	_ "github.com/innomon/agentic/pkg/sandbox/engines/quickjs"
 	"github.com/innomon/agentic/pkg/registry"
+	"github.com/innomon/agentic/pkg/sandbox"
 )
 
-// SandboxDispatcher handles the execution of scripts from plugins.
+// SandboxDispatcher handles the execution of scripts from plugins using the agentic sandbox manager.
 type SandboxDispatcher struct {
 	// HostAPI provides the CMS services to the sandbox
 	HostAPI interface{}
@@ -24,12 +26,8 @@ func NewSandboxDispatcher(hostAPI interface{}) *SandboxDispatcher {
 
 // RegisterPluginTools reads the agentic config and registers tools that use sandboxes.
 func (d *SandboxDispatcher) RegisterPluginTools(reg *registry.Registry, fsys fs.FS, pluginID string) error {
-	// This is where we'd parse agentic.yaml and for each tool with a sandbox:// handler,
-	// we register a tool handler in the registry that calls d.Execute.
-	
-	// Mock implementation for the POC:
-	// Let's assume we find a tool named "calculate_risk" in the plugin.
-	
+	// In a real scenario, we'd parse agentic.yaml to find tools with type: sandbox
+	// Mocking for POC:
 	registry.RegisterToolHandler(fmt.Sprintf("%s_calculate_risk", pluginID), func(ctx context.Context, args map[string]any) (any, error) {
 		return d.Execute(ctx, pluginID, fsys, "scripts/calculate_risk.js", args)
 	})
@@ -44,98 +42,79 @@ func (d *SandboxDispatcher) Execute(ctx context.Context, pluginID string, fsys f
 		return nil, err
 	}
 
-	// Prepare Sandbox Environment
-	env := d.prepareEnv(ctx, pluginID)
-
+	// 1. Resolve VM Type
+	vmType := ""
 	switch ext {
 	case ".js":
-		return d.executeJS(ctx, string(data), args, env)
+		vmType = "quickjs"
 	case ".lua":
-		return d.executeLua(ctx, string(data), args, env)
+		vmType = "lua"
 	case ".star":
-		return d.executeStarlark(ctx, string(data), args, env)
+		vmType = "starlark"
 	case ".wasm":
-		return d.executeWASM(ctx, data, args, env)
+		vmType = "wasm"
 	default:
 		return nil, fmt.Errorf("unsupported script extension: %s", ext)
 	}
-}
 
-type SandboxEnv struct {
-	GetSecret func(key string) (string, bool)
-	Fetch     func(url string, options map[string]any) (any, error)
-}
-
-func (d *SandboxDispatcher) prepareEnv(ctx context.Context, pluginID string) *SandboxEnv {
-	return &SandboxEnv{
-		GetSecret: func(key string) (string, bool) {
-			if d.PluginService == nil {
-				return "", false
-			}
-			// Only allow if listed in manifest
-			info, ok := d.PluginService.Get(pluginID)
-			if !ok {
-				return "", false
-			}
-			allowed := false
-			for _, v := range info.Manifest.EnvVars {
-				if v == key {
-					allowed = true
-					break
-				}
-			}
-			if !allowed {
-				log.Printf("Security Alert: Plugin %s attempted to access unlisted env var %s", pluginID, key)
-				return "", false
-			}
-			return d.PluginService.GetSecret(pluginID, key)
-		},
-		Fetch: func(url string, options map[string]any) (any, error) {
-			if d.PluginService == nil {
-				return nil, fmt.Errorf("plugin service not available")
-			}
-			// Check permissions
-			allowed := false
-			d.PluginService.mu.RLock()
-			for _, g := range d.PluginService.grants {
-				if g.PluginID == pluginID && g.Type == "http" {
-					// Simplified glob match
-					if strings.Contains(url, strings.ReplaceAll(g.Value, "*", "")) {
-						allowed = true
-						break
-					}
-				}
-			}
-			d.PluginService.mu.RUnlock()
-
-			if !allowed {
-				return nil, fmt.Errorf("unauthorized HTTP access to %s. Ask admin for 'http' permission for %s", url, url)
-			}
-
-			log.Printf("Plugin %s performing authorized HTTP fetch to %s", pluginID, url)
-			// Implementation would use http.Client here
-			return map[string]any{"status": 200, "body": "Mock response"}, nil
-		},
+	// 2. Prepare VM Config from Manifest and Grants
+	cfg, err := d.prepareVMConfig(pluginID, vmType)
+	if err != nil {
+		return nil, err
 	}
+
+	// 3. Initialize Agentic Sandbox Manager
+	var logBuf bytes.Buffer
+	host := &sandbox.HostContext{
+		// Tools: d.getPluginTools(pluginID), // Could bridge local tools here
+		Logger: &logBuf,
+	}
+	manager := sandbox.NewManager(host)
+
+	// 4. Run Script
+	vm, err := manager.GetOrCreateVM(pluginID, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create sandbox VM: %w", err)
+	}
+
+	val, err := vm.Run(ctx, string(data))
+	if err != nil {
+		return nil, fmt.Errorf("sandbox execution failed: %w (Logs: %s)", err, logBuf.String())
+	}
+
+	return val, nil
 }
 
-func (d *SandboxDispatcher) executeJS(ctx context.Context, script string, args map[string]any, env *SandboxEnv) (any, error) {
-	// TODO: Integrate with goja/otto and inject env
-	log.Printf("Executing JS script with SandboxEnv (Mock)...")
-	return map[string]any{"status": "success", "result": 42}, nil
-}
+func (d *SandboxDispatcher) prepareVMConfig(pluginID string, vmType string) (sandbox.VMConfig, error) {
+	cfg := sandbox.VMConfig{
+		Type: vmType,
+	}
 
-func (d *SandboxDispatcher) executeLua(ctx context.Context, script string, args map[string]any, env *SandboxEnv) (any, error) {
-	log.Printf("Executing Lua script (Sandbox Mock)...")
-	return nil, fmt.Errorf("lua sandbox not yet implemented")
-}
+	if d.PluginService == nil {
+		return cfg, nil
+	}
 
-func (d *SandboxDispatcher) executeStarlark(ctx context.Context, script string, args map[string]any, env *SandboxEnv) (any, error) {
-	log.Printf("Executing Starlark script (Sandbox Mock)...")
-	return nil, fmt.Errorf("starlark sandbox not yet implemented")
-}
+	info, ok := d.PluginService.Get(pluginID)
+	if !ok {
+		return cfg, fmt.Errorf("plugin %s not found", pluginID)
+	}
 
-func (d *SandboxDispatcher) executeWASM(ctx context.Context, binary []byte, args map[string]any, env *SandboxEnv) (any, error) {
-	log.Printf("Executing WASM script (Sandbox Mock)...")
-	return nil, fmt.Errorf("wasm sandbox not yet implemented")
+	// Map EnvVars (Secrets) to VM Env
+	cfg.Env = make(map[string]string)
+	for _, key := range info.Manifest.EnvVars {
+		if val, ok := d.PluginService.GetSecret(pluginID, key); ok {
+			cfg.Env[key] = val
+		}
+	}
+
+	// Map Permissions (HTTP) to AllowNet
+	d.PluginService.mu.RLock()
+	for _, grant := range d.PluginService.grants {
+		if grant.PluginID == pluginID && grant.Type == "http" {
+			cfg.AllowNet = append(cfg.AllowNet, grant.Value)
+		}
+	}
+	d.PluginService.mu.RUnlock()
+
+	return cfg, nil
 }

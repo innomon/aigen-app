@@ -29,6 +29,7 @@ import (
 	"google.golang.org/adk/model"
 	"google.golang.org/adk/session"
 	"google.golang.org/genai"
+	"gopkg.in/yaml.v3"
 )
 
 type ClassifierConfig struct {
@@ -250,22 +251,27 @@ func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
 						// 5b. Check Plugins
 						if plugins != nil {
 							if yamlData, err := plugins.LoadAgenticConfig(targetName); err == nil {
-								// Instantiate plugin agent in memory
-								// Note: We need a registry instance to parse the YAML.
-								// In a real scenario, we might need to pass a sub-registry or the main one.
-								// For now, let's assume we use the tools/models from the current context.
-								
-								// This is a bit complex as we need to parse the YAML and find the root_agent.
-								// For the POC, let's assume agentic.LoadFromYAML exists or similar.
-								
-								// TODO: Implement actual Agentic YAML loading and execution here.
-								yield(textEvent(ic, fmt.Sprintf("Routing to plugin %s. (Agentic YAML loaded, executing root_agent...)", targetName)), nil)
-								
-								// Placeholder for actual execution:
-								// pluginAgent, _ := registry.LoadAgentFromYAML(ctx, yamlData, models, tools)
-								// for evt, err := range pluginAgent.Run(ic) { ... }
-								
-								_ = yamlData
+								var raw registry.RawConfig
+								if err := yaml.Unmarshal(yamlData, &raw); err == nil {
+									if cfg, err := registry.ParseRaw(&raw); err == nil {
+										pluginReg := registry.New(cfg)
+										root, err := pluginReg.GetRoot(ctx)
+										if err == nil {
+											for evt, err := range root.Run(ic) {
+												if !yield(evt, err) {
+													return
+												}
+											}
+											return
+										} else {
+											yield(textEvent(ic, fmt.Sprintf("Failed to get root agent for plugin %s: %v", targetName, err)), nil)
+										}
+									} else {
+										yield(textEvent(ic, fmt.Sprintf("Failed to parse agentic config for plugin %s: %v", targetName, err)), nil)
+									}
+								} else {
+									yield(textEvent(ic, fmt.Sprintf("Failed to unmarshal agentic config for plugin %s: %v", targetName, err)), nil)
+								}
 								return
 							}
 						}
