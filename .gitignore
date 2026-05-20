@@ -31,6 +31,8 @@ certs/
 firebase-debug.log
 .firebase/
 .gemini/tmp/
+.antigravitycli/
+
 
 # Exports/Imports (Environment specific)
 exports/
