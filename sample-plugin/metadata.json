@@ -1,0 +1,8 @@
+{
+  "id": "weather-plugin",
+  "name": "Weather Service",
+  "version": "1.0.0",
+  "description": "Provides weather information and a weather bizdef.",
+  "author": "AiGen Team",
+  "permissions": ["access:bizdef:weather"]
+}

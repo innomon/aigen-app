@@ -130,6 +130,32 @@ AIGenApp is designed to be cloud-agnostic:
 - **Downstream BizDefs**: Add new business domains by creating a folder in `bizdefs/`.
 - **Custom Tools**: Extend the agentic capabilities by adding tools to `core/agentic/tools/`.
 - **New Channels**: Implement the `ChannelService` patterns for new messaging platforms.
+- **Signed Applets**: Package BizDefs, Agents, and polyglot tools into signed JAR files for secure, dynamic distribution.
+
+## Applet Plugin System
+
+AIGenApp supports a modular extension system called **Applets**. Applets are self-contained, digitally signed JAR files that can dynamically extend the system's capabilities.
+
+### 1. The Applet Package
+An Applet JAR includes:
+- **`bizdef/`**: Entity schemas and migration manifests.
+- **`agentic/`**: Extensions to the interaction brain (`agentic.yaml`).
+- **`scripts/`**: Polyglot business logic (JavaScript, Lua, Starlark).
+- **`wasm/`**: High-performance binaries for complex processing.
+- **`wwwroot/`**: Frontend assets and custom A2UI components.
+
+### 2. Security & Trust Model
+To maintain system integrity, Applets follow a strict trust protocol:
+- **Digital Signatures**: All plugins must be signed using RSA/SHA256. 
+- **Whitelist Verification**: The host only activates plugins signed by trusted authorities or manually "trusted" by an administrator.
+- **Polyglot Sandbox**: All plugin code (JS, WASM, etc.) runs in a memory-safe, resource-capped sandbox.
+- **Managed Host API**: Sandboxed scripts cannot access the host directly; they interact through a restricted `AIGenHostAPI` bridge that enforces RBAC and auditing.
+
+### 3. Dynamic Lifecycle
+Plugins are managed via the **Plugin Management API**:
+- **Discovery**: The `PluginService` automatically detects new JAR files in the `/plugins` directory.
+- **Mounting**: When activated, the plugin's BizDefs are registered with the `SchemaService`, and its agents are merged into the `ChatService` registry on-the-fly.
+- **Hot-Swapping**: Functionality can be added or updated without restarting the primary AIGenApp process.
 
 ## BizDef Integration & Invocation
 

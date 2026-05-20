@@ -1,0 +1,10 @@
+{
+  "name": "weather_report",
+  "display_name": "Weather Report",
+  "description": "Historical weather records",
+  "attributes": [
+    { "name": "location", "type": "string", "required": true },
+    { "name": "temperature", "type": "number" },
+    { "name": "condition", "type": "string" }
+  ]
+}

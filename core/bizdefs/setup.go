@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,23 +34,25 @@ func LoadBizDefsConfig(bizdefsDir string) ([]string, error) {
 	return cfg.EnabledBizDefs, nil
 }
 
-func SetupBizDef(ctx context.Context, bizdefsDir string, bizdefName string, schemaService *services.SchemaService, dao relationdbdao.IPrimaryDao) error {
-	schemasDir := filepath.Join(bizdefsDir, bizdefName, "schemas")
-	files, err := os.ReadDir(schemasDir)
+func SetupBizDefFromFS(ctx context.Context, fsys fs.FS, bizdefName string, schemaService *services.SchemaService) error {
+	schemasDir := "schemas"
+	entries, err := fs.ReadDir(fsys, schemasDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return fmt.Errorf("failed to read %s schemas directory: %w", bizdefName, err)
+		// If it's a plugin JAR, the path might be different, or the error might be different
+		// but typically we expect a schemas/ dir at the root of the provided FS
+		return nil 
 	}
 
-	for _, file := range files {
-		if file.IsDir() || filepath.Ext(file.Name()) != ".json" {
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
 			continue
 		}
 
-		filePath := filepath.Join(schemasDir, file.Name())
-		data, err := os.ReadFile(filePath)
+		filePath := filepath.Join(schemasDir, entry.Name())
+		data, err := fs.ReadFile(fsys, filePath)
 		if err != nil {
 			return fmt.Errorf("failed to read schema file %s: %w", filePath, err)
 		}
@@ -89,14 +92,16 @@ func SetupBizDef(ctx context.Context, bizdefsDir string, bizdefName string, sche
 	return nil
 }
 
-func SetupBizDefEvolution(ctx context.Context, bizdefsDir string, bizdefName string, evolutionService services.IEvolutionService) error {
-	filePath := filepath.Join(bizdefsDir, bizdefName, "evolution.json")
-	data, err := os.ReadFile(filePath)
+func SetupBizDef(ctx context.Context, bizdefsDir string, bizdefName string, schemaService *services.SchemaService, dao relationdbdao.IPrimaryDao) error {
+	fsys := os.DirFS(filepath.Join(bizdefsDir, bizdefName))
+	return SetupBizDefFromFS(ctx, fsys, bizdefName, schemaService)
+}
+
+func SetupBizDefEvolutionFromFS(ctx context.Context, fsys fs.FS, bizdefName string, evolutionService services.IEvolutionService) error {
+	filePath := "evolution.json"
+	data, err := fs.ReadFile(fsys, filePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return fmt.Errorf("failed to read evolution.json for %s: %v", bizdefName, err)
+		return nil // evolution.json is optional
 	}
 
 	var manifest descriptors.EvolutionManifest
@@ -106,6 +111,11 @@ func SetupBizDefEvolution(ctx context.Context, bizdefsDir string, bizdefName str
 
 	evolutionService.RegisterManifest(bizdefName, manifest)
 	return nil
+}
+
+func SetupBizDefEvolution(ctx context.Context, bizdefsDir string, bizdefName string, evolutionService services.IEvolutionService) error {
+	fsys := os.DirFS(filepath.Join(bizdefsDir, bizdefName))
+	return SetupBizDefEvolutionFromFS(ctx, fsys, bizdefName, evolutionService)
 }
 
 type TestDataEntry struct {

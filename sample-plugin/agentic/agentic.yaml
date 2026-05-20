@@ -1,0 +1,8 @@
+tools:
+  - name: "get_weather"
+    description: "Get current weather for a location"
+    handler: "sandbox://scripts/calculate_weather.js"
+    parameters:
+      type: object
+      properties:
+        location: { type: "string" }

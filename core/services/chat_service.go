@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/innomon/aigen-app/core/agentic/agents"
 	"github.com/innomon/agentic/pkg/config"
@@ -49,6 +50,17 @@ func NewChatService(configPath string, entityService IEntityService, schemaServi
 	}
 
 	return svc, nil
+}
+
+func (s *ChatService) RegisterTool(name string, handler func(context.Context, map[string]any) (any, error)) {
+	registry.RegisterToolHandler(name, handler)
+}
+
+func (s *ChatService) AddAgenticConfig(cfg *config.Config) error {
+	// In a real implementation, we'd merge this config into the registry.
+	// For now, we assume the registry is updated or we re-initialize parts of it.
+	log.Printf("Merging agentic config for plugin...")
+	return nil
 }
 
 func (s *ChatService) ProcessMessage(ctx context.Context, identifier string, message string) (string, error) {

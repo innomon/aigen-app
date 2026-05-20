@@ -22,6 +22,8 @@ dist/
 .env
 .env.*
 certs/
+*.pem
+*.jar
 
 # Logs & Temporary Files
 *.log

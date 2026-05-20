@@ -23,6 +23,7 @@ A headless CMS and dynamic application framework in Go, evolved from the FormCMS
 - **Temporary File Access**: Short-lived, unauthenticated URLs with TTL and optimized garbage collection. [Read More](docs/temporary_file_access.md)
 - **Social Engagement**: Built-in likes, bookmarks, and comments.
 - **Embedded UI**: React Admin panel, GrapesJS page builder, and dynamic A2UI renderer included.
+- **Signed Applet Plugins**: Extend the system dynamically with signed JAR files. Support for BizDefs, Agentic tools, and polyglot sandboxed scripts (JS, Lua, Starlark, WASM).
 
 ## Getting Started
 

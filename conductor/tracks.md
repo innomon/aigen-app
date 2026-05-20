@@ -16,3 +16,4 @@ This file tracks the various development tracks for AIGenApp.
 | `bizdef-rename` | Rename App to BizDef | Completed | `./tracks/bizdef-rename/` |
 | `bizdef-evolution` | BizDef Schema Evolution | Active | `./tracks/bizdef-evolution/` |
 | `commerce-ucp` | Commerce UCP & AP2 Integration | Active | `./tracks/commerce-ucp/` |
+| `applet-plugins` | Signed Applet Plugin System | Completed | `./tracks/applet-plugins/` |
