@@ -1,4 +1,4 @@
-export function showToast(message) {
+export function showToast(message, type) {
     // Remove existing toast
     const existingToasts = document.querySelectorAll('.toast');
     existingToasts.forEach(t => t.remove());
@@ -36,6 +36,16 @@ export function showToast(message) {
     // Create new toast
     const toast = document.createElement('div');
     toast.className = 'toast';
+    
+    // Set background color based on type
+    if (type === 'success') {
+        toast.style.backgroundColor = '#10b981'; // green
+    } else if (type === 'danger' || type === 'error') {
+        toast.style.backgroundColor = '#ef4444'; // red
+    } else if (type === 'warning') {
+        toast.style.backgroundColor = '#f59e0b'; // amber
+    }
+    
     toast.textContent = message;
     document.body.appendChild(toast);
 
@@ -47,4 +57,8 @@ export function showToast(message) {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
     }, 2000);
+}
+
+export function toast(title, message, type) {
+    showToast(`${title}: ${message}`, type);
 }

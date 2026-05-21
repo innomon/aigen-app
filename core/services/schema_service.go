@@ -78,7 +78,7 @@ func (s *SchemaService) All(ctx context.Context, schemaType *descriptors.SchemaT
 		return nil, err
 	}
 
-	var results []*descriptors.Schema
+	results := []*descriptors.Schema{}
 	userId, _ := ctx.Value("userId").(int64)
 	roles, _ := ctx.Value("roles").([]string)
 

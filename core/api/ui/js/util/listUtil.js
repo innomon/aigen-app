@@ -38,7 +38,7 @@ export async function renderSchemaTable(tblContainer, errContainer, loadData, ac
     const tbody = document.getElementById('table-body');
     const { showDelete, showViewHistory, showDiff } = actions;
 
-    data.forEach((item, i) => {
+    (data || []).forEach((item, i) => {
         let url = "";
         let duplicateUrl = "";
         switch (item.type) {

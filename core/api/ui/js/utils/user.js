@@ -36,7 +36,7 @@ export function getActiveRole() {
 
 //single flight
 export async function fetchUser() {
-    if (user) return;
+    if (user) return user;
     if (currentUserPromise) {
         return currentUserPromise;
     }
