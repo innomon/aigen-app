@@ -21,6 +21,7 @@ type ISchemaService interface {
 	LoadLoadedEntity(ctx context.Context, name string) (*descriptors.LoadedEntity, error)
 	Save(ctx context.Context, schema *descriptors.Schema, asPublished bool) (*descriptors.Schema, error)
 	Delete(ctx context.Context, schemaId string) error
+	BootstrapDefaultHomePage(ctx context.Context) error
 }
 
 type IEntityService interface {

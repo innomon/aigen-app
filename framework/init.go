@@ -96,6 +96,10 @@ func NewApp(cfg *Config) (*App, error) {
 	permissionService := services.NewPermissionService(dao, schemaService)
 	schemaService.SetPermissionService(permissionService)
 
+	// Create privileged seed context with 'sa' role to bypass permissions filtering during startup/seeding
+	seedCtx := context.WithValue(context.Background(), "roles", []string{"sa"})
+	seedCtx = context.WithValue(seedCtx, "userId", int64(1))
+
 	enabledBizDefs, err := bizdefs.LoadBizDefsConfig(cfg.BizDefsDir)
 	if err != nil {
 		log.Printf("Warning: failed to load bizdefs config from %s: %v", cfg.BizDefsDir, err)
@@ -104,10 +108,10 @@ func NewApp(cfg *Config) (*App, error) {
 
 	for _, bizdefName := range enabledBizDefs {
 		log.Printf("Setting up bizdef schemas: %s", bizdefName)
-		if err := bizdefs.SetupBizDef(context.Background(), cfg.BizDefsDir, bizdefName, schemaService, dao); err != nil {
+		if err := bizdefs.SetupBizDef(seedCtx, cfg.BizDefsDir, bizdefName, schemaService, dao); err != nil {
 			log.Printf("Warning: failed to setup bizdef %s schemas: %v\n", bizdefName, err)
 		}
-		if err := bizdefs.SetupBizDefEvolution(context.Background(), cfg.BizDefsDir, bizdefName, evolutionService); err != nil {
+		if err := bizdefs.SetupBizDefEvolution(seedCtx, cfg.BizDefsDir, bizdefName, evolutionService); err != nil {
 			log.Printf("Warning: failed to setup bizdef %s evolution manifests: %v\n", bizdefName, err)
 		}
 	}
@@ -116,7 +120,7 @@ func NewApp(cfg *Config) (*App, error) {
 
 	for _, bizdefName := range enabledBizDefs {
 		log.Printf("Setting up test data for bizdef: %s", bizdefName)
-		if err := bizdefs.SetupBizDefTestData(context.Background(), cfg.BizDefsDir, bizdefName, entityService); err != nil {
+		if err := bizdefs.SetupBizDefTestData(seedCtx, cfg.BizDefsDir, bizdefName, entityService); err != nil {
 			log.Printf("Warning: failed to setup test data for bizdef %s: %v\n", bizdefName, err)
 		}
 	}
@@ -136,8 +140,13 @@ func NewApp(cfg *Config) (*App, error) {
 
 	// Bootstrap administrator account
 	isTestEnv := cfg.DatabaseDSN == "memory://" || os.Getenv("FORMCMS_ENV") == "test"
-	if err := authService.BootstrapAdmin(context.Background(), cfg.Admin.Email, cfg.Admin.Password, isTestEnv); err != nil {
+	if err := authService.BootstrapAdmin(seedCtx, cfg.Admin.Email, cfg.Admin.Password, isTestEnv); err != nil {
 		log.Printf("Warning: failed to bootstrap admin user: %v", err)
+	}
+
+	// Bootstrap default premium home page
+	if err := schemaService.BootstrapDefaultHomePage(seedCtx); err != nil {
+		log.Printf("Warning: failed to bootstrap default home page: %v", err)
 	}
 
 	auditService := services.NewAuditService(dao)

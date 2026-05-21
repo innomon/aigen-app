@@ -138,17 +138,28 @@ func (s *AuthService) ValidateToken(tokenString string) (int64, []string, error)
 }
 
 func (s *AuthService) GetRoleByName(ctx context.Context, name string) (*descriptors.Role, error) {
-	rec, err := s.dao.Get(ctx, RoleNamespace, name)
-	if err != nil || rec == nil {
+	filters := []datamodels.Filter{
+		{
+			FieldName: "name",
+			Constraints: []datamodels.Constraint{
+				{Match: "equals", Values: []interface{}{name}},
+			},
+		},
+	}
+	
+	limitStr := "1"
+	recs, _, err := s.dao.List(ctx, "aigen.bizdef.entities.Role", filters, datamodels.Pagination{Limit: &limitStr}, nil)
+	if err != nil || len(recs) == 0 {
 		return nil, fmt.Errorf("role not found")
 	}
 
 	var role descriptors.Role
-	if err := mapstructure.Decode(rec.Rec, &role); err != nil {
+	if err := mapstructure.Decode(recs[0].Rec, &role); err != nil {
 		return nil, fmt.Errorf("failed to decode role: %v", err)
 	}
 	return &role, nil
 }
+
 
 func (s *AuthService) LoginByChannel(ctx context.Context, channelType descriptors.ChannelType, identifier string, token string, ip, ua string) (string, error) {
 	// 1. Check if channel already linked to a user

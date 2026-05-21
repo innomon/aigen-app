@@ -28,7 +28,8 @@
     "Ref": "role_guest",
     "Data": {
       "name": "guest",
-      "disabled": false
+      "disabled": false,
+      "dashboard_page_id": "default-home-page"
     }
   }
 ]
