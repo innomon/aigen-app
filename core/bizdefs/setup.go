@@ -34,16 +34,15 @@ func LoadBizDefsConfig(bizdefsDir string) ([]string, error) {
 	return cfg.EnabledBizDefs, nil
 }
 
-func SetupBizDefFromFS(ctx context.Context, fsys fs.FS, bizdefName string, schemaService *services.SchemaService) error {
+func loadSchemasFromFSys(fsys fs.FS) (map[string]descriptors.Entity, error) {
+	schemas := make(map[string]descriptors.Entity)
 	schemasDir := "schemas"
 	entries, err := fs.ReadDir(fsys, schemasDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return schemas, nil
 		}
-		// If it's a plugin JAR, the path might be different, or the error might be different
-		// but typically we expect a schemas/ dir at the root of the provided FS
-		return nil 
+		return nil, err
 	}
 
 	for _, entry := range entries {
@@ -54,39 +53,64 @@ func SetupBizDefFromFS(ctx context.Context, fsys fs.FS, bizdefName string, schem
 		filePath := filepath.Join(schemasDir, entry.Name())
 		data, err := fs.ReadFile(fsys, filePath)
 		if err != nil {
-			return fmt.Errorf("failed to read schema file %s: %w", filePath, err)
+			return nil, fmt.Errorf("failed to read schema file %s: %w", filePath, err)
 		}
 
 		var entity descriptors.Entity
 		if err := json.Unmarshal(data, &entity); err != nil {
-			return fmt.Errorf("failed to parse schema file %s: %w", filePath, err)
+			return nil, fmt.Errorf("failed to parse schema file %s: %w", filePath, err)
 		}
+		schemas[entity.Name] = entity
+	}
+	return schemas, nil
+}
 
+// SetupBizDefFromFS loads schemas from a filesystem and registers or updates them in the database if there are changes.
+func SetupBizDefFromFS(ctx context.Context, fsys fs.FS, bizdefName string, schemaService *services.SchemaService) error {
+	schemas, err := loadSchemasFromFSys(fsys)
+	if err != nil {
+		return err
+	}
+
+	for _, entity := range schemas {
 		existing, err := schemaService.ByNameOrDefault(ctx, entity.Name, descriptors.EntitySchema, nil)
 		if err != nil {
 			return fmt.Errorf("failed to check existing schema %s: %w", entity.Name, err)
 		}
 
 		if existing != nil {
-			continue
-		}
+			existingJSON, _ := json.Marshal(existing.Settings.Entity)
+			newJSON, _ := json.Marshal(&entity)
+			if string(existingJSON) == string(newJSON) {
+				continue
+			}
 
-		schema := &descriptors.Schema{
-			Name:              entity.Name,
-			Type:              descriptors.EntitySchema,
-			IsLatest:          true,
-			PublicationStatus: descriptors.Published,
-			Settings: &descriptors.SchemaSettings{
-				Entity: &entity,
-			},
-		}
+			existing.Settings.Entity = &entity
+			existing.PublicationStatus = descriptors.Published
+			existing.IsLatest = true
 
-		_, err = schemaService.Save(ctx, schema, true)
-		if err != nil {
-			return fmt.Errorf("failed to save schema %s: %w", entity.Name, err)
-		}
+			_, err = schemaService.Save(ctx, existing, true)
+			if err != nil {
+				return fmt.Errorf("failed to update schema %s: %w", entity.Name, err)
+			}
+			fmt.Printf("Updated schema from FS: %s (BizDef: %s)\n", entity.Name, bizdefName)
+		} else {
+			schema := &descriptors.Schema{
+				Name:              entity.Name,
+				Type:              descriptors.EntitySchema,
+				IsLatest:          true,
+				PublicationStatus: descriptors.Published,
+				Settings: &descriptors.SchemaSettings{
+					Entity: &entity,
+				},
+			}
 
-		fmt.Printf("Registered schema: %s (BizDef: %s)\n", entity.Name, bizdefName)
+			_, err = schemaService.Save(ctx, schema, true)
+			if err != nil {
+				return fmt.Errorf("failed to save schema %s: %w", entity.Name, err)
+			}
+			fmt.Printf("Registered schema from FS: %s (BizDef: %s)\n", entity.Name, bizdefName)
+		}
 	}
 
 	return nil
@@ -137,7 +161,7 @@ func SetupBizDefTestData(ctx context.Context, bizdefsDir string, bizdefName stri
 				if os.IsNotExist(err) {
 					return nil
 				}
-				return fmt.Errorf("failed to read seed_data.json for %s: %v", bizdefName, err)
+				return fmt.Errorf("failed to read test_data.json for %s: %v", bizdefName, err)
 			}
 		} else {
 			return fmt.Errorf("failed to read seed_data.json for %s: %v", bizdefName, err)

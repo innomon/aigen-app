@@ -140,6 +140,13 @@ Modifying a BizDef's structure or behavior depends on what phase the modificatio
 - You can use the CMS admin interface to dynamically add new columns, modify pages, or adjust Handlebars templates. These modifications are persisted to the database and take effect immediately via the dynamic `squirrel` query builder and `raymond` templating engine.
 - Note: UI modifications currently exist in the database and would need to be exported back to `.json` files if you want to bundle them into the persistent BizDef source code. You can use the `cmd/export` utility for this.
 
+**Modifying/Overriding via Plugins (Downstream Customization):**
+- Downstream projects can completely customize and override built-in BizDef schemas and default configurations without modifying the core codebase or maintaining a fork.
+- The primary and recommended mechanism for downstream overrides is through **Applet Plugins** (JAR files).
+- When an Applet Plugin containing a `bizdef/` directory is placed in the plugins folder (configured via `plugins_dir` or the `FORMCMS_PLUGINS_DIR` environment variable), the host system automatically mounts it on startup.
+- The **Smart Schema Evolution Engine** dynamically compares the plugin's schema definitions with existing definitions in the core database (`aigen_records`). If differences are detected, the system performs a safe, in-place, JIT schema upgrade of the database definitions. This JIT process is fully idempotent—if the schema structures match, no database write is performed.
+- Through this mechanism, downstream projects can cleanly introduce, override, or evolve standard BizDefs using the unified plugin system.
+
 ---
 
 ## 7. Exporting BizDef Modifications

@@ -168,10 +168,12 @@ Applets operate under a **Least Privilege** model:
 - **Admin Authorization**: Sensitive permissions (like external network access) must be explicitly authorized by an administrator. All grants are logged in the **Audit Log**.
 - **Secure Vault**: Sensitive credentials (API keys, secrets) are stored in an encrypted vault. Plugins can only access keys they have explicitly declared in their manifest.
 
-### 6. Plugin Schema Evolution
-Data consistency across plugin updates is maintained via the **EvolutionService**:
+### 6. Plugin Schema Evolution & Smart Overrides
+Data consistency and schema customization across plugin installations and upgrades are handled elegantly:
+- **Downstream Overrides**: Instead of maintaining standard codebase forks or complex custom schema directories, downstream projects use the Applet Plugin system to supply their overrides. Any `schemas/*.json` inside the plugin's `bizdef/` directory automatically overlays matching core system definitions.
+- **Smart Evolution Engine**: During startup or plugin mounting, the host's setup manager performs dynamic JSON structural comparison on the schemas. A database update is executed only if a structural change is detected. This makes loading extremely fast and completely idempotent.
 - **Automatic JIT Evolution**: When a plugin is updated, any existing data is automatically evolved "on-the-fly" using the plugin's new `evolution.json` manifest during read/write operations.
-- **Data Integrity**: This ensures that data created by version 1.0 of a plugin remains accessible and valid when the system is upgraded to version 2.0.
+- **Data Integrity**: This ensures that data created by version 1.0 of a plugin remains accessible and valid when the system is upgraded to version 2.0, completely avoiding standard SQL `ALTER TABLE` locks.
 
 ## BizDef Integration & Invocation
 
@@ -251,5 +253,7 @@ AIGenApp provides a hybrid interface that blends traditional structured administ
 - **Dynamic Dashboards**: The primary administrative interface (`dashboard.html`) is role-aware and highly customizable. It dynamically renders pages based on a user's assigned role, allowing for tailored workflows and specialized dashboards defined by system administrators.
 - **Entity Administration**: Provides standard, form-based interfaces for direct entity and user management (`entity_list.html`, `entity_edit.html`), ensuring complete control over system data.
 - **Conversational Agent (Chat UI)**: The chat interface (`chat.html`) serves as an agent-led, conversational alternative to the structured UI. It allows users to query data, trigger actions, and manage entities using natural language via the AI-driven agentic framework.
+- **Virtual Overlay Filesystem (OverlayFS)**: To enable downstream customization without codebase modifications or forks, the UI serving layer supports an overlay architecture. Administrators can configure a `custom_ui_path` (or `FORMCMS_CUSTOM_UI_PATH` environment variable) pointing to a local directory. Any assets placed inside this folder take absolute priority over embedded system UI resources, which act as a graceful fallback.
 
 Users are free to navigate between these structured dashboards and the conversational chat assistant depending on their current workflow requirements.
+

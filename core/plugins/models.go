@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"encoding/json"
+	"strings"
 	"time"
 )
 
@@ -20,6 +22,30 @@ type PluginManifest struct {
 type PermissionRequirement struct {
 	Type  string `json:"type"`  // e.g. "http", "bizdef", "filesystem"
 	Value string `json:"value"` // e.g. "*.google.com", "crm", "/tmp/*"
+}
+
+func (p *PermissionRequirement) UnmarshalJSON(data []byte) error {
+	type Alias PermissionRequirement
+	var obj Alias
+	if err := json.Unmarshal(data, &obj); err == nil {
+		*p = PermissionRequirement(obj)
+		return nil
+	}
+
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+
+	parts := strings.SplitN(str, ":", 2)
+	if len(parts) == 2 {
+		p.Type = parts[0]
+		p.Value = parts[1]
+	} else {
+		p.Type = "unknown"
+		p.Value = str
+	}
+	return nil
 }
 
 type PermissionGrant struct {

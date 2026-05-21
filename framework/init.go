@@ -188,7 +188,7 @@ func NewApp(cfg *Config) (*App, error) {
 	a2aApi := api.NewA2AApi(a2aService, authService, cfg.Channels)
 	mcpApi := api.NewMCPApi(mcpService, authApi, tempAccessService, fileStore)
 	tempAccessApi := api.NewTempAccessApi(cfg.TemporaryAccess, tempAccessService, fileStore)
-	staticApi := api.NewStaticApi(cfg.WWWRoot, cfg.Storage.FS.UrlPrefix, pluginService)
+	staticApi := api.NewStaticApi(cfg.WWWRoot, cfg.CustomUIPath, cfg.Storage.FS.UrlPrefix, pluginService)
 	pageApi := api.NewPageApi(pageService, authService, authApi)
 	a2uiApi := api.NewA2UIApi(a2uiService, authApi)
 	pluginApi := api.NewPluginApi(pluginService, authApi)

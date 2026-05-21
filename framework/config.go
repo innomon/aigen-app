@@ -46,6 +46,7 @@ type AdminConfig struct {
 type Config struct {
 	BizDefsDir        string                     `yaml:"bizdefs_dir" json:"bizdefs_dir"`
 	WWWRoot           string                     `yaml:"www_root" json:"www_root"`
+	CustomUIPath      string                     `yaml:"custom_ui_path,omitempty" json:"custom_ui_path,omitempty"`
 	DatabaseDSN       string                     `yaml:"database_dsn" json:"database_dsn"`
 	Domain            string                     `yaml:"domain" json:"domain"`
 	Port              string                     `yaml:"port" json:"port"`
@@ -63,6 +64,7 @@ func DefaultConfig() *Config {
 		BizDefsDir:        "bizdefs",
 		PluginsDir:        "plugins",
 		WWWRoot:           "wwwroot",
+		CustomUIPath:      "",
 		DatabaseDSN:       "memory://",
 		Port:              "5000",
 		AgenticConfigPath: "agentic.yaml",
@@ -119,6 +121,9 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if wwwRoot := os.Getenv("FORMCMS_WWW_ROOT"); wwwRoot != "" {
 		config.WWWRoot = wwwRoot
+	}
+	if customUIPath := os.Getenv("FORMCMS_CUSTOM_UI_PATH"); customUIPath != "" {
+		config.CustomUIPath = customUIPath
 	}
 	if dbDSN := os.Getenv("FORMCMS_DB_DSN"); dbDSN != "" {
 		config.DatabaseDSN = dbDSN

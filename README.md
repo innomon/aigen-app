@@ -23,7 +23,7 @@ A headless CMS and dynamic application framework in Go, evolved from the FormCMS
 - **Temporary File Access**: Short-lived, unauthenticated URLs with TTL and optimized garbage collection. [Read More](docs/temporary_file_access.md)
 - **Social Engagement**: Built-in likes, bookmarks, and comments.
 - **Embedded UI**: React Admin panel, GrapesJS page builder, and dynamic A2UI renderer included.
-- **Signed Applet Plugins**: Extend the system dynamically with signed JAR files. Support for BizDefs, Agentic tools, and polyglot sandboxed scripts (JS, Lua, Starlark, WASM).
+- **Signed Applet Plugins**: Extend the system dynamically with signed JAR files. Support for BizDefs, Agentic tools, polyglot sandboxed scripts (JS, Lua, Starlark, WASM), and **automatic/smart schema overrides** where plugin-supplied schemas seamlessly overlay and update existing data structures in a clean, change-detected database migration.
 
 ## Getting Started
 
@@ -96,6 +96,7 @@ The server will start on `http://localhost:5000`.
 | `DOMAIN` | Your external domain name (e.g., `example.com`). If set, enables automatic HTTPS via `autocert`. | `""` |
 | `PORT` | The port to listen on for HTTP. Ignored if `DOMAIN` is set. | `5000` |
 | `FORMCMS_WWW_ROOT` | The directory for serving static files and storing uploaded assets. | `wwwroot` |
+| `FORMCMS_CUSTOM_UI_PATH` | Path to a custom directory on the local filesystem to serve overriding UI assets, falling back to embedded resources. | `""` |
 | `FORMCMS_BIZDEFS_DIR` | The directory where BizDef definitions and data are located. | `bizdefs` |
 | `FORMCMS_PLUGINS_DIR` | The directory where Applet plugin `.jar` files are loaded from. | `plugins` |
 | `FORMCMS_DB_DSN` | Database connection string (e.g., `postgres://user:pass@host:port/db`). | `""` |
@@ -146,7 +147,7 @@ When deploying to AWS (ECS/EKS), GCP (Cloud Run/GKE), or Azure:
 
 AIGenApp serves static files from two main sources:
 
-1.  **Embedded UI Assets**: The core admin panel and static system assets are embedded in the binary and served under `/admin` and `/static`.
+1.  **Embedded & Custom UI Assets**: The core admin panel and static system assets are embedded in the binary and served under `/admin` and `/static`. Downstream projects can specify `custom_ui_path` (or `FORMCMS_CUSTOM_UI_PATH` env var) to overlay custom assets using the **Overlay Filesystem (OverlayFS)**. If a file is not found in the custom path, it seamlessly falls back to the embedded system assets.
 2.  **Dynamic Static Files**: Files stored in the directory specified by `www_root` (default `wwwroot`) are served via HTTP:
     *   **Uploaded Assets**: By default, uploaded files are stored in `wwwroot/files` and are served under the `/files/*` path.
     *   **Custom Assets**: Any directory or file placed within `www_root` can be accessed if a corresponding route is registered. By default, the `/files/*` route is mapped to the `www_root` directory, meaning `wwwroot/files/logo.png` is available at `/files/logo.png`.

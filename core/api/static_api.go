@@ -5,29 +5,41 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/innomon/aigen-app/core/plugins"
 	"github.com/go-chi/chi/v5"
 )
 
+
 //go:embed all:ui
 var uiAssets embed.FS
 
 type StaticApi struct {
 	wwwRoot       string
+	customUIPath  string
 	filesPrefix   string
 	pluginService *plugins.PluginService
 }
 
-func NewStaticApi(wwwRoot, filesPrefix string, pluginService *plugins.PluginService) *StaticApi {
-	return &StaticApi{wwwRoot: wwwRoot, filesPrefix: filesPrefix, pluginService: pluginService}
+func NewStaticApi(wwwRoot, customUIPath, filesPrefix string, pluginService *plugins.PluginService) *StaticApi {
+	return &StaticApi{wwwRoot: wwwRoot, customUIPath: customUIPath, filesPrefix: filesPrefix, pluginService: pluginService}
 }
 
 func (a *StaticApi) Register(r chi.Router) {
-	// ... (existing uiAssets logic)
 	sub, _ := fs.Sub(uiAssets, "ui")
-	fileServer := http.FileServer(http.FS(sub))
+
+	// Set up OverlayFS with custom directory at higher priority
+	var customFS fs.FS
+	if a.customUIPath != "" {
+		if _, err := os.Stat(a.customUIPath); err == nil {
+			customFS = os.DirFS(a.customUIPath)
+		}
+	}
+
+	overlayFS := NewOverlayFS(customFS, sub)
+	fileServer := http.FileServer(http.FS(overlayFS))
 
 	r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/", http.StatusFound)
