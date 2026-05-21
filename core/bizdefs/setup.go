@@ -126,20 +126,29 @@ type TestDataEntry struct {
 }
 
 func SetupBizDefTestData(ctx context.Context, bizdefsDir string, bizdefName string, entityService services.IEntityService) error {
-	filePath := filepath.Join(bizdefsDir, bizdefName, "data", "test_data.json")
+	filePath := filepath.Join(bizdefsDir, bizdefName, "data", "seed_data.json")
 	dataBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			// Fallback to legacy test_data.json for backward compatibility
+			filePath = filepath.Join(bizdefsDir, bizdefName, "data", "test_data.json")
+			dataBytes, err = os.ReadFile(filePath)
+			if err != nil {
+				if os.IsNotExist(err) {
+					return nil
+				}
+				return fmt.Errorf("failed to read seed_data.json for %s: %v", bizdefName, err)
+			}
+		} else {
+			return fmt.Errorf("failed to read seed_data.json for %s: %v", bizdefName, err)
 		}
-		return fmt.Errorf("failed to read test_data.json for %s: %v", bizdefName, err)
 	}
 
-	fmt.Printf("Setting up test data for %s from JSON...\n", bizdefName)
+	fmt.Printf("Setting up seed data for %s from JSON...\n", bizdefName)
 
 	var entries []TestDataEntry
 	if err := json.Unmarshal(dataBytes, &entries); err != nil {
-		return fmt.Errorf("failed to unmarshal test data: %v", err)
+		return fmt.Errorf("failed to unmarshal seed data: %v", err)
 	}
 
 	if len(entries) > 0 {

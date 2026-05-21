@@ -56,13 +56,17 @@ The development phase involves physically creating the assets within a local or 
 To ensure environments are reproducible, the dynamic assets created in the Development phase must be captured as code.
 
 ### 4.1. Exporting Configuration as Code
-FormCMS allows entities to be exported to JSON formats.
-* **Export Pages & Menus:** Export the raw data of the `Page` and `Menu` entities.
-* **Export Roles:** Export the `Role` configurations, ensuring the references (`dashboard_page_id` and `menu_id`) are preserved.
+FormCMS provides command-line utilities to export dynamic definitions from your relational database:
+* **Export CLI Tool:** Run the exporter binary to fetch dynamic pages, menus, roles, and schemas and write them to JSON files:
+  ```bash
+  go run cmd/export/main.go -db "postgres://user:pass@localhost:5433/dbname" -out "./exports"
+  ```
+* Ensure you extract the `Role` configurations, confirming references (`dashboard_page_id` and `menu_id`) are preserved.
 
 ### 4.2. Seeding Data Files
-* Place the exported JSON objects into the appropriate initialization files (e.g., `apps/rbac/data/test_data.json` or specific deployment seed files).
-* *Example Data Structure:*
+* Place the exported JSON objects into the appropriate initialization files (e.g., `bizdefs/rbac/data/seed_data.json` or specific module seed files).
+* **Dynamic Reference Syntax (`$Ref:`):** The setup engine supports automatic ID resolution. You can assign parent references to child fields via `"$Ref:<parent-ref-key>"`. The setup logic resolves these values dynamically at insertion time.
+* *Example `seed_data.json` Structure:*
   ```json
   [
     {
@@ -80,8 +84,8 @@ FormCMS allows entities to be exported to JSON formats.
       "Ref": "role_sales",
       "Data": { 
         "name": "Sales Manager", 
-        "menu_id": "menu_sales", 
-        "dashboard_page_id": "page_sales_dash" 
+        "menu_id": "$Ref:menu_sales", 
+        "dashboard_page_id": "$Ref:page_sales_dash" 
       }
     }
   ]
@@ -97,9 +101,14 @@ FormCMS allows entities to be exported to JSON formats.
 During the deployment of the FormCMS Go application to staging or production environments, the system automatically provisions the configuration.
 
 ### 5.1. Automated Ingestion
-* Upon system startup (or triggered via an import CLI command/API), FormCMS reads the JSON seed files.
-* The system performs "Upsert" operations. If the `Role`, `Page`, or `Menu` does not exist, it is created. If it does exist, it is updated to match the definition in the codebase.
-* **Referential Integrity:** The import process ensures that `Ref` tags are resolved correctly to physical database IDs, ensuring the `Role` accurately points to the newly inserted `Page` and `Menu`.
+* **Startup Seeding:** Upon system startup, FormCMS reads the configured BizDef JSON seed files under `bizdefs/<module>/data/seed_data.json` (orchestrated in [setup.go](../core/bizdefs/setup.go)).
+* **Security Bypass Context (`seedCtx`):** Startup seeding is performed using a privileged `seedCtx` containing the `"sa"` role. This ensures that restricted fields (like `dashboard_page_id` inside Role) bypass dynamic validation policies and are committed successfully.
+* **Upsert Operations:** The system performs "Upsert" operations. If the `Role`, `Page`, or `Menu` does not exist, it is created. If it already exists, it skips duplicate inserting.
+* **Referential Integrity:** The import process ensures that `$Ref:` tags are resolved correctly to physical database IDs, ensuring the `Role` accurately points to the newly inserted `Page` and `Menu`.
+* **Dynamic Import CLI Command:** Configurations can also be manually imported or updated using the import command line utility:
+  ```bash
+  go run cmd/import/main.go -db "postgres://user:pass@localhost:5433/dbname" -in "./exports"
+  ```
 
 ---
 

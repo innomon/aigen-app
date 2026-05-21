@@ -26,14 +26,14 @@ bizdefs/
 ├── bizdefs.json                    # Registry of currently enabled BizDefs
 ├── crm/                         # Example BizDef: CRM
 │   ├── data/
-│   │   └── test_data.json       # Seed data for the BizDef
+│   │   └── seed_data.json       # Seed data for the BizDef
 │   └── schemas/                 # Entity schemas defining the BizDef's structure
 │       ├── crm_lead.json
 │       ├── crm_deal.json
 │       └── ...
 └── rbac/                        # Example BizDef: Role-Based Access Control
     ├── data/
-    │   └── test_data.json
+    │   └── seed_data.json
     └── schemas/
         └── role.json
 ```
@@ -41,7 +41,7 @@ bizdefs/
 ### Schemas (`schemas/*.json`)
 A schema defines an entity (which maps to a database table). It describes attributes (columns), relationships (lookups, junctions, collections), and UI metadata.
 
-### Test Data (`data/test_data.json`)
+### Seed Data (`data/seed_data.json`)
 A JSON array specifying seed records to insert upon BizDef deployment. It supports reference linking (using `$Ref:<key>`) to handle relationships between newly inserted records.
 
 ---
@@ -58,7 +58,7 @@ The lifecycle of a BizDef is managed by the core CMS initialization process (spe
    - Registers the schema definition for dynamic API generation.
    - Saves the schema definition as a JSON record in the core `aigen_records` table, marking it as `Published`.
 3. **Data Seeding (`SetupBizDefTestData`)**:
-   After schemas are registered, the CMS reads `bizdefs/<bizdef_name>/data/test_data.json`.
+   After schemas are registered, the CMS reads `bizdefs/<bizdef_name>/data/seed_data.json`.
    - It checks if data already exists to prevent duplicate seeding.
    - Inserts the records, dynamically resolving any `$Ref` cross-references between records.
 
@@ -91,7 +91,7 @@ To create a new BizDef (e.g., `inventory`), follow these steps:
    ```
 
 3. **(Optional) Provide Seed Data**:
-   Create `bizdefs/inventory/data/test_data.json`:
+   Create `bizdefs/inventory/data/seed_data.json`:
    ```json
    [
      {
