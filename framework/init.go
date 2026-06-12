@@ -14,7 +14,7 @@ import (
 	"github.com/innomon/aigen-app/core/api"
 	"github.com/innomon/aigen-app/core/bizdefs"
 	"github.com/innomon/aigen-app/core/descriptors"
-	"github.com/innomon/aigen-app/core/plugins"
+	"github.com/innomon/aigen-app/core/app_extensions"
 	"github.com/innomon/aigen-app/core/services"
 	"github.com/innomon/aigen-app/infrastructure/filestore"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
@@ -46,7 +46,7 @@ type App struct {
 	PageService        *services.PageService
 	PermissionService  *services.PermissionService
 	A2UIService        services.IA2UIService
-	PluginService      *plugins.PluginService
+	ExtensionService   *app_extensions.AppExtensionService
 }
 
 // NewApp initializes all services and the router, but does not start the server.
@@ -160,13 +160,13 @@ func NewApp(cfg *Config) (*App, error) {
 		log.Printf("Warning: failed to initialize chat service (agentic config missing or invalid): %v", err)
 	}
 
-	pluginService := plugins.NewPluginService(cfg.PluginsDir, schemaService, evolutionService, chatService, entityService, a2uiService, auditService)
-	if err := pluginService.Start(context.Background()); err != nil {
-		log.Printf("Warning: failed to start plugin service: %v", err)
+	extensionService := app_extensions.NewAppExtensionService(cfg.AppExtensionsDir, schemaService, evolutionService, chatService, entityService, a2uiService, auditService)
+	if err := extensionService.Start(context.Background()); err != nil {
+		log.Printf("Warning: failed to start app extension service: %v", err)
 	}
 
-	// Register Router Agent globally with Plugin provider
-	agents.RegisterRouterAgent(interactionService, pluginService)
+	// Register Router Agent globally with App Extension provider
+	agents.RegisterRouterAgent(interactionService, extensionService)
 
 	a2aService := services.NewA2AService(chatService, cfg.Domain)
 	mcpService := services.NewMCPService(schemaService, entityService, authService, cfg.MCP)
@@ -188,10 +188,10 @@ func NewApp(cfg *Config) (*App, error) {
 	a2aApi := api.NewA2AApi(a2aService, authService, cfg.Channels)
 	mcpApi := api.NewMCPApi(mcpService, authApi, tempAccessService, fileStore)
 	tempAccessApi := api.NewTempAccessApi(cfg.TemporaryAccess, tempAccessService, fileStore)
-	staticApi := api.NewStaticApi(cfg.WWWRoot, cfg.CustomUIPath, cfg.Storage.FS.UrlPrefix, pluginService)
+	staticApi := api.NewStaticApi(cfg.WWWRoot, cfg.CustomUIPath, cfg.Storage.FS.UrlPrefix, extensionService)
 	pageApi := api.NewPageApi(pageService, authService, authApi)
 	a2uiApi := api.NewA2UIApi(a2uiService, authApi)
-	pluginApi := api.NewPluginApi(pluginService, authApi)
+	extensionApi := api.NewAppExtensionApi(extensionService, authApi)
 	var chatApi *api.ChatApi
 	if chatService != nil {
 		chatApi = api.NewChatApi(chatService, authApi)
@@ -225,7 +225,7 @@ func NewApp(cfg *Config) (*App, error) {
 	staticApi.Register(r)
 	pageApi.Register(r)
 	a2uiApi.Register(r)
-	pluginApi.Register(r)
+	extensionApi.Register(r)
 	if chatApi != nil {
 		chatApi.Register(r)
 	}
@@ -241,7 +241,7 @@ func NewApp(cfg *Config) (*App, error) {
 		PageService:        pageService,
 		PermissionService:  permissionService,
 		A2UIService:        a2uiService,
-		PluginService:      pluginService,
+		ExtensionService:   extensionService,
 	}, nil
 }
 

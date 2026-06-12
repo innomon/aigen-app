@@ -53,12 +53,12 @@ type IInteractionService interface {
 	UpdateStatus(ctx context.Context, id string, status string, errStr string) error
 }
 
-type IPluginProvider interface {
+type IAppExtensionProvider interface {
 	GetRoutingDocs() map[string]string
 	LoadAgenticConfig(id string) ([]byte, error)
 }
 
-func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
+func RegisterRouterAgent(svc IInteractionService, extensions IAppExtensionProvider) {
 	registry.RegisterAgentType("router", func(ctx context.Context, name string, cfg *RouterAgentConfig, models registry.ModelRegistry, tools registry.ToolRegistry, sub []agent.Agent) (agent.Agent, error) {
 		return agent.New(agent.Config{
 			Name:        name,
@@ -83,22 +83,22 @@ func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
 						return
 					}
 
-					// 2. Resolve Available Targets (Sub-Agents + Plugins)
+					// 2. Resolve Available Targets (Sub-Agents + Extensions)
 					availableTargets := []string{}
 					for _, a := range sub {
 						availableTargets = append(availableTargets, a.Name())
 					}
 					
-					pluginDocs := make(map[string]string)
-					if plugins != nil {
-						pluginDocs = plugins.GetRoutingDocs()
-						for id := range pluginDocs {
+					extensionDocs := make(map[string]string)
+					if extensions != nil {
+						extensionDocs = extensions.GetRoutingDocs()
+						for id := range extensionDocs {
 							availableTargets = append(availableTargets, id)
 						}
 					}
 
 					if len(availableTargets) == 0 {
-						yield(textEvent(ic, "I'm sorry, I don't have any BizDefs or Plugins configured to handle your request."), nil)
+						yield(textEvent(ic, "I'm sorry, I don't have any BizDefs or App Extensions configured to handle your request."), nil)
 						return
 					}
 
@@ -162,8 +162,8 @@ func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
 									m, err := models.Get(ctx, cfg.Classifier.Model)
 									if err == nil {
 										optionsStr := strings.Join(availableTargets, ", ")
-										// Enrich with plugin descriptions if available
-										for id, desc := range pluginDocs {
+										// Enrich with extension descriptions if available
+										for id, desc := range extensionDocs {
 											optionsStr += fmt.Sprintf("\n- %s: %s", id, desc)
 										}
 
@@ -219,7 +219,7 @@ func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
 									}
 									prompt := strings.ReplaceAll(cfg.SelectionPrompt, "${options}", optionsText)
 									if prompt == "" {
-										prompt = "Please select a BizDef or Plugin:" + optionsText
+										prompt = "Please select a BizDef or App Extension:" + optionsText
 									}
 									yield(textEvent(ic, prompt), nil)
 									return
@@ -228,7 +228,7 @@ func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
 						}
 					}
 
-					// 5. Route to Target Agent (Sub-Agent or Plugin)
+					// 5. Route to Target Agent (Sub-Agent or App Extension)
 					if targetName != "" {
 						// 5a. Check Sub-Agents first
 						var target agent.Agent
@@ -248,14 +248,14 @@ func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
 							return
 						}
 
-						// 5b. Check Plugins
-						if plugins != nil {
-							if yamlData, err := plugins.LoadAgenticConfig(targetName); err == nil {
+						// 5b. Check App Extensions
+						if extensions != nil {
+							if yamlData, err := extensions.LoadAgenticConfig(targetName); err == nil {
 								var raw registry.RawConfig
 								if err := yaml.Unmarshal(yamlData, &raw); err == nil {
 									if cfg, err := registry.ParseRaw(&raw); err == nil {
-										pluginReg := registry.New(cfg)
-										root, err := pluginReg.GetRoot(ctx)
+										extensionReg := registry.New(cfg)
+										root, err := extensionReg.GetRoot(ctx)
 										if err == nil {
 											for evt, err := range root.Run(ic) {
 												if !yield(evt, err) {
@@ -264,13 +264,13 @@ func RegisterRouterAgent(svc IInteractionService, plugins IPluginProvider) {
 											}
 											return
 										} else {
-											yield(textEvent(ic, fmt.Sprintf("Failed to get root agent for plugin %s: %v", targetName, err)), nil)
+											yield(textEvent(ic, fmt.Sprintf("Failed to get root agent for extension %s: %v", targetName, err)), nil)
 										}
 									} else {
-										yield(textEvent(ic, fmt.Sprintf("Failed to parse agentic config for plugin %s: %v", targetName, err)), nil)
+										yield(textEvent(ic, fmt.Sprintf("Failed to parse agentic config for extension %s: %v", targetName, err)), nil)
 									}
 								} else {
-									yield(textEvent(ic, fmt.Sprintf("Failed to unmarshal agentic config for plugin %s: %v", targetName, err)), nil)
+									yield(textEvent(ic, fmt.Sprintf("Failed to unmarshal agentic config for extension %s: %v", targetName, err)), nil)
 								}
 								return
 							}

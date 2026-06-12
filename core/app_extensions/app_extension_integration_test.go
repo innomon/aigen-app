@@ -1,4 +1,4 @@
-package plugins
+package app_extensions
 
 import (
 	"bytes"
@@ -12,20 +12,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPluginLifecycle(t *testing.T) {
+func TestExtensionLifecycle(t *testing.T) {
 	// 1. Setup minimal dependencies
 	dao, _ := relationdbdao.CreateDao("postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
 	schemaService := services.NewSchemaService(dao)
 	evolutionService := services.NewEvolutionService(dao, schemaService)
 	auditService := services.NewAuditService(dao)
 
-	pluginsDir := "plugins"
-	svc := NewPluginService(pluginsDir, schemaService, evolutionService, nil, nil, nil, auditService)
+	extensionsDir := "app-extensions"
+	svc := NewAppExtensionService(extensionsDir, schemaService, evolutionService, nil, nil, nil, auditService)
 
 	// Mock manifest with permissions and env_vars
-	info := &PluginInfo{
-		Manifest: PluginManifest{
-			ID: "test-plugin",
+	info := &AppExtensionInfo{
+		Manifest: AppExtensionManifest{
+			ID: "test-extension",
 			Permissions: []PermissionRequirement{
 				{Type: "http", Value: "*.openai.com"},
 			},
@@ -35,15 +35,15 @@ func TestPluginLifecycle(t *testing.T) {
 		IsVerified: true,
 	}
 	svc.mu.Lock()
-	svc.plugins["test-plugin"] = info
+	svc.extensions["test-extension"] = info
 	svc.mu.Unlock()
 
 	ctx := context.Background()
 
 	t.Run("Vault Security", func(t *testing.T) {
-		svc.SetSecret("test-plugin", "API_KEY", "super-secret")
+		svc.SetSecret("test-extension", "API_KEY", "super-secret")
 
-		cfg, err := svc.Dispatcher.prepareVMConfig("test-plugin", "quickjs")
+		cfg, err := svc.Dispatcher.prepareVMConfig("test-extension", "quickjs")
 		assert.NoError(t, err)
 
 		// 1. Allowed key
@@ -58,10 +58,10 @@ func TestPluginLifecycle(t *testing.T) {
 
 	t.Run("Permission Enforcement", func(t *testing.T) {
 		// First authorize via admin
-		err := svc.AuthorizePermission(ctx, "test-plugin", PermissionRequirement{Type: "http", Value: "*.openai.com"}, "admin1")
+		err := svc.AuthorizePermission(ctx, "test-extension", PermissionRequirement{Type: "http", Value: "*.openai.com"}, "admin1")
 		assert.NoError(t, err)
 
-		cfg, err := svc.Dispatcher.prepareVMConfig("test-plugin", "quickjs")
+		cfg, err := svc.Dispatcher.prepareVMConfig("test-extension", "quickjs")
 		assert.NoError(t, err)
 
 		// Check if AllowNet contains the granted value
@@ -88,7 +88,7 @@ func TestPluginLifecycle(t *testing.T) {
 			},
 		}
 
-		result, err := svc.Dispatcher.Execute(ctx, "test-plugin", fsys, "scripts/test.js", nil)
+		result, err := svc.Dispatcher.Execute(ctx, "test-extension", fsys, "scripts/test.js", nil)
 		assert.NoError(t, err)
 
 		resMap := result.(map[string]interface{})
@@ -121,4 +121,3 @@ func (m *mockFile) ModTime() time.Time         { return time.Now() }
 func (m *mockFile) IsDir() bool                { return false }
 func (m *mockFile) Sys() interface{}           { return nil }
 func (m *mockFile) Close() error               { return nil }
-

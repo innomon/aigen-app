@@ -1,7 +1,7 @@
 # AIGenApp Configuration
 
 bizdefs_dir: "bizdefs"
-plugins_dir: "plugins"
+app_extensions_dir: "app-extensions"
 www_root: "wwwroot"
 database_dsn: "aigen.db"
 domain: ""

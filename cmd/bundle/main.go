@@ -105,32 +105,32 @@ func main() {
 		log.Fatalf("failed to walk source directory: %v", err)
 	}
 
-	// 3. Create PLUGIN.SF (Signature File)
-	sfFile, err := zw.Create("META-INF/PLUGIN.SF")
+	// 3. Create EXTENSION.SF (Signature File)
+	sfFile, err := zw.Create("META-INF/EXTENSION.SF")
 	if err != nil {
-		log.Fatalf("failed to create PLUGIN.SF: %v", err)
+		log.Fatalf("failed to create EXTENSION.SF: %v", err)
 	}
 	_, err = sfFile.Write([]byte(manifestContent))
 	if err != nil {
-		log.Fatalf("failed to write PLUGIN.SF: %v", err)
+		log.Fatalf("failed to write EXTENSION.SF: %v", err)
 	}
 
-	// 4. Create PLUGIN.RSA (Signature Block)
-	// For this POC, we sign the entire PLUGIN.SF content
+	// 4. Create EXTENSION.RSA (Signature Block)
+	// For this POC, we sign the entire EXTENSION.SF content
 	hashed := sha256.Sum256([]byte(manifestContent))
 	signature, err := rsa.SignPKCS1v15(rand.Reader, priv, crypto.SHA256, hashed[:])
 	if err != nil {
 		log.Fatalf("failed to sign: %v", err)
 	}
 
-	rsaFile, err := zw.Create("META-INF/PLUGIN.RSA")
+	rsaFile, err := zw.Create("META-INF/EXTENSION.RSA")
 	if err != nil {
-		log.Fatalf("failed to create PLUGIN.RSA: %v", err)
+		log.Fatalf("failed to create EXTENSION.RSA: %v", err)
 	}
 	_, err = rsaFile.Write(signature)
 	if err != nil {
-		log.Fatalf("failed to write PLUGIN.RSA: %v", err)
+		log.Fatalf("failed to write EXTENSION.RSA: %v", err)
 	}
 
-	fmt.Printf("Plugin bundled and signed: %s\n", outPath)
+	fmt.Printf("App Extension bundled and signed: %s\n", outPath)
 }

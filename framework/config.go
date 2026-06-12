@@ -53,7 +53,7 @@ type Config struct {
 	AgenticConfigPath string                     `yaml:"agentic_config_path" json:"agentic_config_path"`
 	Channels          descriptors.ChannelsConfig `yaml:"channels" json:"channels"`
 	MCP               descriptors.MCPConfig      `yaml:"mcp" json:"mcp"`
-	PluginsDir        string                     `yaml:"plugins_dir" json:"plugins_dir"`
+	AppExtensionsDir  string                     `yaml:"app_extensions_dir" json:"app_extensions_dir"`
 	Storage           StorageConfig              `yaml:"storage" json:"storage"`
 	TemporaryAccess   []descriptors.TemporaryAccessConfig `yaml:"temporary_access" json:"temporary_access"`
 	Admin             AdminConfig                `yaml:"admin" json:"admin"`
@@ -62,7 +62,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		BizDefsDir:        "bizdefs",
-		PluginsDir:        "plugins",
+		AppExtensionsDir:  "app-extensions",
 		WWWRoot:           "wwwroot",
 		CustomUIPath:      "",
 		DatabaseDSN:       "memory://",
@@ -113,8 +113,10 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	// Environment variable overrides
-	if pluginsDir := os.Getenv("FORMCMS_PLUGINS_DIR"); pluginsDir != "" {
-		config.PluginsDir = pluginsDir
+	if appExtensionsDir := os.Getenv("FORMCMS_APP_EXTENSIONS_DIR"); appExtensionsDir != "" {
+		config.AppExtensionsDir = appExtensionsDir
+	} else if pluginsDir := os.Getenv("FORMCMS_PLUGINS_DIR"); pluginsDir != "" {
+		config.AppExtensionsDir = pluginsDir
 	}
 	if bizdefsDir := os.Getenv("FORMCMS_BIZDEFS_DIR"); bizdefsDir != "" {
 		config.BizDefsDir = bizdefsDir

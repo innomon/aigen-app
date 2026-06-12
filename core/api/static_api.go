@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/innomon/aigen-app/core/plugins"
+	"github.com/innomon/aigen-app/core/app_extensions"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -20,11 +20,11 @@ type StaticApi struct {
 	wwwRoot       string
 	customUIPath  string
 	filesPrefix   string
-	pluginService *plugins.PluginService
+	extensionService *app_extensions.AppExtensionService
 }
 
-func NewStaticApi(wwwRoot, customUIPath, filesPrefix string, pluginService *plugins.PluginService) *StaticApi {
-	return &StaticApi{wwwRoot: wwwRoot, customUIPath: customUIPath, filesPrefix: filesPrefix, pluginService: pluginService}
+func NewStaticApi(wwwRoot, customUIPath, filesPrefix string, extensionService *app_extensions.AppExtensionService) *StaticApi {
+	return &StaticApi{wwwRoot: wwwRoot, customUIPath: customUIPath, filesPrefix: filesPrefix, extensionService: extensionService}
 }
 
 func (a *StaticApi) Register(r chi.Router) {
@@ -48,12 +48,12 @@ func (a *StaticApi) Register(r chi.Router) {
 	r.Handle("/admin/*", http.StripPrefix("/admin", fileServer))
 	r.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
-	// Serve from plugin JARs
-	if a.pluginService != nil {
-		r.Get("/_plugins/{id}/*", func(w http.ResponseWriter, r *http.Request) {
+	// Serve from app extension JARs
+	if a.extensionService != nil {
+		r.Get("/_extensions/{id}/*", func(w http.ResponseWriter, r *http.Request) {
 			id := chi.URLParam(r, "id")
-			info, ok := a.pluginService.Get(id)
-			if !ok || info.Status != plugins.StatusActive {
+			info, ok := a.extensionService.Get(id)
+			if !ok || info.Status != app_extensions.StatusActive {
 				http.NotFound(w, r)
 				return
 			}
@@ -61,7 +61,7 @@ func (a *StaticApi) Register(r chi.Router) {
 			// Open the JAR and serve from wwwroot/
 			jar, err := zip.OpenReader(info.Path)
 			if err != nil {
-				http.Error(w, "failed to open plugin", http.StatusInternalServerError)
+				http.Error(w, "failed to open extension", http.StatusInternalServerError)
 				return
 			}
 			defer jar.Close()
@@ -72,8 +72,8 @@ func (a *StaticApi) Register(r chi.Router) {
 				return
 			}
 
-			// Trim the prefix /_plugins/{id}/
-			prefix := "/_plugins/" + id + "/"
+			// Trim the prefix /_extensions/{id}/
+			prefix := "/_extensions/" + id + "/"
 			path := strings.TrimPrefix(r.URL.Path, prefix)
 			
 			file, err := sub.Open(path)

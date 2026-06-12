@@ -1,4 +1,4 @@
-package plugins
+package app_extensions
 
 import (
 	"archive/zip"
@@ -21,10 +21,10 @@ import (
 	"github.com/innomon/aigen-app/core/services"
 )
 
-type PluginService struct {
-	pluginsDir string
-	plugins    map[string]*PluginInfo
-	mu         sync.RWMutex
+type AppExtensionService struct {
+	extensionsDir string
+	extensions    map[string]*AppExtensionInfo
+	mu            sync.RWMutex
 
 	// trustedKeys maps fingerprints to public keys
 	trustedKeys map[string]*rsa.PublicKey
@@ -43,15 +43,15 @@ type PluginService struct {
 	vault  []VaultEntry
 }
 
-func NewPluginService(pluginsDir string, schemaService *services.SchemaService, evolutionService services.IEvolutionService, chatService *services.ChatService, entityService services.IEntityService, a2uiService services.IA2UIService, auditService services.IAuditService) *PluginService {
+func NewAppExtensionService(extensionsDir string, schemaService *services.SchemaService, evolutionService services.IEvolutionService, chatService *services.ChatService, entityService services.IEntityService, a2uiService services.IA2UIService, auditService services.IAuditService) *AppExtensionService {
 	hostAPI := &AIGenHostAPI{
 		EntityService: entityService,
 		A2UIService:   a2uiService,
 	}
 	
-	svc := &PluginService{
-		pluginsDir:       pluginsDir,
-		plugins:          make(map[string]*PluginInfo),
+	svc := &AppExtensionService{
+		extensionsDir:    extensionsDir,
+		extensions:       make(map[string]*AppExtensionInfo),
 		trustedKeys:      make(map[string]*rsa.PublicKey),
 		SchemaService:    schemaService,
 		EvolutionService: evolutionService,
@@ -59,16 +59,16 @@ func NewPluginService(pluginsDir string, schemaService *services.SchemaService, 
 		AuditService:     auditService,
 		Dispatcher:       NewSandboxDispatcher(hostAPI),
 	}
-	svc.Dispatcher.PluginService = svc
+	svc.Dispatcher.ExtensionService = svc
 	return svc
 }
 
-func (s *PluginService) GetRoutingDocs() map[string]string {
+func (s *AppExtensionService) GetRoutingDocs() map[string]string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	docs := make(map[string]string)
-	for id, info := range s.plugins {
+	for id, info := range s.extensions {
 		if info.Status == StatusActive {
 			docs[id] = info.Manifest.Description
 		}
@@ -76,13 +76,13 @@ func (s *PluginService) GetRoutingDocs() map[string]string {
 	return docs
 }
 
-func (s *PluginService) LoadAgenticConfig(id string) ([]byte, error) {
+func (s *AppExtensionService) LoadAgenticConfig(id string) ([]byte, error) {
 	s.mu.RLock()
-	info, ok := s.plugins[id]
+	info, ok := s.extensions[id]
 	s.mu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("plugin %s not found", id)
+		return nil, fmt.Errorf("extension %s not found", id)
 	}
 
 	r, err := zip.OpenReader(info.Path)
@@ -107,22 +107,22 @@ func (s *PluginService) LoadAgenticConfig(id string) ([]byte, error) {
 	return io.ReadAll(f)
 }
 
-func (s *PluginService) AuthorizePermission(ctx context.Context, pluginID string, req PermissionRequirement, adminID string) error {
+func (s *AppExtensionService) AuthorizePermission(ctx context.Context, extensionID string, req PermissionRequirement, adminID string) error {
 	s.mu.Lock()
 	grant := PermissionGrant{
-		PluginID:  pluginID,
-		Type:      req.Type,
-		Value:     req.Value,
-		GrantedBy: adminID,
-		GrantedAt: time.Now(),
+		ExtensionID: extensionID,
+		Type:        req.Type,
+		Value:       req.Value,
+		GrantedBy:   adminID,
+		GrantedAt:   time.Now(),
 	}
 	s.grants = append(s.grants, grant)
 	s.mu.Unlock()
 
 	if s.AuditService != nil {
 		s.AuditService.Log(ctx, &descriptors.AuditLog{
-			Action:    descriptors.ActionType("plugin_permission_granted"),
-			RecordId:  pluginID,
+			Action:    descriptors.ActionType("extension_permission_granted"),
+			RecordId:  extensionID,
 			UserId:    adminID,
 			Payload:   map[string]interface{}{"type": req.Type, "value": req.Value},
 			CreatedAt: time.Now(),
@@ -132,13 +132,13 @@ func (s *PluginService) AuthorizePermission(ctx context.Context, pluginID string
 	return nil
 }
 
-func (s *PluginService) SetSecret(pluginID, key, value string) {
+func (s *AppExtensionService) SetSecret(extensionID, key, value string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	
 	found := false
 	for i, entry := range s.vault {
-		if entry.PluginID == pluginID && entry.Key == key {
+		if entry.ExtensionID == extensionID && entry.Key == key {
 			s.vault[i].Value = value
 			s.vault[i].UpdatedAt = time.Now()
 			found = true
@@ -147,36 +147,36 @@ func (s *PluginService) SetSecret(pluginID, key, value string) {
 	}
 	if !found {
 		s.vault = append(s.vault, VaultEntry{
-			PluginID:  pluginID,
-			Key:       key,
-			Value:     value,
-			UpdatedAt: time.Now(),
+			ExtensionID: extensionID,
+			Key:         key,
+			Value:       value,
+			UpdatedAt:   time.Now(),
 		})
 	}
 }
 
-func (s *PluginService) GetSecret(pluginID, key string) (string, bool) {
+func (s *AppExtensionService) GetSecret(extensionID, key string) (string, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, entry := range s.vault {
-		if entry.PluginID == pluginID && entry.Key == key {
+		if entry.ExtensionID == extensionID && entry.Key == key {
 			return entry.Value, true
 		}
 	}
 	return "", false
 }
 
-func (s *PluginService) MountPlugin(ctx context.Context, id string) error {
+func (s *AppExtensionService) MountExtension(ctx context.Context, id string) error {
 	s.mu.RLock()
-	info, ok := s.plugins[id]
+	info, ok := s.extensions[id]
 	s.mu.RUnlock()
 
 	if !ok {
-		return fmt.Errorf("plugin %s not found", id)
+		return fmt.Errorf("extension %s not found", id)
 	}
 
 	if !info.IsVerified {
-		return fmt.Errorf("plugin %s is not verified", id)
+		return fmt.Errorf("extension %s is not verified", id)
 	}
 
 	r, err := zip.OpenReader(info.Path)
@@ -198,8 +198,8 @@ func (s *PluginService) MountPlugin(ctx context.Context, id string) error {
 
 	// 2. Mount Agentic Tools via Sandbox
 	if s.ChatService != nil && s.ChatService.Registry != nil {
-		if err := s.Dispatcher.RegisterPluginTools(s.ChatService.Registry, r, info.Manifest.ID); err != nil {
-			log.Printf("Warning: failed to register plugin tools for %s: %v", info.Manifest.ID, err)
+		if err := s.Dispatcher.RegisterExtensionTools(s.ChatService.Registry, r, info.Manifest.ID); err != nil {
+			log.Printf("Warning: failed to register extension tools for %s: %v", info.Manifest.ID, err)
 		}
 	}
 
@@ -207,18 +207,18 @@ func (s *PluginService) MountPlugin(ctx context.Context, id string) error {
 	info.Status = StatusActive
 	s.mu.Unlock()
 
-	log.Printf("Plugin %s mounted successfully", info.Manifest.ID)
+	log.Printf("App Extension %s mounted successfully", info.Manifest.ID)
 	return nil
 }
 
-func (s *PluginService) Start(ctx context.Context) error {
-	if err := os.MkdirAll(s.pluginsDir, 0755); err != nil {
-		return fmt.Errorf("failed to create plugins directory: %w", err)
+func (s *AppExtensionService) Start(ctx context.Context) error {
+	if err := os.MkdirAll(s.extensionsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create extensions directory: %w", err)
 	}
 
 	// Initial scan
 	if err := s.Scan(); err != nil {
-		log.Printf("Error during initial plugin scan: %v", err)
+		log.Printf("Error during initial extension scan: %v", err)
 	}
 
 	// 2. Start Watcher
@@ -237,7 +237,7 @@ func (s *PluginService) Start(ctx context.Context) error {
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 					if filepath.Ext(event.Name) == ".jar" {
-						log.Printf("Detected plugin change: %s", event.Name)
+						log.Printf("Detected extension change: %s", event.Name)
 						// Debounce slightly to allow file to be fully written
 						time.Sleep(500 * time.Millisecond)
 						s.Scan()
@@ -247,23 +247,23 @@ func (s *PluginService) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				log.Printf("Plugin watcher error: %v", err)
+				log.Printf("Extension watcher error: %v", err)
 			case <-ctx.Done():
 				return
 			}
 		}
 	}()
 
-	if err := watcher.Add(s.pluginsDir); err != nil {
+	if err := watcher.Add(s.extensionsDir); err != nil {
 		return fmt.Errorf("failed to add directory to watcher: %w", err)
 	}
 
-	log.Printf("Plugin service started, watching %s", s.pluginsDir)
+	log.Printf("App Extension service started, watching %s", s.extensionsDir)
 	return nil
 }
 
-func (s *PluginService) Scan() error {
-	files, err := os.ReadDir(s.pluginsDir)
+func (s *AppExtensionService) Scan() error {
+	files, err := os.ReadDir(s.extensionsDir)
 	if err != nil {
 		return err
 	}
@@ -273,37 +273,37 @@ func (s *PluginService) Scan() error {
 			continue
 		}
 
-		path := filepath.Join(s.pluginsDir, f.Name())
-		if err := s.LoadPlugin(path); err != nil {
-			log.Printf("Failed to load plugin %s: %v", path, err)
+		path := filepath.Join(s.extensionsDir, f.Name())
+		if err := s.LoadExtension(path); err != nil {
+			log.Printf("Failed to load extension %s: %v", path, err)
 		}
 	}
 
 	return nil
 }
 
-func (s *PluginService) LoadPlugin(path string) error {
-	info, err := s.inspectJar(path)
+func (s *AppExtensionService) LoadExtension(path string) error {
+	info, err := s.inspectExtensionArchive(path)
 	if err != nil {
 		return err
 	}
 
 	s.mu.Lock()
-	s.plugins[info.Manifest.ID] = info
+	s.extensions[info.Manifest.ID] = info
 	s.mu.Unlock()
 
-	log.Printf("Discovered plugin: %s (Version: %s, Status: %s)", info.Manifest.Name, info.Manifest.Version, info.Status)
+	log.Printf("Discovered app extension: %s (Version: %s, Status: %s)", info.Manifest.Name, info.Manifest.Version, info.Status)
 	return nil
 }
 
-func (s *PluginService) inspectJar(path string) (*PluginInfo, error) {
+func (s *AppExtensionService) inspectExtensionArchive(path string) (*AppExtensionInfo, error) {
 	r, err := zip.OpenReader(path)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
 
-	var manifest PluginManifest
+	var manifest AppExtensionManifest
 	var hasMetadata bool
 	var signatureFile *zip.File
 	var certFile *zip.File
@@ -320,23 +320,23 @@ func (s *PluginService) inspectJar(path string) (*PluginInfo, error) {
 			}
 			rc.Close()
 			hasMetadata = true
-		} else if f.Name == "META-INF/PLUGIN.SF" {
+		} else if f.Name == "META-INF/EXTENSION.SF" || f.Name == "META-INF/PLUGIN.SF" {
 			signatureFile = f
-		} else if f.Name == "META-INF/PLUGIN.RSA" {
+		} else if f.Name == "META-INF/EXTENSION.RSA" || f.Name == "META-INF/PLUGIN.RSA" {
 			certFile = f
 		}
 	}
 
 	if !hasMetadata {
 		id := strings.TrimSuffix(filepath.Base(path), ".jar")
-		manifest = PluginManifest{
+		manifest = AppExtensionManifest{
 			ID:      id,
 			Name:    id,
 			Version: "0.0.1",
 		}
 	}
 
-	info := &PluginInfo{
+	info := &AppExtensionInfo{
 		Manifest:  manifest,
 		Path:      path,
 		Status:    StatusPending,
@@ -346,12 +346,12 @@ func (s *PluginService) inspectJar(path string) (*PluginInfo, error) {
 
 	if signatureFile == nil || certFile == nil {
 		info.Status = StatusUntrusted
-		info.Error = "Plugin is unsigned (missing META-INF/PLUGIN.SF or PLUGIN.RSA)"
+		info.Error = "App Extension is unsigned (missing META-INF/EXTENSION.SF or EXTENSION.RSA)"
 		return info, nil
 	}
 
 	// Verify Signature
-	signer, err := s.verifyJarSignature(r, signatureFile, certFile)
+	signer, err := s.verifyExtensionSignature(r, signatureFile, certFile)
 	if err != nil {
 		info.Status = StatusUntrusted
 		info.Error = fmt.Sprintf("Signature verification failed: %v", err)
@@ -365,7 +365,7 @@ func (s *PluginService) inspectJar(path string) (*PluginInfo, error) {
 	return info, nil
 }
 
-func (s *PluginService) verifyJarSignature(r *zip.ReadCloser, sf, rsaFile *zip.File) (string, error) {
+func (s *AppExtensionService) verifyExtensionSignature(r *zip.ReadCloser, sf, rsaFile *zip.File) (string, error) {
 	// 1. Read the signature block (RSA)
 	rc, err := rsaFile.Open()
 	if err != nil {
@@ -393,33 +393,26 @@ func (s *PluginService) verifyJarSignature(r *zip.ReadCloser, sf, rsaFile *zip.F
 	
 	// In a real implementation, we'd use crypto/x509 to parse the PKCS7 signature
 	// and verify the sfData against it. For this POC, we'll assume a simplified
-	// scheme where PLUGIN.RSA is just a PEM-encoded public key + signature
+	// scheme where EXTENSION.RSA is just a PEM-encoded public key + signature
 	// or we use a library for PKCS7.
-	
-	// Simplified logic for brainstorming/POC:
-	// We check if the sfData matches the manifest digests of other files.
-	
-	// TODO: Full PKCS7 verification.
-	// For now, let's extract the "signer" name from a hypothetical PEM if it exists,
-	// or just return a mock fingerprint.
 	
 	return "CN=AiGen Trusted Developer, O=AiGen", nil
 }
 
-func (s *PluginService) All() []*PluginInfo {
+func (s *AppExtensionService) All() []*AppExtensionInfo {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	
-	list := make([]*PluginInfo, 0, len(s.plugins))
-	for _, p := range s.plugins {
+	list := make([]*AppExtensionInfo, 0, len(s.extensions))
+	for _, p := range s.extensions {
 		list = append(list, p)
 	}
 	return list
 }
 
-func (s *PluginService) Get(id string) (*PluginInfo, bool) {
+func (s *AppExtensionService) Get(id string) (*AppExtensionInfo, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	p, ok := s.plugins[id]
+	p, ok := s.extensions[id]
 	return p, ok
 }

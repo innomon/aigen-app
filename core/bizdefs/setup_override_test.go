@@ -37,8 +37,8 @@ func TestSetupBizDefFromFS_OverrideAndMerge(t *testing.T) {
 		}`)},
 	}
 
-	// Plugin overriding filesystem representation
-	pluginFS := fstest.MapFS{
+	// App Extension overriding filesystem representation
+	extensionFS := fstest.MapFS{
 		"schemas/crm_lead.json": &fstest.MapFile{Data: []byte(`{
 			"name": "crm_lead",
 			"table_name": "crm_lead",
@@ -73,8 +73,8 @@ func TestSetupBizDefFromFS_OverrideAndMerge(t *testing.T) {
 	assert.Equal(t, "Core Lead Name", leadSchema.Attributes[1].Header)
 	assert.Len(t, leadSchema.Attributes, 2)
 
-	// 2. Setup plugin overrides
-	err = SetupBizDefFromFS(ctx, pluginFS, "crm", schemaService)
+	// 2. Setup app extension overrides
+	err = SetupBizDefFromFS(ctx, extensionFS, "crm", schemaService)
 	assert.NoError(t, err)
 
 	// Verify overridden lead schema
@@ -91,12 +91,12 @@ func TestSetupBizDefFromFS_OverrideAndMerge(t *testing.T) {
 	assert.NotNil(t, contactSchema)
 	assert.Equal(t, "Core Contact Name", contactSchema.Attributes[1].Header)
 
-	// 3. Re-run identical plugin schema setup (should be idempotent and skip updating)
-	err = SetupBizDefFromFS(ctx, pluginFS, "crm", schemaService)
+	// 3. Re-run identical app extension schema setup (should be idempotent and skip updating)
+	err = SetupBizDefFromFS(ctx, extensionFS, "crm", schemaService)
 	assert.NoError(t, err)
 
 	// 4. Modify overriding schema and setup again (should update in-place)
-	pluginFS["schemas/crm_lead.json"] = &fstest.MapFile{Data: []byte(`{
+	extensionFS["schemas/crm_lead.json"] = &fstest.MapFile{Data: []byte(`{
 		"name": "crm_lead",
 		"table_name": "crm_lead",
 		"primary_key": "id",
@@ -108,7 +108,7 @@ func TestSetupBizDefFromFS_OverrideAndMerge(t *testing.T) {
 		]
 	}`)}
 
-	err = SetupBizDefFromFS(ctx, pluginFS, "crm", schemaService)
+	err = SetupBizDefFromFS(ctx, extensionFS, "crm", schemaService)
 	assert.NoError(t, err)
 
 	// Verify fully updated lead schema

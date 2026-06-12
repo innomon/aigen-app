@@ -1,5 +1,5 @@
 bizdefs_dir: bizdefs
-plugins_dir: plugins
+app_extensions_dir: app-extensions
 www_root: wwwroot
 database_dsn: "postgres://postgres:password@localhost:5432/aigen?sslmode=disable"
 domain: localhost

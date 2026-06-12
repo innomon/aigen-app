@@ -1,4 +1,4 @@
-package plugins
+package app_extensions
 
 import (
 	"context"
@@ -40,8 +40,8 @@ func (api *AIGenHostAPI) UpdateUI(ctx context.Context, id string, typ string, at
 	return nil
 }
 
-// Log allows plugins to write to the host's audit log.
+// Log allows extensions to write to the host's audit log.
 func (api *AIGenHostAPI) Log(ctx context.Context, level string, message string) {
 	// TODO: Integrate with AuditService
-	fmt.Printf("[%s] Plugin Log: %s\n", level, message)
+	fmt.Printf("[%s] Extension Log: %s\n", level, message)
 }
