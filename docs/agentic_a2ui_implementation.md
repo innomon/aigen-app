@@ -15,6 +15,38 @@ The core of the multi-agent system is defined in `agentic.yaml`. This file dicta
   - **Router Agent (`router_agent`)**: The root agent responsible for triaging incoming user requests and delegating them to the appropriate specialized sub-agent.
   - **CMS Agent (`cms_agent`)**: A specialized LLM agent instructed to act as the CMS data assistant. It has access to tools like `cms_entity_list`, `cms_entity_get`, `cms_entity_create`, and `cms_schema_list`.
   - **UI Agent (`ui_agent`)**: A specialized LLM agent instructed to manage the A2UI dashboard. It uses the `cms_a2ui_update` tool to dynamically render or modify UI components.
+  - **Workflow Agents**: Orchestrate complex stateful operations using direct graphs with explicit execution nodes and routing edges.
+
+#### 2.1.1. Workflow Agents (ADK 2.0 Workflows)
+With the transition to ADK 2.0, you can declaratively construct graph-based agent workflows using `type: workflow`.
+
+A workflow defines **Nodes** (referencing existing agents or tools) and **Edges** (specifying the routing route/condition transitions):
+
+```yaml
+agents:
+  OrderProcessingWorkflow:
+    type: workflow
+    description: "Orchestrates order validation and routing."
+    nodes:
+      - name: start                 # Entry point (sentinel node)
+        agent: ValidateOrderAgent
+      - name: ValidateOrderAgent
+        agent: ValidationAgent
+      - name: ProcessFulfillmentAgent
+        agent: FulfillmentAgent
+      - name: HandleRejectionAgent
+        agent: RejectionAgent
+    edges:
+      - from: start
+        to: ValidateOrderAgent
+      - from: ValidateOrderAgent
+        to: ProcessFulfillmentAgent
+        route: "valid"              # Transition if validation matches "valid"
+      - from: ValidateOrderAgent
+        to: HandleRejectionAgent
+        route: DEFAULT              # Fallback route
+```
+
 - **Tools**: Built-in functions registered in Go that the LLM can invoke to interact with the underlying `EntityService` and `SchemaService`. Key tools include:
   - `cms_entity_list`, `cms_entity_get`, `cms_entity_create`: For data manipulation.
   - `cms_schema_list`: For listing available schemas.

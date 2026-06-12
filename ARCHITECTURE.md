@@ -132,9 +132,9 @@ AIGenApp is designed to be cloud-agnostic:
 - **New Channels**: Implement the `ChannelService` patterns for new messaging platforms.
 - **Signed Applets**: Package BizDefs, Agents, and polyglot tools into signed JAR files for secure, dynamic distribution.
 
-## Applet Plugin System
+## Applet Extension System
 
-AIGenApp supports a modular extension system called **Applets**. Applets are self-contained, digitally signed JAR files that can dynamically extend the system's capabilities.
+AIGenApp supports a modular extension system called **Applets** (or **App Extensions**). Applets are self-contained, digitally signed JAR files that can dynamically extend the system's capabilities.
 
 ### 1. The Applet Package
 An Applet JAR includes:
@@ -146,34 +146,34 @@ An Applet JAR includes:
 
 ### 2. Security & Trust Model
 To maintain system integrity, Applets follow a strict trust protocol:
-- **Digital Signatures**: All plugins must be signed using RSA/SHA256. 
-- **Whitelist Verification**: The host only activates plugins signed by trusted authorities or manually "trusted" by an administrator.
-- **Polyglot Sandbox**: All plugin code (JS, WASM, etc.) runs in a memory-safe, resource-capped sandbox.
+- **Digital Signatures**: All extensions must be signed using RSA/SHA256. 
+- **Whitelist Verification**: The host only activates extensions signed by trusted authorities or manually "trusted" by an administrator.
+- **Polyglot Sandbox**: All extension code (JS, WASM, etc.) runs in a memory-safe, resource-capped sandbox.
 - **Managed Host API**: Sandboxed scripts cannot access the host directly; they interact through a restricted `AIGenHostAPI` bridge that enforces RBAC and auditing.
 
 ### 3. Dynamic Lifecycle
-Plugins are managed via the **Plugin Management API**:
-- **Discovery**: The `PluginService` automatically detects new JAR files in the configured plugins directory (defaults to `plugins` or `./plugins`, and can be customized via `plugins_dir` in configuration or the `FORMCMS_PLUGINS_DIR` environment variable).
-- **Mounting**: When activated, the plugin's BizDefs are registered with the `SchemaService`, and its agents are merged into the `ChatService` registry on-the-fly.
+Extensions are managed via the **Extension Management API**:
+- **Discovery**: The `AppExtensionService` automatically detects new JAR files in the configured extensions directory (defaults to `app-extensions` or `./app-extensions`, and can be customized via `app_extensions_dir` in configuration or the `FORMCMS_APP_EXTENSIONS_DIR` environment variable).
+- **Mounting**: When activated, the extension's BizDefs are registered with the `SchemaService`, and its agents are merged into the `ChatService` registry on-the-fly.
 - **Hot-Swapping**: Functionality can be added or updated without restarting the primary AIGenApp process.
 
-### 4. Plugin-Aware Routing
-The **RouterAgent** is natively aware of activated plugins. 
-- **Doc Analysis**: The router introspects plugin metadata and documentation to understand their capabilities.
-- **Agent Transfer**: If a user's intent matches a plugin's domain, the router loads the plugin's `agentic.yaml` and delegates the conversation to its `root_agent`.
+### 4. Extension-Aware Routing
+The **RouterAgent** is natively aware of activated extensions. 
+- **Doc Analysis**: The router introspects extension metadata and documentation to understand their capabilities.
+- **Agent Transfer**: If a user's intent matches an extension's domain, the router loads the extension's `agentic.yaml` and delegates the conversation to its `root_agent`.
 
 ### 5. Permission Management & Secure Vault
 Applets operate under a **Least Privilege** model:
-- **Manifest-Based Permissions**: Plugins must declare required permissions (e.g., `http`, `bizdef`) in their manifest.
+- **Manifest-Based Permissions**: Extensions must declare required permissions (e.g., `http`, `bizdef`) in their manifest.
 - **Admin Authorization**: Sensitive permissions (like external network access) must be explicitly authorized by an administrator. All grants are logged in the **Audit Log**.
-- **Secure Vault**: Sensitive credentials (API keys, secrets) are stored in an encrypted vault. Plugins can only access keys they have explicitly declared in their manifest.
+- **Secure Vault**: Sensitive credentials (API keys, secrets) are stored in an encrypted vault. Extensions can only access keys they have explicitly declared in their manifest.
 
-### 6. Plugin Schema Evolution & Smart Overrides
-Data consistency and schema customization across plugin installations and upgrades are handled elegantly:
-- **Downstream Overrides**: Instead of maintaining standard codebase forks or complex custom schema directories, downstream projects use the Applet Plugin system to supply their overrides. Any `schemas/*.json` inside the plugin's `bizdef/` directory automatically overlays matching core system definitions.
-- **Smart Evolution Engine**: During startup or plugin mounting, the host's setup manager performs dynamic JSON structural comparison on the schemas. A database update is executed only if a structural change is detected. This makes loading extremely fast and completely idempotent.
-- **Automatic JIT Evolution**: When a plugin is updated, any existing data is automatically evolved "on-the-fly" using the plugin's new `evolution.json` manifest during read/write operations.
-- **Data Integrity**: This ensures that data created by version 1.0 of a plugin remains accessible and valid when the system is upgraded to version 2.0, completely avoiding standard SQL `ALTER TABLE` locks.
+### 6. Extension Schema Evolution & Smart Overrides
+Data consistency and schema customization across extension installations and upgrades are handled elegantly:
+- **Downstream Overrides**: Instead of maintaining standard codebase forks or complex custom schema directories, downstream projects use the Applet Extension system to supply their overrides. Any `schemas/*.json` inside the extension's `bizdef/` directory automatically overlays matching core system definitions.
+- **Smart Evolution Engine**: During startup or extension mounting, the host's setup manager performs dynamic JSON structural comparison on the schemas. A database update is executed only if a structural change is detected. This makes loading extremely fast and completely idempotent.
+- **Automatic JIT Evolution**: When an extension is updated, any existing data is automatically evolved "on-the-fly" using the extension's new `evolution.json` manifest during read/write operations.
+- **Data Integrity**: This ensures that data created by version 1.0 of an extension remains accessible and valid when the system is upgraded to version 2.0, completely avoiding standard SQL `ALTER TABLE` locks.
 
 ## BizDef Integration & Invocation
 

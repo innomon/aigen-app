@@ -23,7 +23,7 @@ A headless CMS and dynamic application framework in Go, evolved from the FormCMS
 - **Temporary File Access**: Short-lived, unauthenticated URLs with TTL and optimized garbage collection. [Read More](docs/temporary_file_access.md)
 - **Social Engagement**: Built-in likes, bookmarks, and comments.
 - **Embedded UI**: React Admin panel, GrapesJS page builder, and dynamic A2UI renderer included.
-- **Signed Applet Plugins**: Extend the system dynamically with signed JAR files. Support for BizDefs, Agentic tools, polyglot sandboxed scripts (JS, Lua, Starlark, WASM), and **automatic/smart schema overrides** where plugin-supplied schemas seamlessly overlay and update existing data structures in a clean, change-detected database migration.
+- **Signed Applet Extensions**: Extend the system dynamically with signed JAR files. Support for BizDefs, Agentic tools, polyglot sandboxed scripts (JS, Lua, Starlark, WASM), and **automatic/smart schema overrides** where extension-supplied schemas seamlessly overlay and update existing data structures in a clean, change-detected database migration.
 
 ## Getting Started
 
@@ -98,7 +98,7 @@ The server will start on `http://localhost:5000`.
 | `FORMCMS_WWW_ROOT` | The directory for serving static files and storing uploaded assets. | `wwwroot` |
 | `FORMCMS_CUSTOM_UI_PATH` | Path to a custom directory on the local filesystem to serve overriding UI assets, falling back to embedded resources. | `""` |
 | `FORMCMS_BIZDEFS_DIR` | The directory where BizDef definitions and data are located. | `bizdefs` |
-| `FORMCMS_PLUGINS_DIR` | The directory where Applet plugin `.jar` files are loaded from. | `plugins` |
+| `FORMCMS_APP_EXTENSIONS_DIR` | The directory where Applet extension `.jar` files are loaded from (fallback: `FORMCMS_PLUGINS_DIR`). | `app-extensions` |
 | `FORMCMS_DB_DSN` | Database connection string (e.g., `postgres://user:pass@host:port/db`). | `""` |
 | `FORMCMS_CONFIG_PATH` | Path to the YAML/JSON configuration file. | `""` |
 | `FORMCMS_AGENTIC_CONFIG_PATH` | Path to the `agentic.yaml` configuration for LLM workflows. | `agentic.yaml` |
