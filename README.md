@@ -19,7 +19,7 @@ A headless CMS and dynamic application framework in Go, evolved from the FormCMS
 - **Schema-on-Read Data Modeling**: Define entities and attributes dynamically. All data is stored in a highly flexible single-table JSON schema (`aigen_records`), making migrations a thing of the past.
 - **Declarative Schema Evolution**: Evolve business models without downtime. Supports machine-readable transformation timelines (`evolution.json`), Just-In-Time (JIT) upgrades on read/write, and asynchronous background migrations with Optimistic Concurrency Control.
 - **REST & GraphQL APIs**: Auto-generated CRUD and GraphQL endpoints.
-- **File Storage**: Local and S3 support with image processing.
+- **File Storage**: Local, S3, and SurrealDB support with image processing.
 - **Temporary File Access**: Short-lived, unauthenticated URLs with TTL and optimized garbage collection. [Read More](docs/temporary_file_access.md)
 - **Social Engagement**: Built-in likes, bookmarks, and comments.
 - **Embedded UI**: React Admin panel, GrapesJS page builder, and dynamic A2UI renderer included.
@@ -74,7 +74,7 @@ func main() {
 ```yaml
 bizdefs_dir: "bizdefs"
 www_root: "wwwroot"
-database_dsn: "postgres://user:pass@localhost:5432/aigen_db"
+database_dsn: "postgres://user:pass@localhost:5432/aigen_db" # Or "surreal://root:root@localhost:8000/aigen/aigen"
 domain: ""
 port: "5000"
 agentic_config_path: "agentic.yaml"
@@ -99,7 +99,7 @@ The server will start on `http://localhost:5000`.
 | `FORMCMS_CUSTOM_UI_PATH` | Path to a custom directory on the local filesystem to serve overriding UI assets, falling back to embedded resources. | `""` |
 | `FORMCMS_BIZDEFS_DIR` | The directory where BizDef definitions and data are located. | `bizdefs` |
 | `FORMCMS_APP_EXTENSIONS_DIR` | The directory where Applet extension `.jar` files are loaded from (fallback: `FORMCMS_PLUGINS_DIR`). | `app-extensions` |
-| `FORMCMS_DB_DSN` | Database connection string (e.g., `postgres://user:pass@host:port/db`). | `""` |
+| `FORMCMS_DB_DSN` | Database connection string (e.g., `postgres://user:pass@host:port/db` or `surreal://root:root@host:port/ns/db`). | `""` |
 | `FORMCMS_CONFIG_PATH` | Path to the YAML/JSON configuration file. | `""` |
 | `FORMCMS_AGENTIC_CONFIG_PATH` | Path to the `agentic.yaml` configuration for LLM workflows. | `agentic.yaml` |
 | `GEMINI_API_KEY` | API key for Google Gemini models. | `""` |
@@ -183,5 +183,5 @@ go build -o aigen-admin cmd/admin/main.go
 - `core/descriptors`: Data models and schema definitions.
 - `core/services`: Business logic and orchestration.
 - `infrastructure/filestore`: File storage implementations (Local, S3).
-- `infrastructure/relationdbdao`: Database abstraction layer (PostgreSQL and Firestore using single JSON store).
+- `infrastructure/relationdbdao`: Database abstraction layer (PostgreSQL, Firestore, and SurrealDB using single JSON store).
 - `utils`: Shared utilities and data models.

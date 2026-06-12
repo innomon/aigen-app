@@ -1,16 +1,23 @@
 bizdefs_dir: bizdefs
 app_extensions_dir: app-extensions
 www_root: wwwroot
+# Database connection DSN (supports postgres://, firestore://, surreal:// or surrealdb://, and memory://)
 database_dsn: "postgres://postgres:password@localhost:5432/aigen?sslmode=disable"
+# Example SurrealDB DSN:
+# database_dsn: "surreal://root:root@localhost:8000/aigen/aigen"
+
 domain: localhost
 port: "5000"
 agentic_config_path: agentic.yaml
 
 storage:
+  # Supported drivers: fs (local), s3, gcs, postgres, surrealdb
   driver: fs
   fs:
     root: wwwroot/files
     url_prefix: /files
+  surrealdb:
+    url: "surreal://root:root@localhost:8000/aigen/aigen"
 
 channels:
   a2a_enabled: true

@@ -98,9 +98,10 @@ graph TD
     User((User/Client)) --> API[API Layer: chi Router]
     API --> Service[Service Layer: Execution Brain]
     Service --> DAO[DAO Layer: Database Abstraction]
-    Service --> Filestore[Filestore Layer: S3/GCS/Local]
+    Service --> Filestore[Filestore Layer: S3/GCS/Local/SurrealDB]
     DAO --> Postgres[(PostgreSQL)]
     DAO --> Firestore[(Firestore)]
+    DAO --> SurrealDB[(SurrealDB)]
     
     subgraph Logic & Intelligence
         BizDef[Domain Brain: BizDefs]
@@ -113,8 +114,8 @@ graph TD
 
 ### Infrastructure Abstraction
 AIGenApp is designed to be cloud-agnostic:
-- **`IPrimaryDao`**: Abstracts the database (Postgres, Firestore, or Memory).
-- **`IFileStore`**: Abstracts the storage (Local, S3, GCS, or Postgres-BLOB).
+- **`IPrimaryDao`**: Abstracts the database (Postgres, Firestore, SurrealDB, or Memory).
+- **`IFileStore`**: Abstracts the storage (Local, S3, GCS, Postgres-BLOB, or SurrealDB).
 
 ## Relationship & Data Flow
 

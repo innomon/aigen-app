@@ -25,6 +25,9 @@ type Config struct {
 	Postgres struct {
 		URL string
 	}
+	SurrealDB struct {
+		URL string
+	}
 }
 
 func CreateFileStore(ctx context.Context, cfg Config) (IFileStore, error) {
@@ -37,6 +40,8 @@ func CreateFileStore(ctx context.Context, cfg Config) (IFileStore, error) {
 		return NewGCSFileStore(ctx, cfg.GCS.Bucket, cfg.GCS.CredentialsFile)
 	case "postgres":
 		return NewPostgresFileStore(cfg.Postgres.URL)
+	case "surrealdb":
+		return NewSurrealFileStore(ctx, cfg.SurrealDB.URL)
 	default:
 		return nil, fmt.Errorf("unsupported storage driver: %s", cfg.Driver)
 	}
