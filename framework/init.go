@@ -193,8 +193,13 @@ func NewApp(cfg *Config) (*App, error) {
 	a2uiApi := api.NewA2UIApi(a2uiService, authApi)
 	extensionApi := api.NewAppExtensionApi(extensionService, authApi)
 	var chatApi *api.ChatApi
+	var adk2appApi *api.ADK2AppApi
 	if chatService != nil {
 		chatApi = api.NewChatApi(chatService, authApi)
+		adk2appApi, err = api.NewADK2AppApi(chatService, authService, permissionService, whatsappService, extensionService)
+		if err != nil {
+			log.Printf("Warning: failed to initialize adk2app API: %v", err)
+		}
 	}
 
 	r := chi.NewRouter()
@@ -228,6 +233,9 @@ func NewApp(cfg *Config) (*App, error) {
 	extensionApi.Register(r)
 	if chatApi != nil {
 		chatApi.Register(r)
+	}
+	if adk2appApi != nil {
+		adk2appApi.Register(r)
 	}
 
 	return &App{

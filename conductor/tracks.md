@@ -21,5 +21,6 @@ This file tracks the various development tracks for AIGenApp.
 | `admin-bootstrapping` | Secure Admin User Bootstrapping | In Progress | `./tracks/admin-bootstrapping/` |
 | `v2-upgrade-app-extension` | V2 Upgrade & App-Extension Rename | Completed | `./tracks/v2-upgrade-app-extension/` |
 | `surrealdb-support` | SurrealDB Support in relationdbdao & filestore | Completed | `./tracks/surrealdb-support/` |
+| `app-gateway` | ADK to App Gateway (adk2app) | In Progress | `./tracks/app-gateway/` |
 
 

@@ -6,7 +6,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/stretchr/testify/assert"
 )
@@ -90,3 +92,76 @@ func TestWhatsAppService_TOTP(t *testing.T) {
 	// Verify window ±1 (simulated by checking at different times if we exposed the internal method, 
 	// but we can just trust the internal logic or mock time if needed)
 }
+
+func TestWhatsAppService_VerifyADKJWT(t *testing.T) {
+	privPEM, pubPEM, err := generateKeyPair()
+	assert.NoError(t, err)
+
+	block, _ := pem.Decode([]byte(privPEM))
+	privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	assert.NoError(t, err)
+
+	cfg := descriptors.ChannelConfig{
+		PublicKey: pubPEM,
+	}
+	s, err := NewWhatsAppService(cfg)
+	assert.NoError(t, err)
+
+	now := time.Now()
+	t.Run("Valid Token", func(t *testing.T) {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, &ADKClaims{
+			UserID:  "919876543210",
+			Channel: "whatsapp",
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    "whatsadk-gateway",
+				Audience:  jwt.ClaimStrings{"adk-agent"},
+				IssuedAt:  jwt.NewNumericDate(now),
+				ExpiresAt: jwt.NewNumericDate(now.Add(5 * time.Minute)),
+			},
+		})
+		tokenString, err := token.SignedString(privKey)
+		assert.NoError(t, err)
+
+		claims, err := s.VerifyADKJWT(tokenString)
+		assert.NoError(t, err)
+		assert.Equal(t, "919876543210", claims.UserID)
+		assert.Equal(t, "whatsapp", claims.Channel)
+	})
+
+	t.Run("Expired Token", func(t *testing.T) {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, &ADKClaims{
+			UserID:  "919876543210",
+			Channel: "whatsapp",
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    "whatsadk-gateway",
+				Audience:  jwt.ClaimStrings{"adk-agent"},
+				IssuedAt:  jwt.NewNumericDate(now.Add(-10 * time.Minute)),
+				ExpiresAt: jwt.NewNumericDate(now.Add(-5 * time.Minute)),
+			},
+		})
+		tokenString, err := token.SignedString(privKey)
+		assert.NoError(t, err)
+
+		_, err = s.VerifyADKJWT(tokenString)
+		assert.Error(t, err)
+	})
+
+	t.Run("Missing User ID", func(t *testing.T) {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, &ADKClaims{
+			UserID:  "",
+			Channel: "whatsapp",
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    "whatsadk-gateway",
+				Audience:  jwt.ClaimStrings{"adk-agent"},
+				IssuedAt:  jwt.NewNumericDate(now),
+				ExpiresAt: jwt.NewNumericDate(now.Add(5 * time.Minute)),
+			},
+		})
+		tokenString, err := token.SignedString(privKey)
+		assert.NoError(t, err)
+
+		_, err = s.VerifyADKJWT(tokenString)
+		assert.Error(t, err)
+	})
+}
+

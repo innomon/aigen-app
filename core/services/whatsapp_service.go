@@ -110,6 +110,39 @@ func (s *WhatsAppService) VerifyGatewayJWT(tokenString string) (string, string, 
 	return "", "", fmt.Errorf("invalid token")
 }
 
+type ADKClaims struct {
+	UserID  string `json:"user_id"`
+	Channel string `json:"channel"`
+	jwt.RegisteredClaims
+}
+
+func (s *WhatsAppService) VerifyADKJWT(tokenString string) (*ADKClaims, error) {
+	if s.gatewayPub == nil {
+		return nil, fmt.Errorf("gateway public key not configured")
+	}
+
+	token, err := jwt.ParseWithClaims(tokenString, &ADKClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.gatewayPub, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*ADKClaims); ok && token.Valid {
+		if claims.UserID == "" {
+			return nil, fmt.Errorf("missing user_id claim")
+		}
+		return claims, nil
+	}
+
+	return nil, fmt.Errorf("invalid token")
+}
+
+
 func (s *WhatsAppService) GenerateOTP(challengeID string) (string, error) {
 	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
 	

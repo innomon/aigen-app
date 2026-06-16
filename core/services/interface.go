@@ -124,6 +124,7 @@ type IChannelService interface {
 type IWhatsAppService interface {
 	GenerateReverseOTPJWT(mobile string, challengeID string) (string, error)
 	VerifyGatewayJWT(tokenString string) (mobile string, challengeID string, err error)
+	VerifyADKJWT(tokenString string) (*ADKClaims, error)
 	GenerateOTP(challengeID string) (string, error)
 	VerifyOTP(challengeID string, otp string) (bool, error)
 	
@@ -151,3 +152,9 @@ type ICommerceService interface {
 	CreateCheckout(ctx context.Context, buyerId string, productIds []string) (datamodels.Record, error)
 	VerifyMandate(ctx context.Context, mandateId string) (bool, error)
 }
+
+type IAppExtensionService interface {
+	GetRoutingDocs() map[string]string
+	LoadAgenticConfig(id string) ([]byte, error)
+}
+
