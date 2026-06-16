@@ -25,6 +25,16 @@ channels:
     enabled: true
     gateway_url: "http://localhost:8080"
     gateway_number: "+1234567890"
+    # gateway public key (PEM-encoded) for verifying gateway JWTs
+    public_key: |
+      -----BEGIN PUBLIC KEY-----
+      ...
+      -----END PUBLIC KEY-----
+    # backend private key (PEM-encoded) for signing reverse-OTP JWTs
+    private_key: |
+      -----BEGIN RSA PRIVATE KEY-----
+      ...
+      -----END RSA PRIVATE KEY-----
 
 mcp:
   enabled: true

@@ -13,15 +13,15 @@ This plan outlines the steps required to implement the secure `adk2app` endpoint
   - Return the loaded `agent.Agent`.
 
 ## Phase 3: Middleware and Routing Implementation
-- [ ] Create `core/api/adk2app_api.go` defining the `ADK2AppApi` struct and its Chi routing configuration.
-- [ ] Implement the `AuthenticateAndAuthorize` middleware:
+- [x] Create `core/api/adk2app_api.go` defining the `ADK2AppApi` struct and its Chi routing configuration.
+- [x] Implement the `AuthenticateAndAuthorize` middleware:
   - Extract the token, call `whatsappService.VerifyADKJWT`.
   - Validate that the target user ID matches the token subject.
   - Resolve user and roles via `authService.LoginByChannel`.
   - Perform RBAC check on `appName` via `permissionService.HasAccess`.
-- [ ] Initialize and mount the `adkrest.Server` wrapped by the middleware under `/api/adk2app` in `framework/init.go`.
+- [x] Initialize and mount the `adkrest.Server` wrapped by the middleware under `/api/adk2app` in `framework/init.go`.
 
 ## Phase 4: Configuration & Verification
-- [ ] Update `config.yaml.sample` to document gateway public key setup if not already clear.
-- [ ] Run `go build ./...` to verify compilation.
-- [ ] Create integration tests verifying the full flow: request decoding, middleware auth, RBAC checks, and mock agent execution.
+- [x] Update `config.yaml.sample` to document gateway public key setup if not already clear.
+- [x] Run `go build ./...` to verify compilation.
+- [x] Create integration tests verifying the full flow: request decoding, middleware auth, RBAC checks, and mock agent execution.
