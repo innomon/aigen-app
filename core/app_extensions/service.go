@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/innomon/aigen-app/utils/logger"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/innomon/aigen-app/core/bizdefs"
@@ -189,17 +190,17 @@ func (s *AppExtensionService) MountExtension(ctx context.Context, id string) err
 	subFS, err := fs.Sub(r, "bizdef")
 	if err == nil {
 		if err := bizdefs.SetupBizDefFromFS(ctx, subFS, info.Manifest.ID, s.SchemaService); err != nil {
-			log.Printf("Warning: failed to mount bizdef for %s: %v", info.Manifest.ID, err)
+			logger.Printf("Warning: failed to mount bizdef for %s: %v", info.Manifest.ID, err)
 		}
 		if err := bizdefs.SetupBizDefEvolutionFromFS(ctx, subFS, info.Manifest.ID, s.EvolutionService); err != nil {
-			log.Printf("Warning: failed to mount bizdef evolution for %s: %v", info.Manifest.ID, err)
+			logger.Printf("Warning: failed to mount bizdef evolution for %s: %v", info.Manifest.ID, err)
 		}
 	}
 
 	// 2. Mount Agentic Tools via Sandbox
 	if s.ChatService != nil && s.ChatService.Registry != nil {
 		if err := s.Dispatcher.RegisterExtensionTools(s.ChatService.Registry, r, info.Manifest.ID); err != nil {
-			log.Printf("Warning: failed to register extension tools for %s: %v", info.Manifest.ID, err)
+			logger.Printf("Warning: failed to register extension tools for %s: %v", info.Manifest.ID, err)
 		}
 	}
 
@@ -207,7 +208,7 @@ func (s *AppExtensionService) MountExtension(ctx context.Context, id string) err
 	info.Status = StatusActive
 	s.mu.Unlock()
 
-	log.Printf("App Extension %s mounted successfully", info.Manifest.ID)
+	logger.Printf("App Extension %s mounted successfully", info.Manifest.ID)
 	return nil
 }
 
@@ -218,7 +219,7 @@ func (s *AppExtensionService) Start(ctx context.Context) error {
 
 	// Initial scan
 	if err := s.Scan(); err != nil {
-		log.Printf("Error during initial extension scan: %v", err)
+		logger.Printf("Error during initial extension scan: %v", err)
 	}
 
 	// 2. Start Watcher
@@ -237,7 +238,7 @@ func (s *AppExtensionService) Start(ctx context.Context) error {
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 					if filepath.Ext(event.Name) == ".jar" {
-						log.Printf("Detected extension change: %s", event.Name)
+						logger.Printf("Detected extension change: %s", event.Name)
 						// Debounce slightly to allow file to be fully written
 						time.Sleep(500 * time.Millisecond)
 						s.Scan()
@@ -247,7 +248,7 @@ func (s *AppExtensionService) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				log.Printf("Extension watcher error: %v", err)
+				logger.Printf("Extension watcher error: %v", err)
 			case <-ctx.Done():
 				return
 			}
@@ -258,7 +259,7 @@ func (s *AppExtensionService) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to add directory to watcher: %w", err)
 	}
 
-	log.Printf("App Extension service started, watching %s", s.extensionsDir)
+	logger.Printf("App Extension service started, watching %s", s.extensionsDir)
 	return nil
 }
 
@@ -275,7 +276,7 @@ func (s *AppExtensionService) Scan() error {
 
 		path := filepath.Join(s.extensionsDir, f.Name())
 		if err := s.LoadExtension(path); err != nil {
-			log.Printf("Failed to load extension %s: %v", path, err)
+			logger.Printf("Failed to load extension %s: %v", path, err)
 		}
 	}
 
@@ -292,7 +293,7 @@ func (s *AppExtensionService) LoadExtension(path string) error {
 	s.extensions[info.Manifest.ID] = info
 	s.mu.Unlock()
 
-	log.Printf("Discovered app extension: %s (Version: %s, Status: %s)", info.Manifest.Name, info.Manifest.Version, info.Status)
+	logger.Printf("Discovered app extension: %s (Version: %s, Status: %s)", info.Manifest.Name, info.Manifest.Version, info.Status)
 	return nil
 }
 

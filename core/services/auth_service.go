@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"time"
+
+	"github.com/innomon/aigen-app/utils/logger"
 
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
@@ -385,7 +386,7 @@ func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultP
 	if isRandom {
 		printAdminBanner(email, password)
 	} else {
-		log.Printf("[INFO] Bootstrapped administrator user account: %s", email)
+		logger.Printf("[INFO] Bootstrapped administrator user account: %s", email)
 	}
 
 	return nil

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/innomon/aigen-app/framework"
+	"github.com/innomon/aigen-app/utils/logger"
 )
 
 func main() {
@@ -15,10 +15,10 @@ func main() {
 
 	config, err := framework.LoadConfig(configPath)
 	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
+		logger.Fatalf("Error loading configuration: %v", err)
 	}
 
 	if err := framework.Start(config); err != nil {
-		log.Fatalf("Framework failed to start: %v", err)
+		logger.Fatalf("Framework failed to start: %v", err)
 	}
 }

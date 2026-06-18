@@ -8,3 +8,13 @@ domain: ""
 port: "5000"
 agentic_config_path: "agentic.yaml"
 custom_ui_path: "/home/innomon/orez/apps/startup-ecosys/custom_ui"
+
+log:
+  level: "INFO"
+  console_enabled: true
+  file_enabled: true
+  dir: "logs"
+  file_name: "server.log"
+  max_size_mb: 10
+  max_backups: 5
+

@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/innomon/aigen-app/utils/logger"
 
 	"github.com/innomon/aigen-app/core/agentic/agents"
 	"github.com/innomon/aigen-app/core/api"
@@ -51,6 +52,20 @@ type App struct {
 
 // NewApp initializes all services and the router, but does not start the server.
 func NewApp(cfg *Config) (*App, error) {
+	// Initialize logger
+	_, err := logger.Init(logger.Config{
+		Level:          cfg.Log.Level,
+		ConsoleEnabled: cfg.Log.ConsoleEnabled,
+		FileEnabled:    cfg.Log.FileEnabled,
+		Dir:            cfg.Log.Dir,
+		FileName:       cfg.Log.FileName,
+		MaxSizeMB:      cfg.Log.MaxSizeMB,
+		MaxBackups:     cfg.Log.MaxBackups,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize logger: %w", err)
+	}
+
 	// Initialize Database
 	dao, err := relationdbdao.CreateDao(cfg.DatabaseDSN)
 	if err != nil {
@@ -102,26 +117,26 @@ func NewApp(cfg *Config) (*App, error) {
 
 	enabledBizDefs, err := bizdefs.LoadBizDefsConfig(cfg.BizDefsDir)
 	if err != nil {
-		log.Printf("Warning: failed to load bizdefs config from %s: %v", cfg.BizDefsDir, err)
+		logger.Printf("Warning: failed to load bizdefs config from %s: %v", cfg.BizDefsDir, err)
 		enabledBizDefs = []string{} // Proceed without bizdefs if failed
 	}
 
 	for _, bizdefName := range enabledBizDefs {
-		log.Printf("Setting up bizdef schemas: %s", bizdefName)
+		logger.Printf("Setting up bizdef schemas: %s", bizdefName)
 		if err := bizdefs.SetupBizDef(seedCtx, cfg.BizDefsDir, bizdefName, schemaService, dao); err != nil {
-			log.Printf("Warning: failed to setup bizdef %s schemas: %v\n", bizdefName, err)
+			logger.Printf("Warning: failed to setup bizdef %s schemas: %v\n", bizdefName, err)
 		}
 		if err := bizdefs.SetupBizDefEvolution(seedCtx, cfg.BizDefsDir, bizdefName, evolutionService); err != nil {
-			log.Printf("Warning: failed to setup bizdef %s evolution manifests: %v\n", bizdefName, err)
+			logger.Printf("Warning: failed to setup bizdef %s evolution manifests: %v\n", bizdefName, err)
 		}
 	}
 
 	entityService := services.NewEntityService(schemaService, evolutionService, dao, permissionService)
 
 	for _, bizdefName := range enabledBizDefs {
-		log.Printf("Setting up test data for bizdef: %s", bizdefName)
+		logger.Printf("Setting up test data for bizdef: %s", bizdefName)
 		if err := bizdefs.SetupBizDefTestData(seedCtx, cfg.BizDefsDir, bizdefName, entityService); err != nil {
-			log.Printf("Warning: failed to setup test data for bizdef %s: %v\n", bizdefName, err)
+			logger.Printf("Warning: failed to setup test data for bizdef %s: %v\n", bizdefName, err)
 		}
 	}
 
@@ -133,7 +148,7 @@ func NewApp(cfg *Config) (*App, error) {
 	interactionService := services.NewInteractionService(dao)
 	whatsappService, err := services.NewWhatsAppService(cfg.Channels.WhatsApp)
 	if err != nil {
-		log.Printf("Warning: failed to initialize WhatsApp service: %v", err)
+		logger.Printf("Warning: failed to initialize WhatsApp service: %v", err)
 	}
 	channelService := services.NewChannelService(dao, cfg.Channels, interactionService, assetService)
 	authService := services.NewAuthService(dao, "your-secret-key", channelService, whatsappService)
@@ -141,12 +156,12 @@ func NewApp(cfg *Config) (*App, error) {
 	// Bootstrap administrator account
 	isTestEnv := cfg.DatabaseDSN == "memory://" || os.Getenv("FORMCMS_ENV") == "test"
 	if err := authService.BootstrapAdmin(seedCtx, cfg.Admin.Email, cfg.Admin.Password, isTestEnv); err != nil {
-		log.Printf("Warning: failed to bootstrap admin user: %v", err)
+		logger.Printf("Warning: failed to bootstrap admin user: %v", err)
 	}
 
 	// Bootstrap default premium home page
 	if err := schemaService.BootstrapDefaultHomePage(seedCtx); err != nil {
-		log.Printf("Warning: failed to bootstrap default home page: %v", err)
+		logger.Printf("Warning: failed to bootstrap default home page: %v", err)
 	}
 
 	auditService := services.NewAuditService(dao)
@@ -157,12 +172,12 @@ func NewApp(cfg *Config) (*App, error) {
 
 	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, evolutionService, a2uiService, interactionService, commerceService)
 	if err != nil {
-		log.Printf("Warning: failed to initialize chat service (agentic config missing or invalid): %v", err)
+		logger.Printf("Warning: failed to initialize chat service (agentic config missing or invalid): %v", err)
 	}
 
 	extensionService := app_extensions.NewAppExtensionService(cfg.AppExtensionsDir, schemaService, evolutionService, chatService, entityService, a2uiService, auditService)
 	if err := extensionService.Start(context.Background()); err != nil {
-		log.Printf("Warning: failed to start app extension service: %v", err)
+		logger.Printf("Warning: failed to start app extension service: %v", err)
 	}
 
 	// Register Router Agent globally with App Extension provider and Permissions provider
@@ -198,7 +213,7 @@ func NewApp(cfg *Config) (*App, error) {
 		chatApi = api.NewChatApi(chatService, authApi)
 		adk2appApi, err = api.NewADK2AppApi(chatService, authService, permissionService, whatsappService, extensionService)
 		if err != nil {
-			log.Printf("Warning: failed to initialize adk2app API: %v", err)
+			logger.Printf("Warning: failed to initialize adk2app API: %v", err)
 		}
 	}
 

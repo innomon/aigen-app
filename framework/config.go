@@ -43,6 +43,16 @@ type AdminConfig struct {
 	Password string `yaml:"password" json:"password"`
 }
 
+type LogConfig struct {
+	Level          string `yaml:"level" json:"level"`
+	ConsoleEnabled bool   `yaml:"console_enabled" json:"console_enabled"`
+	FileEnabled    bool   `yaml:"file_enabled" json:"file_enabled"`
+	Dir            string `yaml:"dir" json:"dir"`
+	FileName       string `yaml:"file_name" json:"file_name"`
+	MaxSizeMB      int    `yaml:"max_size_mb" json:"max_size_mb"`
+	MaxBackups     int    `yaml:"max_backups" json:"max_backups"`
+}
+
 type Config struct {
 	BizDefsDir        string                     `yaml:"bizdefs_dir" json:"bizdefs_dir"`
 	WWWRoot           string                     `yaml:"www_root" json:"www_root"`
@@ -57,6 +67,7 @@ type Config struct {
 	Storage           StorageConfig              `yaml:"storage" json:"storage"`
 	TemporaryAccess   []descriptors.TemporaryAccessConfig `yaml:"temporary_access" json:"temporary_access"`
 	Admin             AdminConfig                `yaml:"admin" json:"admin"`
+	Log               LogConfig                  `yaml:"log" json:"log"`
 }
 
 func DefaultConfig() *Config {
@@ -85,6 +96,15 @@ func DefaultConfig() *Config {
 		Admin: AdminConfig{
 			Email:    "",
 			Password: "",
+		},
+		Log: LogConfig{
+			Level:          "INFO",
+			ConsoleEnabled: true,
+			FileEnabled:    true,
+			Dir:            "logs",
+			FileName:       "server.log",
+			MaxSizeMB:      10,
+			MaxBackups:     5,
 		},
 	}
 }

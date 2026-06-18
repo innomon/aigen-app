@@ -46,3 +46,21 @@ temporary_access:
   - path: "tmp"
     ttl: 300
     role: "admin"
+
+# Structured logging & log rotation configuration
+log:
+  # Logging level: DEBUG, INFO, WARN, ERROR
+  level: "INFO"
+  # Enable human-readable text logs on Stderr
+  console_enabled: true
+  # Enable machine-readable JSONL logs to a file
+  file_enabled: true
+  # Log files destination directory
+  dir: "logs"
+  # Active log file name
+  file_name: "server.log"
+  # Maximum size of active log file before rotation (in MB)
+  max_size_mb: 10
+  # Maximum number of rotated log backups to retain
+  max_backups: 5
+

@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/innomon/aigen-app/utils/logger"
 	"time"
 
 	"github.com/innomon/aigen-app/core/descriptors"
@@ -71,7 +71,7 @@ func (s *EngagementService) flush(buffer []*descriptors.EngagementStatus) {
 			Tmstamp:   time.Now(),
 		}
 		if err := s.dao.Save(ctx, rec); err != nil {
-			log.Printf("Failed to save engagement status: %v", err)
+			logger.Printf("Failed to save engagement status: %v", err)
 			continue
 		}
 
@@ -91,7 +91,7 @@ func (s *EngagementService) flushCounts(ctx context.Context, status *descriptors
 	
 	rec, err := s.dao.Get(ctx, EngagementCountNamespace, key)
 	if err != nil {
-		log.Printf("Failed to get engagement counts: %v", err)
+		logger.Printf("Failed to get engagement counts: %v", err)
 		return
 	}
 

@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/innomon/aigen-app/utils/logger"
 
 	"github.com/innomon/agentic/pkg/config"
 	"github.com/innomon/agentic/pkg/registry"
@@ -63,7 +63,7 @@ func (s *ChatService) RegisterTool(name string, handler func(context.Context, ma
 func (s *ChatService) AddAgenticConfig(cfg *config.Config) error {
 	// In a real implementation, we'd merge this config into the registry.
 	// For now, we assume the registry is updated or we re-initialize parts of it.
-	log.Printf("Merging agentic config for app extension...")
+	logger.Printf("Merging agentic config for app extension...")
 	return nil
 }
 
