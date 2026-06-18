@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -132,6 +133,11 @@ func (a *ADK2AppApi) AuthenticateAndAuthorize(next http.Handler) http.Handler {
 			http.Error(w, "Forbidden: access denied for agent "+appName, http.StatusForbidden)
 			return
 		}
+
+		// Inject identity into context for downstream runners (like RouterAgent)
+		ctx := context.WithValue(r.Context(), "userId", userId)
+		ctx = context.WithValue(ctx, "roles", roles)
+		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})

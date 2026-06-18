@@ -25,3 +25,8 @@ This plan outlines the steps required to implement the secure `adk2app` endpoint
 - [x] Update `config.yaml.sample` to document gateway public key setup if not already clear.
 - [x] Run `go build ./...` to verify compilation.
 - [x] Create integration tests verifying the full flow: request decoding, middleware auth, RBAC checks, and mock agent execution.
+
+## Phase 5: Routing Adaptation to WhatsADK
+- [x] Inject user identity context from `adk2app` middleware into the HTTP request context.
+- [x] Adapt `RouterAgent` to dynamically filter sub-agents and extensions based on user RBAC permissions.
+- [x] Add unit test in `chat_service_test.go` to verify the permission-based filtering and selection menu bypass.

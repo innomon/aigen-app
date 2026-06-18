@@ -165,8 +165,8 @@ func NewApp(cfg *Config) (*App, error) {
 		log.Printf("Warning: failed to start app extension service: %v", err)
 	}
 
-	// Register Router Agent globally with App Extension provider
-	agents.RegisterRouterAgent(interactionService, extensionService)
+	// Register Router Agent globally with App Extension provider and Permissions provider
+	agents.RegisterRouterAgent(interactionService, extensionService, permissionService)
 
 	a2aService := services.NewA2AService(chatService, cfg.Domain)
 	mcpService := services.NewMCPService(schemaService, entityService, authService, cfg.MCP)

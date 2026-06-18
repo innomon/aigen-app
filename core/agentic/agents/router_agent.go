@@ -58,7 +58,11 @@ type IAppExtensionProvider interface {
 	LoadAgenticConfig(id string) ([]byte, error)
 }
 
-func RegisterRouterAgent(svc IInteractionService, extensions IAppExtensionProvider) {
+type IPermissionProvider interface {
+	HasAccess(ctx context.Context, userId int64, roles []string, entityName, action string) (bool, error)
+}
+
+func RegisterRouterAgent(svc IInteractionService, extensions IAppExtensionProvider, permissions IPermissionProvider) {
 	registry.RegisterAgentType("router", func(ctx context.Context, name string, cfg *RouterAgentConfig, models registry.ModelRegistry, tools registry.ToolRegistry, sub []agent.Agent) (agent.Agent, error) {
 		return agent.New(agent.Config{
 			Name:        name,
@@ -84,17 +88,38 @@ func RegisterRouterAgent(svc IInteractionService, extensions IAppExtensionProvid
 					}
 
 					// 2. Resolve Available Targets (Sub-Agents + Extensions)
-					availableTargets := []string{}
+					allTargets := []string{}
 					for _, a := range sub {
-						availableTargets = append(availableTargets, a.Name())
+						allTargets = append(allTargets, a.Name())
 					}
 					
 					extensionDocs := make(map[string]string)
 					if extensions != nil {
 						extensionDocs = extensions.GetRoutingDocs()
 						for id := range extensionDocs {
-							availableTargets = append(availableTargets, id)
+							allTargets = append(allTargets, id)
 						}
+					}
+
+					// Filter by permissions if userId and roles are available
+					availableTargets := []string{}
+					valUserId := ic.Value("userId")
+					valRoles := ic.Value("roles")
+					if valUserId != nil && valRoles != nil && permissions != nil {
+						userId, ok1 := valUserId.(int64)
+						roles, ok2 := valRoles.([]string)
+						if ok1 && ok2 {
+							for _, target := range allTargets {
+								hasAccess, err := permissions.HasAccess(ic, userId, roles, target, "read")
+								if err == nil && hasAccess {
+									availableTargets = append(availableTargets, target)
+								}
+							}
+						} else {
+							availableTargets = allTargets
+						}
+					} else {
+						availableTargets = allTargets
 					}
 
 					if len(availableTargets) == 0 {

@@ -80,6 +80,17 @@ func (m *mockModelRegistry) Get(ctx context.Context, name string) (model.LLM, er
 	return nil, fmt.Errorf("model not found")
 }
 
+type mockPermissionProvider struct {
+	hasAccess func(ctx context.Context, userId int64, roles []string, entityName, action string) (bool, error)
+}
+
+func (m *mockPermissionProvider) HasAccess(ctx context.Context, userId int64, roles []string, entityName, action string) (bool, error) {
+	if m.hasAccess != nil {
+		return m.hasAccess(ctx, userId, roles, entityName, action)
+	}
+	return true, nil
+}
+
 func TestChatServiceAndRouter(t *testing.T) {
 	ctx := context.Background()
 	intSvc := &mockInteractionService{history: make(map[string][]*descriptors.Interaction)}
@@ -119,8 +130,9 @@ func TestChatServiceAndRouter(t *testing.T) {
 		})
 	})
 
+	mockPerm := &mockPermissionProvider{}
 	// We need to register "router" too, ChatService.NewChatService calls agents.RegisterRouterAgent
-	agents.RegisterRouterAgent(intSvc, nil)
+	agents.RegisterRouterAgent(intSvc, nil, mockPerm)
 
 	reg := registry.New(cfg)
 	chatSvc := &ChatService{
@@ -281,5 +293,25 @@ func TestChatServiceAndRouter(t *testing.T) {
 		assert.Contains(t, resp, "My name is Alice")
 		assert.Contains(t, resp, "Nice to meet you Alice")
 		assert.Contains(t, resp, "Who am I?")
+	})
+
+	t.Run("Router filters targets by permission", func(t *testing.T) {
+		// Define permission check: only allow "bizdef1"
+		mockPerm.hasAccess = func(ctx context.Context, userId int64, roles []string, entityName, action string) (bool, error) {
+			if entityName == "bizdef1" {
+				return true, nil
+			}
+			return false, nil
+		}
+		defer func() { mockPerm.hasAccess = nil }() // Reset after test
+
+		// Create context with userId and roles
+		testCtx := context.WithValue(ctx, "userId", int64(42))
+		testCtx = context.WithValue(testCtx, "roles", []string{"user"})
+
+		// Run ProcessMessage. Since only "bizdef1" is allowed, it should bypass selection menu and route directly to bizdef1!
+		resp, err := chatSvc.ProcessMessage(testCtx, "user-perm-test", "I need help")
+		assert.NoError(t, err)
+		assert.Equal(t, "Hello from BizDef 1", resp)
 	})
 }
