@@ -36,41 +36,44 @@ AIGenApp is a reusable Go framework. To use it, create a new Go project and impo
 ### Creating a Project
 
 1. **Initialize a new Go module:**
+
 ```bash
 mkdir my-bizdef
 cd my-bizdef
 go mod init my-bizdef
 ```
 
-2. **Create a `main.go` file:**
+1. **Create a `main.go` file:**
+
 ```go
 package main
 
 import (
-	"log"
-	"os"
+ "log"
+ "os"
 
-	"github.com/innomon/aigen-app/framework"
+ "github.com/innomon/aigen-app/framework"
 )
 
 func main() {
-	configPath := ""
-	if len(os.Args) > 1 {
-		configPath = os.Args[1]
-	}
+ configPath := ""
+ if len(os.Args) > 1 {
+  configPath = os.Args[1]
+ }
 
-	config, err := framework.LoadConfig(configPath)
-	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
-	}
+ config, err := framework.LoadConfig(configPath)
+ if err != nil {
+  log.Fatalf("Error loading configuration: %v", err)
+ }
 
-	if err := framework.Start(config); err != nil {
-		log.Fatalf("Framework failed to start: %v", err)
-	}
+ if err := framework.Start(config); err != nil {
+  log.Fatalf("Framework failed to start: %v", err)
+ }
 }
 ```
 
-3. **Create a `config.yaml` file:**
+1. **Create a `config.yaml` file:**
+
 ```yaml
 bizdefs_dir: "bizdefs"
 www_root: "wwwroot"
@@ -80,7 +83,8 @@ port: "5000"
 agentic_config_path: "agentic.yaml"
 ```
 
-4. **Run the server:**
+1. **Run the server:**
+
 ```bash
 go run main.go config.yaml
 ```
@@ -115,18 +119,21 @@ The server will start on `http://localhost:5000`.
 | `AIGEN_ADMIN_EMAIL` | Custom email address override for the bootstrapped admin account. | `""` |
 | `AIGEN_ADMIN_PASSWORD` | Custom password override for the bootstrapped admin account. | `""` |
 
-
 ### Production Best Practices
 
 #### 1. Local Production (Behind Firewall / Cloudflare)
+
 For deployments on a Linux VPS or On-Prem server behind a Cloudflare proxy/tunnel, use **systemd** with a restricted environment file.
 
-1.  **Create a Secure Env File**: Store your secrets in a system-protected directory (e.g., `/etc/aigen/aigen.env`) and set permissions to `600`.
+1. **Create a Secure Env File**: Store your secrets in a system-protected directory (e.g., `/etc/aigen/aigen.env`) and set permissions to `600`.
+
     ```bash
     FORMCMS_DB_DSN="postgres://user:pass@localhost:5432/aigen_prod"
     GEMINI_API_KEY="your-prod-key"
     ```
-2.  **Configure systemd**: Create a service unit (e.g., `/etc/systemd/system/aigen.service`) that references this file:
+
+2. **Configure systemd**: Create a service unit (e.g., `/etc/systemd/system/aigen.service`) that references this file:
+
     ```ini
     [Service]
     ExecStart=/path/to/aigen-app
@@ -136,29 +143,30 @@ For deployments on a Linux VPS or On-Prem server behind a Cloudflare proxy/tunne
     ```
 
 #### 2. Cloud Native (Containerized)
+
 When deploying to AWS (ECS/EKS), GCP (Cloud Run/GKE), or Azure:
 
-1.  **Use Secret Managers**: Do not bake `.env` files into your Docker image. Instead, use AWS Secrets Manager or GCP Secret Manager.
-2.  **Injection**: Configure your orchestrator to inject these secrets as environment variables at runtime.
-    *   **Kubernetes**: Use `secretKeyRef` or the [External Secrets Operator](https://external-secrets.io/).
-    *   **Cloud Run**: Directly map GCP Secrets to environment variables in the service configuration.
+1. **Use Secret Managers**: Do not bake `.env` files into your Docker image. Instead, use AWS Secrets Manager or GCP Secret Manager.
+2. **Injection**: Configure your orchestrator to inject these secrets as environment variables at runtime.
+    - **Kubernetes**: Use `secretKeyRef` or the [External Secrets Operator](https://external-secrets.io/).
+    - **Cloud Run**: Directly map GCP Secrets to environment variables in the service configuration.
 
 ## Static File Serving
 
 AIGenApp serves static files from two main sources:
 
-1.  **Embedded & Custom UI Assets**: The core admin panel and static system assets are embedded in the binary and served under `/admin` and `/static`. Downstream projects can specify `custom_ui_path` (or `FORMCMS_CUSTOM_UI_PATH` env var) to overlay custom assets using the **Overlay Filesystem (OverlayFS)**. If a file is not found in the custom path, it seamlessly falls back to the embedded system assets.
-2.  **Dynamic Static Files**: Files stored in the directory specified by `www_root` (default `wwwroot`) are served via HTTP:
-    *   **Uploaded Assets**: By default, uploaded files are stored in `wwwroot/files` and are served under the `/files/*` path.
-    *   **Custom Assets**: Any directory or file placed within `www_root` can be accessed if a corresponding route is registered. By default, the `/files/*` route is mapped to the `www_root` directory, meaning `wwwroot/files/logo.png` is available at `/files/logo.png`.
+1. **Embedded & Custom UI Assets**: The core admin panel and static system assets are embedded in the binary and served under `/admin` and `/static`. Downstream projects can specify `custom_ui_path` (or `FORMCMS_CUSTOM_UI_PATH` env var) to overlay custom assets using the **Overlay Filesystem (OverlayFS)**. If a file is not found in the custom path, it seamlessly falls back to the embedded system assets.
+2. **Dynamic Static Files**: Files stored in the directory specified by `www_root` (default `wwwroot`) are served via HTTP:
+    - **Uploaded Assets**: By default, uploaded files are stored in `wwwroot/files` and are served under the `/files/*` path.
+    - **Custom Assets**: Any directory or file placed within `www_root` can be accessed if a corresponding route is registered. By default, the `/files/*` route is mapped to the `www_root` directory, meaning `wwwroot/files/logo.png` is available at `/files/logo.png`.
 
 ## Root Route Handling
 
 The root route (`/`) is dynamically handled by the `PageApi` and follows a tiered resolution logic:
 
-1.  **Dynamic "Home" Page**: It first looks for a page entity in the database specifically named `home`. If found, it renders this page using the application's Handlebars-based template engine.
-2.  **Role-Based Dashboard**: If no `home` page exists, the system checks the current user's role (or the `guest` role if not authenticated). If that role has a `DashboardPageId` configured, it renders that specific page.
-3.  **Admin Redirect**: If neither of the above is found, the system redirects the user to the admin interface (`/admin/list.html`).
+1. **Dynamic "Home" Page**: It first looks for a page entity in the database specifically named `home`. If found, it renders this page using the application's Handlebars-based template engine.
+2. **Role-Based Dashboard**: If no `home` page exists, the system checks the current user's role (or the `guest` role if not authenticated). If that role has a `DashboardPageId` configured, it renders that specific page.
+3. **Admin Redirect**: If neither of the above is found, the system redirects the user to the admin interface (`/admin/list.html`).
 
 ## CLI Utilities
 

@@ -1,0 +1,17 @@
+[![Go Reference](https://pkg.go.dev/badge/modernc.org/quickjs.svg)](https://pkg.go.dev/modernc.org/quickjs)
+[![LiberaPay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/jnml/donate)
+[![receives](https://img.shields.io/liberapay/receives/jnml.svg?logo=liberapay)](https://liberapay.com/jnml/donate)
+[![patrons](https://img.shields.io/liberapay/patrons/jnml.svg?logo=liberapay)](https://liberapay.com/jnml/donate)
+
+![logo_png](logo.png)
+
+# quickjs
+
+Package quickjs is a pure Go embeddable Javascript engine. It supports the
+ECMA script 14 ([ES2023]) specification including modules, asynchronous
+generators, proxies and BigInt.
+
+See also the original [C QuickJS] library.
+
+[C QuickJS]: https://bellard.org/quickjs
+[ES2023]: https://tc39.es/ecma262/2023/

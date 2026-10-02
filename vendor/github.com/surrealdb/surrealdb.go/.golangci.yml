@@ -1,0 +1,110 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - dogsled
+    - dupl
+    - errcheck
+    - funlen
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - goprintffuncname
+    - gosec
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+  settings:
+    dupl:
+      threshold: 100
+    funlen:
+      lines: 100
+      statements: 50
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    gosec:
+      excludes:
+        # Password fields are fundamental to a DB SDK
+        - G117
+        # HTTP requests use URLs from user configuration, not tainted input
+        - G704
+        # Log messages contain DB metadata (namespace/table names), not user input
+        - G706
+    gocritic:
+      disabled-checks:
+        - dupImport
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
+        - dupSubExpr
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 15
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+    nolintlint:
+      require-explanation: false
+      require-specific: false
+      allow-unused: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters:
+          - dupl
+          - funlen
+          - lll
+      - linters:
+          - mnd
+        path: _test\.go
+      # We assume writing logs to stdout and therefore
+      # chances of blocking are very rare-
+      # Having contexts for every log write would add unnecessary
+      # complexity and overhead to the SDK.
+      - linters:
+          - noctx
+        path: pkg/logger/slog.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/golangci/golangci-lint
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

@@ -1,0 +1,8 @@
+*.zip
+tmp
+tmp_file.txt
+test262/
+test262_report.txt
+go.work*
+*.exe
+test262.conf

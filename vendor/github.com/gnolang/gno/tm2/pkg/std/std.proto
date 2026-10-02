@@ -1,0 +1,95 @@
+syntax = "proto3";
+package std;
+
+option go_package = "github.com/gnolang/gno/tm2/pkg/std/pb";
+
+// imports
+import "google/protobuf/any.proto";
+
+// messages
+message BaseAccount {
+	string address = 1;
+	string coins = 2;
+	google.protobuf.Any pub_key = 3 [json_name = "public_key"];
+	uint64 account_number = 4;
+	uint64 sequence = 5;
+}
+
+message Coin {
+	string value = 1;
+}
+
+message GasPrice {
+	sint64 gas = 1;
+	string price = 2;
+}
+
+message MemFile {
+	string name = 1;
+	string body = 2;
+}
+
+message MemPackage {
+	string name = 1;
+	string path = 2;
+	repeated MemFile files = 3;
+	google.protobuf.Any type = 4;
+	google.protobuf.Any info = 5;
+}
+
+message InternalError {
+}
+
+message TxDecodeError {
+}
+
+message InvalidSequenceError {
+}
+
+message UnauthorizedError {
+}
+
+message InsufficientFundsError {
+}
+
+message UnknownRequestError {
+}
+
+message InvalidAddressError {
+}
+
+message UnknownAddressError {
+}
+
+message InvalidPubKeyError {
+}
+
+message InsufficientCoinsError {
+}
+
+message InvalidCoinsError {
+}
+
+message InvalidGasWantedError {
+}
+
+message OutOfGasError {
+}
+
+message MemoTooLargeError {
+}
+
+message InsufficientFeeError {
+}
+
+message TooManySignaturesError {
+}
+
+message NoSignaturesError {
+}
+
+message GasOverflowError {
+}
+
+message RestrictedTransferError {
+}
