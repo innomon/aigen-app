@@ -22,7 +22,7 @@ This file tracks the various development tracks for AIGenApp.
 | `v2-upgrade-app-extension` | V2 Upgrade & App-Extension Rename | Completed | `./tracks/v2-upgrade-app-extension/` |
 | `surrealdb-support` | SurrealDB Support in relationdbdao & filestore | Completed | `./tracks/surrealdb-support/` |
 | `app-gateway` | ADK to App Gateway (adk2app) | Completed | `./tracks/app-gateway/` |
-| `sqlite-p2p-support` | SQLite P2P Support for DAO & Filestore | Completed | `./tracks/sqlite-p2p-support/` |
+| `sqlite-p2p-support` | SQLite P2P Support for DAO & Filestore | Archived | `./archive/sqlite-p2p-support/` |
 
 
 
