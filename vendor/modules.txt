@@ -351,7 +351,7 @@ github.com/fsnotify/fsnotify/internal
 # github.com/fxamacker/cbor/v2 v2.7.0
 ## explicit; go 1.17
 github.com/fxamacker/cbor/v2
-# github.com/gnolang/gno v0.0.0-20260319132221-e6da9024ac5c
+# github.com/gnolang/gno v1.1.0
 ## explicit; go 1.24.0
 github.com/gnolang/gno/gnovm/pkg/benchops
 github.com/gnolang/gno/gnovm/pkg/gnoenv
@@ -561,8 +561,8 @@ github.com/lib/pq/internal/proto
 github.com/lib/pq/oid
 github.com/lib/pq/pqerror
 github.com/lib/pq/scram
-# github.com/mattn/go-isatty v0.0.20
-## explicit; go 1.15
+# github.com/mattn/go-isatty v0.0.24
+## explicit; go 1.20
 github.com/mattn/go-isatty
 # github.com/mattn/go-sqlite3 v1.14.37
 ## explicit; go 1.19
@@ -657,14 +657,17 @@ github.com/spiffe/go-spiffe/v2/internal/jwtutil
 github.com/spiffe/go-spiffe/v2/internal/pemutil
 github.com/spiffe/go-spiffe/v2/internal/x509util
 github.com/spiffe/go-spiffe/v2/spiffeid
-# github.com/stretchr/objx v0.5.2
+# github.com/stretchr/objx v0.5.3
 ## explicit; go 1.20
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.11.1
+# github.com/stretchr/testify v1.12.1
 ## explicit; go 1.17
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/assert/yaml
+github.com/stretchr/testify/internal/difflib
+github.com/stretchr/testify/internal/spew
 github.com/stretchr/testify/mock
+github.com/stretchr/testify/require
 # github.com/surrealdb/surrealdb.go v1.4.0
 ## explicit; go 1.23
 github.com/surrealdb/surrealdb.go
@@ -699,6 +702,18 @@ github.com/x448/float16
 # github.com/yosida95/uritemplate/v3 v3.0.2
 ## explicit; go 1.14
 github.com/yosida95/uritemplate/v3
+# go-pear v0.0.0 => ../../../owly-sewa/go-pear
+## explicit; go 1.25.6
+go-pear/pkg/autobase
+go-pear/pkg/compactenc
+go-pear/pkg/flattree
+go-pear/pkg/hypercore
+go-pear/pkg/hyperdht
+go-pear/pkg/hyperswarm
+go-pear/pkg/policy
+go-pear/pkg/protomux
+go-pear/pkg/secretstream
+go-pear/pkg/udx
 # go.opentelemetry.io/auto/sdk v1.2.1
 ## explicit; go 1.24.0
 go.opentelemetry.io/auto/sdk
@@ -807,7 +822,10 @@ go.opentelemetry.io/proto/otlp/trace/v1
 # go.uber.org/multierr v1.11.0
 ## explicit; go 1.19
 go.uber.org/multierr
-# golang.org/x/crypto v0.52.0
+# go.yaml.in/yaml/v3 v3.0.5
+## explicit; go 1.16
+go.yaml.in/yaml/v3
+# golang.org/x/crypto v0.54.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
@@ -819,6 +837,7 @@ golang.org/x/crypto/chacha20
 golang.org/x/crypto/chacha20poly1305
 golang.org/x/crypto/cryptobyte
 golang.org/x/crypto/cryptobyte/asn1
+golang.org/x/crypto/curve25519
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/internal/alias
@@ -830,13 +849,13 @@ golang.org/x/image/bmp
 golang.org/x/image/ccitt
 golang.org/x/image/tiff
 golang.org/x/image/tiff/lzw
-# golang.org/x/mod v0.35.0
+# golang.org/x/mod v0.38.0
 ## explicit; go 1.25.0
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.55.0
+# golang.org/x/net v0.57.0
 ## explicit; go 1.25.0
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -858,17 +877,17 @@ golang.org/x/oauth2/google/internal/stsexchange
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sync v0.20.0
+# golang.org/x/sync v0.22.0
 ## explicit; go 1.25.0
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.45.0
-## explicit; go 1.25.0
+# golang.org/x/sys v0.48.0
+## explicit; go 1.26.0
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/text v0.37.0
+# golang.org/x/text v0.40.0
 ## explicit; go 1.25.0
 golang.org/x/text/cases
 golang.org/x/text/internal
@@ -887,7 +906,7 @@ golang.org/x/text/width
 # golang.org/x/time v0.15.0
 ## explicit; go 1.25.0
 golang.org/x/time/rate
-# golang.org/x/tools v0.44.0
+# golang.org/x/tools v0.48.0
 ## explicit; go 1.25.0
 golang.org/x/tools/go/ast/astutil
 # google.golang.org/adk v1.4.0
@@ -1206,8 +1225,8 @@ gorm.io/gorm/logger
 gorm.io/gorm/migrator
 gorm.io/gorm/schema
 gorm.io/gorm/utils
-# modernc.org/libc v1.70.0
-## explicit; go 1.24.0
+# modernc.org/libc v1.75.7
+## explicit; go 1.25.0
 modernc.org/libc
 modernc.org/libc/errno
 modernc.org/libc/fcntl
@@ -1240,17 +1259,29 @@ modernc.org/libquickjs
 # modernc.org/mathutil v1.7.1
 ## explicit; go 1.21
 modernc.org/mathutil
-# modernc.org/memory v1.11.0
+# modernc.org/memory v1.12.1
 ## explicit; go 1.23.0
 modernc.org/memory
 # modernc.org/quickjs v0.17.1
 ## explicit; go 1.24.0
 modernc.org/quickjs
-# modernc.org/sqlite v1.46.1
-## explicit; go 1.24.0
+# modernc.org/sqlite v1.59.0
+## explicit; go 1.25.0
+modernc.org/sqlite
+modernc.org/sqlite/lib
+modernc.org/sqlite/vtab
 # rsc.io/omap v1.2.0
 ## explicit; go 1.23rc1
 rsc.io/omap
 # rsc.io/ordered v1.1.1
 ## explicit; go 1.22.0
 rsc.io/ordered
+# sqlite-p2p v0.0.0-00010101000000-000000000000 => ../../../owly-sewa/sqlite-p2p
+## explicit; go 1.26.0
+sqlite-p2p/internal/crypto
+sqlite-p2p/internal/p2p
+sqlite-p2p/internal/store
+sqlite-p2p/pkg/config
+sqlite-p2p/pkg/p2p
+# go-pear => ../../../owly-sewa/go-pear
+# sqlite-p2p => ../../../owly-sewa/sqlite-p2p

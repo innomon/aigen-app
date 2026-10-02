@@ -10,7 +10,8 @@ You are evolving `AIGenApp` (formerly `aigen-cms` / `FormCMS`) backend in Go (Go
 - **Data Model**: All entities are stored in a single table (`aigen_records`) utilizing a JSON schema structure (Namespace, Key, Rec, MetaData).
 - **SQL Building**: Use `Masterminds/squirrel` for queries inside SQL-based DAOs (Postgres). Services MUST NOT use squirrel or direct SQL; they must rely exclusively on `IPrimaryDao` methods.
 - **GraphQL**: Use `graphql-go/graphql`.
-- **Database**: The abstraction layer (`IPrimaryDao`) supports PostgreSQL and Google Cloud Firestore natively utilizing their JSON/document capabilities.
+- **Database**: The abstraction layer (`IPrimaryDao`) supports SQLite P2P (`sqlite-p2p`, default), PostgreSQL, SurrealDB, and Google Cloud Firestore natively utilizing their JSON/document capabilities.
+- **Filestore**: `IFileStore` provides decentralized binary and multi-part asset storage powered by SQLite P2P as default, with support for local FS, S3, GCS, PostgreSQL, and SurrealDB.
 - **Template Engine**: `aymerick/raymond` for Handlebars templates.
 
 ### Go Development

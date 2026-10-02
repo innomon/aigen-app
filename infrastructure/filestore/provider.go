@@ -28,11 +28,21 @@ type Config struct {
 	SurrealDB struct {
 		URL string
 	}
+	SqliteP2P struct {
+		URL       string
+		UrlPrefix string
+	}
 }
 
 func CreateFileStore(ctx context.Context, cfg Config) (IFileStore, error) {
 	switch cfg.Driver {
-	case "fs", "local", "":
+	case "sqlite-p2p", "p2p", "sqlite", "":
+		url := cfg.SqliteP2P.URL
+		if url == "" && cfg.FS.PathPrefix != "" {
+			url = cfg.FS.PathPrefix
+		}
+		return NewSqliteP2PFileStore(url, cfg.SqliteP2P.UrlPrefix)
+	case "fs", "local":
 		return NewLocalFileStore(cfg.FS.PathPrefix, cfg.FS.UrlPrefix), nil
 	case "s3":
 		return NewS3FileStore(ctx, cfg.S3.Bucket, cfg.S3.Region, cfg.S3.AccessKeyID, cfg.S3.SecretAccessKey, cfg.S3.Endpoint)

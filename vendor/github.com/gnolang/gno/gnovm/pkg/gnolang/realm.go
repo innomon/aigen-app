@@ -1332,9 +1332,7 @@ func copyValueWithRefs(val Value) Value {
 	case BigdecValue:
 		return cv
 	case DataByteValue:
-		// DataByteValue is a view into an ArrayValue.Data,
-		// it is copied with its parent array.
-		panic("DataByteValue should not be copied independently")
+		panic("cannot copy data byte value with references")
 	case PointerValue:
 		if cv.Base == nil {
 			panic("should not happen")
@@ -1716,11 +1714,11 @@ func toRefValue(val Value) RefValue {
 		} else if !oo.GetIsReal() {
 			panic("unexpected unreal object")
 		}
-
-		// NOTE: A dirty object here is valid when a parent is being
-		// converted to a RefValue while its child is still dirty
-		// (e.g. dirty map elements). See map31b.gno and zrealm17.gno.
-
+		// This can happen with some circular
+		// references.
+		// else if oo.GetIsDirty() {
+		// panic("unexpected dirty object")
+		// }
 		if oo.GetIsNewEscaped() {
 			// NOTE: oo.GetOwnerID() will become zero.
 			return RefValue{
@@ -1731,7 +1729,7 @@ func toRefValue(val Value) RefValue {
 		} else if oo.GetIsEscaped() {
 			if debugRealm {
 				if !oo.GetOwnerID().IsZero() {
-					panic("escaped object should not have an owner ID")
+					panic("cannot convert escaped object to ref value without an owner ID")
 				}
 			}
 			return RefValue{
@@ -1742,10 +1740,10 @@ func toRefValue(val Value) RefValue {
 		} else {
 			if debugRealm {
 				if oo.GetRefCount() > 1 {
-					panic("non-escaped object should not have refcount > 1")
+					panic("unexpected references when converting to ref value")
 				}
 				if oo.GetHash().IsZero() {
-					panic("non-escaped object should not have zero hash")
+					panic("hash missing when converting to ref value")
 				}
 			}
 			return RefValue{
