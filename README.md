@@ -19,7 +19,7 @@ A headless CMS and dynamic application framework in Go, evolved from the FormCMS
 - **Schema-on-Read Data Modeling**: Define entities and attributes dynamically. All data is stored in a highly flexible single-table JSON schema (`aigen_records`), making migrations a thing of the past.
 - **Declarative Schema Evolution**: Evolve business models without downtime. Supports machine-readable transformation timelines (`evolution.json`), Just-In-Time (JIT) upgrades on read/write, and asynchronous background migrations with Optimistic Concurrency Control.
 - **REST & GraphQL APIs**: Auto-generated CRUD and GraphQL endpoints.
-- **File Storage**: Local, S3, and SurrealDB support with image processing.
+- **Database & Storage**: Native, zero-CGO **SQLite P2P (`sqlite-p2p`)** as default for decentralized replication across nodes, with support for PostgreSQL, SurrealDB, Google Cloud Firestore, S3, and GCS. [Read SQLite P2P Guide](docs/sqlite_p2p_usage.md).
 - **Temporary File Access**: Short-lived, unauthenticated URLs with TTL and optimized garbage collection. [Read More](docs/temporary_file_access.md)
 - **Social Engagement**: Built-in likes, bookmarks, and comments.
 - **Embedded UI**: React Admin panel, GrapesJS page builder, and dynamic A2UI renderer included.

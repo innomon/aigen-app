@@ -93,6 +93,9 @@ func NewApp(cfg *Config) (*App, error) {
 	fsCfg.GCS.Bucket = cfg.Storage.GCS.Bucket
 	fsCfg.GCS.CredentialsFile = cfg.Storage.GCS.CredentialsFile
 	fsCfg.Postgres.URL = cfg.Storage.Postgres.URL
+	fsCfg.SurrealDB.URL = cfg.Storage.SurrealDB.URL
+	fsCfg.SqliteP2P.URL = cfg.Storage.SqliteP2P.URL
+	fsCfg.SqliteP2P.UrlPrefix = cfg.Storage.SqliteP2P.UrlPrefix
 
 	// If root is default and WWWRoot was overridden, update it
 	if cfg.WWWRoot != "wwwroot" && cfg.Storage.FS.Root == "wwwroot/files" {

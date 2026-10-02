@@ -1,0 +1,58 @@
+# SQLite P2P Configuration Example for AIGenApp
+# ==========================================================
+
+# Directory containing BizDef schema bundles
+bizdefs_dir: "bizdefs"
+
+# Directory where Applet extensions (.jar files) are placed
+app_extensions_dir: "app-extensions"
+
+# Static assets root
+www_root: "wwwroot"
+
+# HTTP server port
+port: "5000"
+
+# Agentic graph definition path
+agentic_config_path: "agentic.yaml"
+
+# ----------------------------------------------------------
+# Database Persistence Layer (IPrimaryDao)
+# ----------------------------------------------------------
+# Schemes supported:
+#   - sqlite-p2p://path/to/db.sqlite?topic=...&wal=true
+#   - p2p://path/to/db.sqlite
+#   - sqlite-p2p://:memory: (ephemeral memory database)
+#   - postgres://user:pass@localhost:5432/db
+#   - surreal://root:root@localhost:8000/ns/db
+database_dsn: "sqlite-p2p://data/aigen.db?topic=aigen-mesh-cluster&port=4001&wal=true"
+
+# ----------------------------------------------------------
+# Asset & Binary Storage Layer (IFileStore)
+# ----------------------------------------------------------
+storage:
+  # Supported drivers: sqlite-p2p (default), fs, s3, gcs, postgres, surrealdb
+  driver: "sqlite-p2p"
+  sqlite_p2p:
+    url: "sqlite-p2p://data/filestore.db?topic=aigen-mesh-cluster&port=4002&wal=true"
+    url_prefix: "/api/files/p2p"
+
+# ----------------------------------------------------------
+# Temporary Unauthenticated File Access (TTL-based)
+# ----------------------------------------------------------
+temporary_access:
+  - path: "tmp"
+    ttl: 300
+    role: "admin"
+
+# ----------------------------------------------------------
+# Structured Logging & File Rotation
+# ----------------------------------------------------------
+log:
+  level: "INFO"
+  console_enabled: true
+  file_enabled: true
+  dir: "logs"
+  file_name: "server.log"
+  max_size_mb: 10
+  max_backups: 5

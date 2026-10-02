@@ -30,12 +30,23 @@ type PostgresStorageConfig struct {
 	URL string `yaml:"url" json:"url"`
 }
 
+type SurrealDBStorageConfig struct {
+	URL string `yaml:"url" json:"url"`
+}
+
+type SqliteP2PStorageConfig struct {
+	URL       string `yaml:"url" json:"url"`
+	UrlPrefix string `yaml:"url_prefix,omitempty" json:"url_prefix,omitempty"`
+}
+
 type StorageConfig struct {
-	Driver   string                `yaml:"driver" json:"driver"`
-	FS       FSConfig              `yaml:"fs" json:"fs"`
-	S3       S3Config              `yaml:"s3" json:"s3"`
-	GCS      GCSConfig             `yaml:"gcs" json:"gcs"`
-	Postgres PostgresStorageConfig `yaml:"postgres" json:"postgres"`
+	Driver    string                 `yaml:"driver" json:"driver"`
+	FS        FSConfig               `yaml:"fs" json:"fs"`
+	S3        S3Config               `yaml:"s3" json:"s3"`
+	GCS       GCSConfig              `yaml:"gcs" json:"gcs"`
+	Postgres  PostgresStorageConfig  `yaml:"postgres" json:"postgres"`
+	SurrealDB SurrealDBStorageConfig `yaml:"surrealdb" json:"surrealdb"`
+	SqliteP2P SqliteP2PStorageConfig `yaml:"sqlite_p2p" json:"sqlite_p2p"`
 }
 
 type AdminConfig struct {
