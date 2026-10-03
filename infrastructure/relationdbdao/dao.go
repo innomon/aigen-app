@@ -3,6 +3,8 @@ package relationdbdao
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"regexp"
 
 	"github.com/Masterminds/squirrel"
 )
@@ -31,3 +33,14 @@ func (d *Dao) Close() error {
 func (d *Dao) Begin(ctx context.Context) (*sql.Tx, error) {
 	return d.db.BeginTx(ctx, nil)
 }
+
+var validFieldNameRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_.]*$`)
+
+// ValidateFieldName ensures field names used in JSON extraction or sort clauses contain only safe identifier characters.
+func ValidateFieldName(fieldName string) error {
+	if !validFieldNameRegex.MatchString(fieldName) {
+		return fmt.Errorf("invalid field name: %q", fieldName)
+	}
+	return nil
+}
+

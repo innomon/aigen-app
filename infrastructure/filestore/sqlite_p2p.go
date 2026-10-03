@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -179,7 +180,7 @@ func (s *SqliteP2PFileStore) GetMetadata(ctx context.Context, path string) (*Fil
 	var tm time.Time
 	if err := row.Scan(&metaStr, &tm); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("file not found: %s", path)
+			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get metadata: %w", err)
 	}
@@ -248,11 +249,14 @@ func (s *SqliteP2PFileStore) List(ctx context.Context, prefix string) ([]string,
 		}
 		paths = append(paths, p)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return paths, nil
 }
 
 func (s *SqliteP2PFileStore) PurgeExpired(ctx context.Context, prefix string, ttlSeconds int) (int, error) {
-	cutoff := time.Now().UTC().Add(-time.Duration(ttlSeconds) * time.Second)
+	cutoff := time.Now().UTC().Add(-time.Duration(ttlSeconds) * time.Second).Format("2006-01-02 15:04:05")
 	query := `DELETE FROM filesys WHERE path LIKE ? AND tmstamp < ?`
 	res, err := s.db.ExecContext(ctx, query, prefix+"%", cutoff)
 	if err != nil {
@@ -279,6 +283,7 @@ func (s *SqliteP2PFileStore) GetUploadedChunks(ctx context.Context, path string)
 	for num := range chunkMap {
 		result = append(result, strconv.Itoa(num))
 	}
+	sort.Strings(result)
 	return result, nil
 }
 
@@ -307,19 +312,28 @@ func (s *SqliteP2PFileStore) CommitChunks(ctx context.Context, path string) erro
 		s.chunkMu.Unlock()
 		return fmt.Errorf("no chunks found to commit for path: %s", path)
 	}
+
+	keys := make([]int, 0, len(chunkMap))
+	for k := range chunkMap {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	var assembled bytes.Buffer
+	for _, k := range keys {
+		assembled.Write(chunkMap[k])
+	}
+	s.chunkMu.Unlock()
+
+	if err := s.Upload(ctx, path, &assembled); err != nil {
+		return fmt.Errorf("failed to upload committed chunks: %w", err)
+	}
+
+	s.chunkMu.Lock()
 	delete(s.chunks, path)
 	s.chunkMu.Unlock()
 
-	var assembled bytes.Buffer
-	for i := 1; i <= len(chunkMap); i++ {
-		data, ok := chunkMap[i]
-		if !ok {
-			return fmt.Errorf("missing chunk %d for path: %s", i, path)
-		}
-		assembled.Write(data)
-	}
-
-	return s.Upload(ctx, path, &assembled)
+	return nil
 }
 
 // Close closes the underlying p2p engine.

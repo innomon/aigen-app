@@ -52,11 +52,8 @@ func parseSurrealDBConnString(connStr string) (endpoint, username, password, ns,
 	if db == "" {
 		db = "aigen"
 	}
-	if username == "" {
-		username = "root"
-	}
-	if password == "" {
-		password = "root"
+	if username == "" || password == "" {
+		return "", "", "", "", "", fmt.Errorf("surrealdb connection string must specify credentials (e.g. surrealdb://user:pass@host:port/ns/db)")
 	}
 
 	return endpoint, username, password, ns, db, nil
@@ -191,6 +188,9 @@ func (d *SurrealDBDao) List(ctx context.Context, namespace string, filters []dat
 
 	argCounter := 0
 	for _, f := range filters {
+		if err := ValidateFieldName(f.FieldName); err != nil {
+			return nil, 0, err
+		}
 		for _, c := range f.Constraints {
 			if c.Match == "equals" && len(c.Values) > 0 {
 				argName := fmt.Sprintf("arg_%d", argCounter)
@@ -212,6 +212,9 @@ func (d *SurrealDBDao) List(ctx context.Context, namespace string, filters []dat
 
 	var sortParts []string
 	for _, sort := range sorts {
+		if err := ValidateFieldName(sort.Field); err != nil {
+			return nil, 0, err
+		}
 		order := "ASC"
 		if sort.Order == datamodels.SortOrderDesc {
 			order = "DESC"

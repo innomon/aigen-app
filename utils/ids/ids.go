@@ -45,3 +45,17 @@ func NewRandomID() string {
 
 	return encoding.EncodeToString(uuid)
 }
+
+// NewRandomInt64ID generates a positive random int64 id within the safe 53-bit JSON integer range (up to 2^53-1).
+func NewRandomInt64ID() int64 {
+	var b [8]byte
+	_, _ = rand.Read(b[:])
+	// Mask to 53 bits (0x001F_FFFF_FFFF_FFFF) for IEEE-754 float64 safety
+	val := int64(b[0]&0x1f)<<48 | int64(b[1])<<40 | int64(b[2])<<32 |
+		int64(b[3])<<24 | int64(b[4])<<16 | int64(b[5])<<8 | int64(b[6])
+	if val <= 0 {
+		return time.Now().UnixNano() & 0x001FFFFFFFFFFFFF
+	}
+	return val
+}
+

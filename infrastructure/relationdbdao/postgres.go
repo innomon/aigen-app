@@ -150,6 +150,9 @@ func (d *PostgresDao) List(ctx context.Context, namespace string, filters []data
 		Where(squirrel.Eq{"namespace": namespace})
 
 	for _, f := range filters {
+		if err := ValidateFieldName(f.FieldName); err != nil {
+			return nil, 0, err
+		}
 		for _, c := range f.Constraints {
 			if c.Match == "equals" && len(c.Values) > 0 {
 				vals := make([]interface{}, len(c.Values))
@@ -164,6 +167,9 @@ func (d *PostgresDao) List(ctx context.Context, namespace string, filters []data
 	}
 
 	for _, sort := range sorts {
+		if err := ValidateFieldName(sort.Field); err != nil {
+			return nil, 0, err
+		}
 		order := "ASC"
 		if sort.Order == datamodels.SortOrderDesc {
 			order = "DESC"
@@ -200,9 +206,20 @@ func (d *PostgresDao) List(ctx context.Context, namespace string, filters []data
 		if err := rows.Scan(&rec.Namespace, &rec.Key, &recData, &metaData, &rec.Tmstamp); err != nil {
 			return nil, 0, err
 		}
-		json.Unmarshal(recData, &rec.Rec)
-		json.Unmarshal(metaData, &rec.MetaData)
+		if len(recData) > 0 {
+			if err := json.Unmarshal(recData, &rec.Rec); err != nil {
+				return nil, 0, fmt.Errorf("failed to unmarshal rec: %w", err)
+			}
+		}
+		if len(metaData) > 0 {
+			if err := json.Unmarshal(metaData, &rec.MetaData); err != nil {
+				return nil, 0, fmt.Errorf("failed to unmarshal metadata: %w", err)
+			}
+		}
 		results = append(results, rec)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
 	}
 
 	countSb := d.builder.Select("COUNT(*)").From(RecordsTable).Where(squirrel.Eq{"namespace": namespace})

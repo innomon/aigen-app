@@ -6,6 +6,7 @@ import (
 	"io"
 	"mime"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"time"
@@ -66,8 +67,8 @@ func (s *LocalFileStore) GetMetadata(ctx context.Context, path string) (*FileMet
 	}, nil
 }
 
-func (s *LocalFileStore) GetUrl(path string) string {
-	return filepath.Join(s.urlPrefix, path)
+func (s *LocalFileStore) GetUrl(p string) string {
+	return path.Join(s.urlPrefix, p)
 }
 
 func (s *LocalFileStore) Download(ctx context.Context, path string, writer io.Writer) error {

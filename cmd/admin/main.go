@@ -12,6 +12,7 @@ import (
 	"github.com/innomon/aigen-app/core/services"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
+	"github.com/innomon/aigen-app/utils/ids"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -41,12 +42,12 @@ func printUsage() {
 	fmt.Println("  create      Create a new super-admin user")
 	fmt.Println("  reset-pass  Reset the password of an existing user")
 	fmt.Println("Example:")
-	fmt.Println("  aigen-admin create -db=\"postgres://...\" -email=\"admin@aigen.local\" -password=\"securepass\"")
+	fmt.Println("  aigen-admin create -db=\"sqlite-p2p://.aigen.db\" -email=\"admin@aigen.local\" -password=\"securepass\"")
 }
 
 func handleCreate(args []string) {
 	fs := flag.NewFlagSet("create", flag.ExitOnError)
-	dbConn := fs.String("db", "", "Database DSN connection string (e.g. postgres://... or memory://)")
+	dbConn := fs.String("db", "", "Database DSN connection string (e.g. sqlite-p2p://.aigen.db or postgres://...)")
 	email := fs.String("email", "", "Email address for the new admin")
 	password := fs.String("password", "", "Password for the new admin")
 	fs.Parse(args)
@@ -76,7 +77,7 @@ func handleCreate(args []string) {
 
 	now := time.Now()
 	user := &descriptors.User{
-		Id:           now.Unix(),
+		Id:           ids.NewRandomInt64ID(),
 		Email:        *email,
 		PasswordHash: string(hashedPassword),
 		Roles:        []string{descriptors.RoleSa, descriptors.RoleAdmin, descriptors.RoleUser},
@@ -100,7 +101,7 @@ func handleCreate(args []string) {
 
 func handleResetPass(args []string) {
 	fs := flag.NewFlagSet("reset-pass", flag.ExitOnError)
-	dbConn := fs.String("db", "", "Database DSN connection string (e.g. postgres://... or memory://)")
+	dbConn := fs.String("db", "", "Database DSN connection string (e.g. sqlite-p2p://.aigen.db or postgres://...)")
 	email := fs.String("email", "", "Email address of the user")
 	password := fs.String("password", "", "New password for the user")
 	fs.Parse(args)
@@ -124,7 +125,10 @@ func handleResetPass(args []string) {
 
 	// Retrieve user
 	rec, err := dao.Get(ctx, services.UserNamespace, *email)
-	if err != nil || rec == nil {
+	if err != nil {
+		log.Fatalf("Failed to query user %s: %v", *email, err)
+	}
+	if rec == nil {
 		log.Fatalf("User not found: %s", *email)
 	}
 

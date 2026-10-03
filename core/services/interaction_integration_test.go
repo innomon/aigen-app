@@ -10,6 +10,7 @@ import (
 
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
+	"github.com/innomon/aigen-app/utils/datamodels"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,6 +19,9 @@ func (m *mockAssetService) Save(ctx context.Context, asset *descriptors.Asset) (
 func (m *mockAssetService) Upload(ctx context.Context, path string, reader io.Reader) error { return nil }
 func (m *mockAssetService) UpdateAssetsLinks(ctx context.Context, oldAssetIds []int64, newAssetPaths []string, entityName string, recordId int64) error { return nil }
 func (m *mockAssetService) GetAssetByPath(ctx context.Context, path string) (*descriptors.Asset, error) { return nil, nil }
+func (m *mockAssetService) ChunkStatus(ctx context.Context, userId, fileName string, fileSize int64) (*datamodels.ChunkStatus, error) { return nil, nil }
+func (m *mockAssetService) UploadChunk(ctx context.Context, path string, chunkNumber int, reader io.Reader) error { return nil }
+func (m *mockAssetService) CommitChunks(ctx context.Context, path, fileName string) (*descriptors.Asset, error) { return nil, nil }
 
 func TestInteractionIntegration(t *testing.T) {
 	ctx := context.Background()

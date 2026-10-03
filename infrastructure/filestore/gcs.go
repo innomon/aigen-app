@@ -76,7 +76,20 @@ func (g *GCSFileStore) Delete(ctx context.Context, path string) error {
 }
 
 func (g *GCSFileStore) DeleteByPrefix(ctx context.Context, prefix string) error {
-	return fmt.Errorf("DeleteByPrefix not implemented for GCS")
+	it := g.client.Bucket(g.bucket).Objects(ctx, &storage.Query{Prefix: prefix})
+	for {
+		attrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if err := g.client.Bucket(g.bucket).Object(attrs.Name).Delete(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (g *GCSFileStore) List(ctx context.Context, prefix string) ([]string, error) {
@@ -121,13 +134,13 @@ func (g *GCSFileStore) PurgeExpired(ctx context.Context, prefix string, ttlSecon
 }
 
 func (g *GCSFileStore) GetUploadedChunks(ctx context.Context, path string) ([]string, error) {
-	return nil, fmt.Errorf("Chunked upload not implemented for GCS")
+	return nil, fmt.Errorf("chunked upload not implemented for GCS")
 }
 
 func (g *GCSFileStore) UploadChunk(ctx context.Context, path string, chunkNumber int, reader io.Reader) (string, error) {
-	return "", fmt.Errorf("Chunked upload not implemented for GCS")
+	return "", fmt.Errorf("chunked upload not implemented for GCS")
 }
 
 func (g *GCSFileStore) CommitChunks(ctx context.Context, path string) error {
-	return fmt.Errorf("Chunked upload not implemented for GCS")
+	return fmt.Errorf("chunked upload not implemented for GCS")
 }

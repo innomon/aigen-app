@@ -154,10 +154,23 @@ func NewApp(cfg *Config) (*App, error) {
 		logger.Printf("Warning: failed to initialize WhatsApp service: %v", err)
 	}
 	channelService := services.NewChannelService(dao, cfg.Channels, interactionService, assetService)
-	authService := services.NewAuthService(dao, "your-secret-key", channelService, whatsappService)
+
+	isTestEnv := cfg.DatabaseDSN == "memory://" || os.Getenv("FORMCMS_ENV") == "test" || os.Getenv("AIGEN_ENV") == "test"
+	jwtSecret := cfg.Auth.JWTSecret
+	if jwtSecret == "" {
+		jwtSecret = os.Getenv("AIGEN_JWT_SECRET")
+	}
+	if jwtSecret == "" {
+		if isTestEnv {
+			jwtSecret = "aigen-development-test-jwt-secret-key-32bytes-long"
+		} else {
+			return nil, fmt.Errorf("AIGEN_JWT_SECRET environment variable or auth.jwt_secret config is required in production")
+		}
+	}
+
+	authService := services.NewAuthService(dao, jwtSecret, channelService, whatsappService)
 
 	// Bootstrap administrator account
-	isTestEnv := cfg.DatabaseDSN == "memory://" || os.Getenv("FORMCMS_ENV") == "test"
 	if err := authService.BootstrapAdmin(seedCtx, cfg.Admin.Email, cfg.Admin.Password, isTestEnv); err != nil {
 		logger.Printf("Warning: failed to bootstrap admin user: %v", err)
 	}
@@ -196,7 +209,7 @@ func NewApp(cfg *Config) (*App, error) {
 	entityApi := api.NewEntityApi(entityService, authApi)
 	graphqlApi := api.NewGraphQLApi(graphqlService, authApi)
 	queryApi := api.NewQueryApi(graphqlService, authApi)
-	assetApi := api.NewAssetApi(assetService)
+	assetApi := api.NewAssetApi(assetService, authApi)
 	engagementApi := api.NewEngagementApi(engagementService, authApi)
 	commentApi := api.NewCommentApi(commentService, authApi)
 	notificationApi := api.NewNotificationApi(notificationService, authApi)
@@ -290,7 +303,11 @@ func (a *App) Run() error {
 
 		fmt.Printf("Starting AiGen CMS on %s with autocert...\n", a.Config.Domain)
 		// Redirect HTTP to HTTPS
-		go http.ListenAndServe(":80", certManager.HTTPHandler(nil))
+		go func() {
+			if err := http.ListenAndServe(":80", certManager.HTTPHandler(nil)); err != nil {
+				logger.Printf("Warning: HTTP redirect listener on port 80 failed: %v", err)
+			}
+		}()
 		return server.ListenAndServeTLS("", "")
 	} else {
 		fmt.Printf("Starting AiGen CMS on :%s...\n", a.Config.Port)

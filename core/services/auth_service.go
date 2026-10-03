@@ -13,6 +13,7 @@ import (
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/infrastructure/relationdbdao"
 	"github.com/innomon/aigen-app/utils/datamodels"
+	"github.com/innomon/aigen-app/utils/ids"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/bcrypt"
@@ -47,7 +48,7 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (*de
 	}
 
 	user := &descriptors.User{
-		Id:           time.Now().Unix(),
+		Id:           ids.NewRandomInt64ID(),
 		Email:        email,
 		PasswordHash: string(hashedPassword),
 		Roles:        []string{descriptors.RoleUser},
@@ -124,12 +125,24 @@ func (s *AuthService) ValidateToken(tokenString string) (int64, []string, error)
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userId := int64(claims["userId"].(float64))
+		var userId int64
+		switch v := claims["userId"].(type) {
+		case float64:
+			userId = int64(v)
+		case int64:
+			userId = v
+		case int:
+			userId = int64(v)
+		default:
+			return 0, nil, fmt.Errorf("invalid userId claim type")
+		}
 		
 		var roles []string
 		if r, ok := claims["roles"].([]interface{}); ok {
 			for _, role := range r {
-				roles = append(roles, role.(string))
+				if rStr, ok := role.(string); ok {
+					roles = append(roles, rStr)
+				}
 			}
 		}
 		return userId, roles, nil
@@ -196,9 +209,10 @@ func (s *AuthService) LoginByChannel(ctx context.Context, channelType descriptor
 		}
 
 		now := time.Now()
+		newId := ids.NewRandomInt64ID()
 		user = &descriptors.User{
-			Id:        now.Unix(),
-			Email:     fmt.Sprintf("user_%d@aigen.local", now.Unix()), // Placeholder
+			Id:        newId,
+			Email:     fmt.Sprintf("user_%d@aigen.local", newId), // Placeholder
 			Phone:     identifier,
 			Roles:     []string{descriptors.RoleUser},
 			CreatedAt: now,
@@ -216,8 +230,8 @@ func (s *AuthService) LoginByChannel(ctx context.Context, channelType descriptor
 		}
 
 		// Link the channel
-		s.channelService.RegisterChannel(ctx, user.Id, channelType, identifier, nil)
-		s.channelService.VerifyChannel(ctx, user.Id, channelType, "")
+		_, _ = s.channelService.RegisterChannel(ctx, user.Id, channelType, identifier, nil)
+		_, _ = s.channelService.VerifyChannel(ctx, user.Id, channelType, "")
 	}
 
 	// 4. TOTP Verification if token is provided
@@ -273,7 +287,9 @@ func (s *AuthService) LinkChannel(ctx context.Context, userId int64, channelType
 	// Update user phone if it's WhatsApp and not set
 	if channelType == descriptors.ChannelWhatsApp && user.Phone == "" {
 		user.Phone = identifier
-		s.UpdateUser(ctx, user)
+		if err := s.UpdateUser(ctx, user); err != nil {
+			return fmt.Errorf("failed to update user phone: %w", err)
+		}
 	}
 
 	_, err = s.channelService.RegisterChannel(ctx, userId, channelType, identifier, nil)
@@ -297,26 +313,41 @@ func (s *AuthService) UpdateUser(ctx context.Context, user *descriptors.User) er
 }
 
 func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultPassword string, isTestEnv bool) error {
-	// 1. Scan for existing admin users in a database-agnostic way
-	recs, _, err := s.dao.List(ctx, UserNamespace, nil, datamodels.Pagination{Limit: func() *string { limitStr := "100"; return &limitStr }()}, nil)
-	if err != nil {
-		return fmt.Errorf("failed to scan for existing users: %w", err)
-	}
-
+	// 1. Scan for existing admin users in a database-agnostic way (paginating all records)
 	adminExists := false
-	for _, rec := range recs {
-		var user descriptors.User
-		if err := mapstructure.Decode(rec.Rec, &user); err == nil {
-			for _, role := range user.Roles {
-				if role == descriptors.RoleAdmin || role == descriptors.RoleSa {
-					adminExists = true
-					break
+	offset := uint64(0)
+	limit := uint64(100)
+
+	for {
+		limStr := fmt.Sprintf("%d", limit)
+		offStr := fmt.Sprintf("%d", offset)
+		recs, total, err := s.dao.List(ctx, UserNamespace, nil, datamodels.Pagination{
+			Limit:  &limStr,
+			Offset: &offStr,
+		}, nil)
+		if err != nil {
+			return fmt.Errorf("failed to scan for existing users: %w", err)
+		}
+
+		for _, rec := range recs {
+			var user descriptors.User
+			if err := mapstructure.Decode(rec.Rec, &user); err == nil {
+				for _, role := range user.Roles {
+					if role == descriptors.RoleAdmin || role == descriptors.RoleSa {
+						adminExists = true
+						break
+					}
 				}
 			}
+			if adminExists {
+				break
+			}
 		}
-		if adminExists {
+
+		if adminExists || len(recs) == 0 || offset+uint64(len(recs)) >= uint64(total) {
 			break
 		}
+		offset += limit
 	}
 
 	// If admin already exists, skip bootstrapping

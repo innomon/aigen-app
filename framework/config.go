@@ -54,6 +54,10 @@ type AdminConfig struct {
 	Password string `yaml:"password" json:"password"`
 }
 
+type AuthConfig struct {
+	JWTSecret string `yaml:"jwt_secret" json:"jwt_secret"`
+}
+
 type LogConfig struct {
 	Level          string `yaml:"level" json:"level"`
 	ConsoleEnabled bool   `yaml:"console_enabled" json:"console_enabled"`
@@ -78,6 +82,7 @@ type Config struct {
 	Storage           StorageConfig              `yaml:"storage" json:"storage"`
 	TemporaryAccess   []descriptors.TemporaryAccessConfig `yaml:"temporary_access" json:"temporary_access"`
 	Admin             AdminConfig                `yaml:"admin" json:"admin"`
+	Auth              AuthConfig                 `yaml:"auth" json:"auth"`
 	Log               LogConfig                  `yaml:"log" json:"log"`
 }
 
@@ -87,11 +92,15 @@ func DefaultConfig() *Config {
 		AppExtensionsDir:  "app-extensions",
 		WWWRoot:           "wwwroot",
 		CustomUIPath:      "",
-		DatabaseDSN:       "memory://",
+		DatabaseDSN:       "sqlite-p2p://.aigen.db",
 		Port:              "5000",
 		AgenticConfigPath: "agentic.yaml",
 		Storage: StorageConfig{
-			Driver: "fs",
+			Driver: "sqlite-p2p",
+			SqliteP2P: SqliteP2PStorageConfig{
+				URL:       "sqlite-p2p://.aigen.db",
+				UrlPrefix: "/files",
+			},
 			FS: FSConfig{
 				Root:      "wwwroot/files",
 				UrlPrefix: "/files",
@@ -107,6 +116,9 @@ func DefaultConfig() *Config {
 		Admin: AdminConfig{
 			Email:    "",
 			Password: "",
+		},
+		Auth: AuthConfig{
+			JWTSecret: "",
 		},
 		Log: LogConfig{
 			Level:          "INFO",
@@ -175,6 +187,11 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if adminPass := os.Getenv("AIGEN_ADMIN_PASSWORD"); adminPass != "" {
 		config.Admin.Password = adminPass
+	}
+	if jwtSecret := os.Getenv("AIGEN_JWT_SECRET"); jwtSecret != "" {
+		config.Auth.JWTSecret = jwtSecret
+	} else if jwtSecret := os.Getenv("FORMCMS_JWT_SECRET"); jwtSecret != "" {
+		config.Auth.JWTSecret = jwtSecret
 	}
 
 	return config, nil

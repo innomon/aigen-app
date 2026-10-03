@@ -81,12 +81,14 @@ func (d *MemoryDao) SaveConditional(ctx context.Context, rec datamodels.RecJSON,
 
 	// Normalize Rec
 	if rec.Rec != nil {
-		data, _ := json.Marshal(rec.Rec)
-		decoder := json.NewDecoder(bytes.NewReader(data))
-		decoder.UseNumber()
-		var m map[string]interface{}
-		if err := decoder.Decode(&m); err == nil {
-			rec.Rec = m
+		data, err := json.Marshal(rec.Rec)
+		if err == nil {
+			decoder := json.NewDecoder(bytes.NewReader(data))
+			decoder.UseNumber()
+			var m map[string]interface{}
+			if err := decoder.Decode(&m); err == nil {
+				rec.Rec = m
+			}
 		}
 	}
 
@@ -168,8 +170,13 @@ func (d *MemoryDao) List(ctx context.Context, namespace string, filters []datamo
 	if len(sorts) > 0 {
 		for _, s := range sorts {
 			sort.Slice(results, func(i, j int) bool {
-				valI := results[i].Rec.(map[string]interface{})[s.Field]
-				valJ := results[j].Rec.(map[string]interface{})[s.Field]
+				mapI, okI := results[i].Rec.(map[string]interface{})
+				mapJ, okJ := results[j].Rec.(map[string]interface{})
+				if !okI || !okJ {
+					return false
+				}
+				valI := mapI[s.Field]
+				valJ := mapJ[s.Field]
 
 				res := fmt.Sprintf("%v", valI) < fmt.Sprintf("%v", valJ)
 				if s.Order == datamodels.SortOrderDesc {

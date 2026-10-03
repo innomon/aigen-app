@@ -141,13 +141,46 @@ func (a *AuthApi) WhatsAppVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a.setTokenCookie(w, r, token, 86400)
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+
+func (a *AuthApi) setTokenCookie(w http.ResponseWriter, r *http.Request, token string, maxAge int) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
 		Value:    token,
 		Path:     "/",
+		MaxAge:   maxAge,
 		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+		SameSite: http.SameSiteStrictMode,
 	})
+}
 
+type whatsappReverseVerifyRequest struct {
+	Token string `json:"token"`
+}
+
+func (a *AuthApi) WhatsAppReverseVerify(w http.ResponseWriter, r *http.Request) {
+	var req whatsappReverseVerifyRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	mobile, challengeID, err := a.whatsappService.VerifyGatewayJWT(req.Token)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	token, err := a.authService.LoginByChannel(r.Context(), descriptors.ChannelWhatsApp, mobile, challengeID, r.RemoteAddr, r.UserAgent())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	a.setTokenCookie(w, r, token, 86400)
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
@@ -156,7 +189,11 @@ type whatsappTOTPEnrollRequest struct {
 }
 
 func (a *AuthApi) WhatsAppTOTPEnroll(w http.ResponseWriter, r *http.Request) {
-	userId := r.Context().Value("userId").(int64)
+	userId, ok := r.Context().Value("userId").(int64)
+	if !ok || userId == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	var req whatsappTOTPEnrollRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -204,16 +241,9 @@ func (a *AuthApi) WhatsAppTOTPVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "token",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-	})
-
+	a.setTokenCookie(w, r, token, 86400)
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
-
 
 type authRequest struct {
 	Email    string `json:"email"`
@@ -249,30 +279,18 @@ func (a *AuthApi) DoLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "token",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-	})
-
+	a.setTokenCookie(w, r, token, 86400)
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
 func (a *AuthApi) DoLogout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "token",
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-	})
+	a.setTokenCookie(w, r, "", -1)
 	w.WriteHeader(http.StatusOK)
 }
 
 func (a *AuthApi) GetMe(w http.ResponseWriter, r *http.Request) {
-	userId := r.Context().Value("userId").(int64)
-	if userId == 0 {
+	userId, ok := r.Context().Value("userId").(int64)
+	if !ok || userId == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -346,13 +364,7 @@ func (a *AuthApi) DoLoginByChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "token",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-	})
-
+	a.setTokenCookie(w, r, token, 86400)
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
@@ -388,8 +400,7 @@ func (a *AuthApi) RBACMiddleware(action string, explicitResource ...string) func
 			}
 
 			if resourceName == "" {
-				// If not entity-based route, maybe we can't check here
-				next.ServeHTTP(w, r)
+				http.Error(w, "Forbidden: resource name required", http.StatusForbidden)
 				return
 			}
 

@@ -194,8 +194,22 @@ func (s *PermissionService) GetFieldPermissions(ctx context.Context, entityName 
 				lvl = int(val)
 			}
 
-			read := data["read"].(bool)
-			write := data["write"].(bool)
+			var read, write bool
+			if rVal, ok := data["read"].(bool); ok {
+				read = rVal
+			} else if rNum, ok := data["read"].(float64); ok {
+				read = rNum == 1
+			} else if rInt, ok := data["read"].(int); ok {
+				read = rInt == 1
+			}
+
+			if wVal, ok := data["write"].(bool); ok {
+				write = wVal
+			} else if wNum, ok := data["write"].(float64); ok {
+				write = wNum == 1
+			} else if wInt, ok := data["write"].(int); ok {
+				write = wInt == 1
+			}
 			
 			if _, ok := permLevels[lvl]; !ok {
 				permLevels[lvl] = map[string]bool{"read": false, "write": false}

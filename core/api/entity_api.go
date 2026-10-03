@@ -42,6 +42,17 @@ func (a *EntityApi) Register(r chi.Router) {
 	})
 }
 
+func (a *EntityApi) handleError(w http.ResponseWriter, err error) {
+	if err == nil {
+		return
+	}
+	if err.Error() == "record not found" {
+		http.Error(w, "Record not found", http.StatusNotFound)
+		return
+	}
+	http.Error(w, "An internal server error occurred", http.StatusInternalServerError)
+}
+
 func (a *EntityApi) CollectionList(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	id := chi.URLParam(r, "id")
@@ -56,7 +67,7 @@ func (a *EntityApi) CollectionList(w http.ResponseWriter, r *http.Request) {
 	parseResult := datamodels.ParseQuery(strArgs)
 	records, total, err := a.entityService.CollectionList(r.Context(), name, id, attr, parseResult.Pagination, parseResult.Filters, parseResult.Sorts)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 
@@ -80,7 +91,7 @@ func (a *EntityApi) CollectionInsert(w http.ResponseWriter, r *http.Request) {
 
 	savedRecord, err := a.entityService.CollectionInsert(r.Context(), name, id, attr, record)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 	json.NewEncoder(w).Encode(savedRecord)
@@ -101,7 +112,7 @@ func (a *EntityApi) JunctionList(w http.ResponseWriter, r *http.Request) {
 	parseResult := datamodels.ParseQuery(strArgs)
 	records, total, err := a.entityService.JunctionList(r.Context(), name, id, attr, exclude, parseResult.Pagination, parseResult.Filters, parseResult.Sorts)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 
@@ -124,7 +135,7 @@ func (a *EntityApi) JunctionSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := a.entityService.JunctionSave(r.Context(), name, id, attr, targetIds); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -142,7 +153,7 @@ func (a *EntityApi) JunctionDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := a.entityService.JunctionDelete(r.Context(), name, id, attr, targetIds); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -159,7 +170,7 @@ func (a *EntityApi) List(w http.ResponseWriter, r *http.Request) {
 	parseResult := datamodels.ParseQuery(strArgs)
 	records, total, err := a.entityService.List(r.Context(), name, parseResult.Pagination, parseResult.Filters, parseResult.Sorts)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 
@@ -176,7 +187,7 @@ func (a *EntityApi) Get(w http.ResponseWriter, r *http.Request) {
 
 	record, err := a.entityService.Single(r.Context(), name, id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 	json.NewEncoder(w).Encode(record)
@@ -192,7 +203,7 @@ func (a *EntityApi) Create(w http.ResponseWriter, r *http.Request) {
 
 	savedRecord, err := a.entityService.Insert(r.Context(), name, record)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 	json.NewEncoder(w).Encode(savedRecord)
@@ -208,7 +219,7 @@ func (a *EntityApi) Update(w http.ResponseWriter, r *http.Request) {
 
 	updatedRecord, err := a.entityService.Update(r.Context(), name, record)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 	json.NewEncoder(w).Encode(updatedRecord)
@@ -219,7 +230,7 @@ func (a *EntityApi) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	if err := a.entityService.Delete(r.Context(), name, id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.handleError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

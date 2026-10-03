@@ -6,6 +6,7 @@ This file tracks the active and archived development tracks for AIGenApp.
 
 | Track ID | Title | Status | Folder |
 | :--- | :--- | :--- | :--- |
+| `code-review-remediation` | Full Codebase Review Remediation | Complete | `./tracks/code-review-remediation/` |
 | `admin-bootstrapping` | Secure Admin User Bootstrapping | In Progress | `./tracks/admin-bootstrapping/` |
 
 ---

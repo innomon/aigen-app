@@ -38,13 +38,17 @@ func TestParseSurrealDBConnString(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			connStr:  "surreal://localhost:8920",
+			connStr:  "surreal://root:root@localhost:8920",
 			endpoint: "ws://localhost:8920",
 			username: "root",
 			password: "root",
 			ns:       "aigen",
 			db:       "aigen",
 			wantErr:  false,
+		},
+		{
+			connStr: "surreal://localhost:8920",
+			wantErr: true,
 		},
 	}
 

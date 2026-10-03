@@ -355,12 +355,18 @@ func (s *SchemaService) Save(ctx context.Context, schema *descriptors.Schema, as
 				Constraints: matchEqualityConstraint("equals", true),
 			},
 		}
-		recs, _, _ := s.dao.List(ctx, SchemaNamespace, filters, datamodels.Pagination{}, nil)
+		recs, _, err := s.dao.List(ctx, SchemaNamespace, filters, datamodels.Pagination{}, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list existing schema versions: %w", err)
+		}
 		for _, r := range recs {
-			data := r.Rec.(map[string]interface{})
-			data["is_latest"] = false
-			r.Rec = data
-			s.dao.Save(ctx, r)
+			if data, ok := r.Rec.(map[string]interface{}); ok {
+				data["is_latest"] = false
+				r.Rec = data
+				if err := s.dao.Save(ctx, r); err != nil {
+					return nil, fmt.Errorf("failed to update previous schema is_latest: %w", err)
+				}
+			}
 		}
 	}
 
@@ -379,22 +385,23 @@ func (s *SchemaService) Save(ctx context.Context, schema *descriptors.Schema, as
 				},
 			},
 		}
-		recs, _, _ := s.dao.List(ctx, SchemaNamespace, filters, datamodels.Pagination{}, nil)
+		recs, _, err := s.dao.List(ctx, SchemaNamespace, filters, datamodels.Pagination{}, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list published schema versions: %w", err)
+		}
 		for _, r := range recs {
-			data := r.Rec.(map[string]interface{})
-			data["publication_status"] = descriptors.Draft
-			r.Rec = data
-			s.dao.Save(ctx, r)
+			if data, ok := r.Rec.(map[string]interface{}); ok {
+				data["publication_status"] = descriptors.Draft
+				r.Rec = data
+				if err := s.dao.Save(ctx, r); err != nil {
+					return nil, fmt.Errorf("failed to update previous schema publication_status: %w", err)
+				}
+			}
 		}
 	}
 
-	// For simple pivot, we use schemaId as key, but if we have multiple versions, 
-	// we might need a composite key or just use schemaId as key for ONLY the latest.
-	// However, the user said Key is unique ID. If we want history, we need a unique key per version.
-	
 	if schema.Id == 0 {
-		// New record, need an ID. In JSON store, we might use ULID or NanoID.
-		schema.Id = time.Now().UnixNano() // Temporary ID
+		schema.Id = ids.NewRandomInt64ID()
 	}
 
 	rec := datamodels.RecJSON{

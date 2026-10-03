@@ -67,10 +67,23 @@ func (s *S3FileStore) GetMetadata(ctx context.Context, path string) (*FileMetada
 		return nil, err
 	}
 
+	var size int64
+	if head.ContentLength != nil {
+		size = *head.ContentLength
+	}
+	var contentType string
+	if head.ContentType != nil {
+		contentType = *head.ContentType
+	}
+	var createdAt time.Time
+	if head.LastModified != nil {
+		createdAt = *head.LastModified
+	}
+
 	return &FileMetadata{
-		Size:        *head.ContentLength,
-		ContentType: *head.ContentType,
-		CreatedAt:   *head.LastModified,
+		Size:        size,
+		ContentType: contentType,
+		CreatedAt:   createdAt,
 	}, nil
 }
 
@@ -79,11 +92,16 @@ func (s *S3FileStore) GetUrl(path string) string {
 }
 
 func (s *S3FileStore) Download(ctx context.Context, path string, writer io.Writer) error {
-	downloader := manager.NewDownloader(s.client)
-	_, err := downloader.Download(ctx, fakeWriterAt{writer}, &s3.GetObjectInput{
+	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(path),
 	})
+	if err != nil {
+		return err
+	}
+	defer out.Body.Close()
+
+	_, err = io.Copy(writer, out.Body)
 	return err
 }
 
@@ -140,7 +158,9 @@ func (s *S3FileStore) List(ctx context.Context, prefix string) ([]string, error)
 		}
 
 		for _, obj := range page.Contents {
-			files = append(files, *obj.Key)
+			if obj.Key != nil {
+				files = append(files, *obj.Key)
+			}
 		}
 	}
 
@@ -165,7 +185,7 @@ func (s *S3FileStore) PurgeExpired(ctx context.Context, prefix string, ttlSecond
 
 		var batch []types.ObjectIdentifier
 		for _, obj := range page.Contents {
-			if now.Sub(*obj.LastModified) > expiryDuration {
+			if obj.LastModified != nil && now.Sub(*obj.LastModified) > expiryDuration {
 				batch = append(batch, types.ObjectIdentifier{Key: obj.Key})
 			}
 		}
@@ -186,22 +206,14 @@ func (s *S3FileStore) PurgeExpired(ctx context.Context, prefix string, ttlSecond
 }
 
 func (s *S3FileStore) GetUploadedChunks(ctx context.Context, path string) ([]string, error) {
-	return nil, fmt.Errorf("Chunked upload not implemented for S3")
+	return nil, fmt.Errorf("chunked upload not implemented for S3")
 }
 
 func (s *S3FileStore) UploadChunk(ctx context.Context, path string, chunkNumber int, reader io.Reader) (string, error) {
-	return "", fmt.Errorf("Chunked upload not implemented for S3")
+	return "", fmt.Errorf("chunked upload not implemented for S3")
 }
 
 func (s *S3FileStore) CommitChunks(ctx context.Context, path string) error {
-	return fmt.Errorf("Chunked upload not implemented for S3")
+	return fmt.Errorf("chunked upload not implemented for S3")
 }
 
-type fakeWriterAt struct {
-	w io.Writer
-}
-
-func (fw fakeWriterAt) WriteAt(p []byte, off int64) (n int, err error) {
-	// This is a simplified version, real S3 downloader needs proper WriteAt
-	return fw.w.Write(p)
-}

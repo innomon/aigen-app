@@ -123,7 +123,10 @@ func (s *EntityService) Insert(ctx context.Context, name string, data datamodels
 		val := v
 		if name == "User" && k == "password_hash" {
 			if str, ok := v.(string); ok && str != "" {
-				hashed, _ := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
+				hashed, err := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
+				if err != nil {
+					return nil, fmt.Errorf("failed to hash password: %w", err)
+				}
 				val = string(hashed)
 			}
 		}
@@ -170,11 +173,16 @@ func (s *EntityService) Update(ctx context.Context, name string, data datamodels
 	}
 
 	// JIT Evolution before update
-	recData := rec.Rec.(map[string]interface{})
-	s.evolutionService.EvolveRecord(name, recData, &rec.MetaData)
-	rec.Rec = recData
+	recData, ok := rec.Rec.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid record data format")
+	}
+	evolved, _, err := s.evolutionService.EvolveRecord(name, recData, &rec.MetaData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evolve record: %w", err)
+	}
+	existing := evolved
 
-	existing := rec.Rec.(map[string]interface{})
 	roles, _ := ctx.Value("roles").([]string)
 	fieldPerms, _ := s.permissionService.GetFieldPermissions(ctx, name, roles)
 
@@ -186,7 +194,10 @@ func (s *EntityService) Update(ctx context.Context, name string, data datamodels
 		val := v
 		if name == "User" && k == "password_hash" {
 			if str, ok := v.(string); ok && str != "" {
-				hashed, _ := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
+				hashed, err := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
+				if err != nil {
+					return nil, fmt.Errorf("failed to hash password: %w", err)
+				}
 				val = string(hashed)
 			} else {
 				continue

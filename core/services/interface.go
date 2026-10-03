@@ -55,6 +55,9 @@ type IAssetService interface {
 	Upload(ctx context.Context, path string, reader io.Reader) error
 	UpdateAssetsLinks(ctx context.Context, oldAssetIds []int64, newAssetPaths []string, entityName string, recordId int64) error
 	GetAssetByPath(ctx context.Context, path string) (*descriptors.Asset, error)
+	ChunkStatus(ctx context.Context, userId, fileName string, fileSize int64) (*datamodels.ChunkStatus, error)
+	UploadChunk(ctx context.Context, path string, chunkNumber int, reader io.Reader) error
+	CommitChunks(ctx context.Context, path, fileName string) (*descriptors.Asset, error)
 }
 
 type IEngagementService interface {
