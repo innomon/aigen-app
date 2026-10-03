@@ -6,7 +6,6 @@ This file tracks the active and archived development tracks for AIGenApp.
 
 | Track ID | Title | Status | Folder |
 | :--- | :--- | :--- | :--- |
-| `code-review-remediation` | Full Codebase Review Remediation | Complete | `./tracks/code-review-remediation/` |
 | `admin-bootstrapping` | Secure Admin User Bootstrapping | In Progress | `./tracks/admin-bootstrapping/` |
 
 ---
@@ -15,6 +14,7 @@ This file tracks the active and archived development tracks for AIGenApp.
 
 | Track ID | Title | Status | Folder |
 | :--- | :--- | :--- | :--- |
+| `code-review-remediation` | Full Codebase Review Remediation | Archived | `./archive/code-review-remediation/` |
 | `erpnext-accounting` | ERPNext Accounting Integration | Archived | `./archive/erpnext-accounting/` |
 | `multimodal-a2ui` | Multimodal A2UI Support | Archived | `./archive/multimodal-a2ui/` |
 | `router-agent-replacement` | Router Agent Replacement | Archived | `./archive/router-agent-replacement/` |
