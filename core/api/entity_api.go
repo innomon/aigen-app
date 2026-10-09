@@ -80,6 +80,10 @@ func (a *EntityApi) CollectionList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if records == nil {
+		records = []datamodels.Record{}
+	}
+
 	response := map[string]interface{}{
 		"items": records,
 		"total": total,
@@ -123,6 +127,10 @@ func (a *EntityApi) JunctionList(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.handleError(w, err)
 		return
+	}
+
+	if records == nil {
+		records = []datamodels.Record{}
 	}
 
 	response := map[string]interface{}{
@@ -181,6 +189,10 @@ func (a *EntityApi) List(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.handleError(w, err)
 		return
+	}
+
+	if records == nil {
+		records = []datamodels.Record{}
 	}
 
 	response := map[string]interface{}{

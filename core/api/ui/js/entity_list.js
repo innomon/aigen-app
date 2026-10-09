@@ -45,7 +45,7 @@ checkUser(async () => {
         return;
     }
 
-    const records = dataRes.items;
+    const records = dataRes.items || [];
     
     let tableHtml = `
         <table class="table table-striped table-hover">

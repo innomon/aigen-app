@@ -81,6 +81,7 @@ type IAuthService interface {
 	ValidateToken(token string) (int64, []string, error)
 	GetRoleByName(ctx context.Context, name string) (*descriptors.Role, error)
 	BootstrapAdmin(ctx context.Context, defaultEmail, defaultPassword string, isTestEnv bool) error
+	BootstrapRoles(ctx context.Context) error
 }
 
 type INotificationService interface {

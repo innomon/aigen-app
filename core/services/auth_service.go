@@ -109,6 +109,21 @@ func (s *AuthService) Me(ctx context.Context, userId int64) (*descriptors.User, 
 	if err := mapstructure.Decode(recs[0].Rec, &user); err != nil {
 		return nil, fmt.Errorf("failed to decode user: %v", err)
 	}
+
+	if len(user.RolesDetails) == 0 && len(user.Roles) > 0 {
+		for i, r := range user.Roles {
+			roleObj, err := s.GetRoleByName(ctx, r)
+			if err == nil && roleObj != nil {
+				user.RolesDetails = append(user.RolesDetails, *roleObj)
+			} else {
+				user.RolesDetails = append(user.RolesDetails, descriptors.Role{
+					Id:   int64(i + 1),
+					Name: r,
+				})
+			}
+		}
+	}
+
 	return &user, nil
 }
 
@@ -312,7 +327,43 @@ func (s *AuthService) UpdateUser(ctx context.Context, user *descriptors.User) er
 	return s.dao.Save(ctx, rec)
 }
 
+func (s *AuthService) BootstrapRoles(ctx context.Context) error {
+	defaultRoles := []descriptors.Role{
+		{Id: 1, Name: descriptors.RoleSa, Disabled: false},
+		{Id: 2, Name: descriptors.RoleAdmin, Disabled: false},
+		{Id: 3, Name: descriptors.RoleUser, Disabled: false},
+		{Id: 4, Name: descriptors.RoleGuest, Disabled: false},
+	}
+
+	for _, r := range defaultRoles {
+		filters := []datamodels.Filter{
+			{FieldName: "name", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{r.Name}}}},
+		}
+		limStr := "1"
+		recs, _, err := s.dao.List(ctx, "aigen.bizdef.entities.Role", filters, datamodels.Pagination{Limit: &limStr}, nil)
+		if err == nil && len(recs) == 0 {
+			now := time.Now()
+			rec := datamodels.RecJSON{
+				Namespace: "aigen.bizdef.entities.Role",
+				Key:       fmt.Sprintf("%d", r.Id),
+				Rec: map[string]interface{}{
+					"id":        r.Id,
+					"name":      r.Name,
+					"disabled":  r.Disabled,
+					"created_at": now,
+					"updated_at": now,
+				},
+				Tmstamp: now,
+			}
+			_ = s.dao.Save(ctx, rec)
+		}
+	}
+	return nil
+}
+
 func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultPassword string, isTestEnv bool) error {
+	_ = s.BootstrapRoles(ctx)
+
 	// 1. Scan for existing admin users in a database-agnostic way (paginating all records)
 	adminExists := false
 	offset := uint64(0)

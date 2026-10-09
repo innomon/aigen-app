@@ -129,12 +129,211 @@ func (s *SchemaService) ById(ctx context.Context, id int64) (*descriptors.Schema
 	return descriptors.RecordToSchema(recs[0].Rec.(map[string]interface{}))
 }
 
+func GetBuiltinEntitySchema(nameOrSchemaId string) *descriptors.Schema {
+	clean := strings.ToLower(strings.ReplaceAll(strings.TrimPrefix(nameOrSchemaId, "builtin-entity-"), "-", ""))
+	switch clean {
+	case "role":
+		return &descriptors.Schema{
+			SchemaId:          "builtin-entity-role",
+			Name:              "Role",
+			Type:              descriptors.EntitySchema,
+			IsLatest:          true,
+			PublicationStatus: descriptors.Published,
+			Settings: &descriptors.SchemaSettings{
+				Entity: &descriptors.Entity{
+					Name:               "Role",
+					DisplayName:        "Role",
+					TableName:          "Role",
+					PrimaryKey:         "id",
+					LabelAttributeName: "name",
+					Attributes: []descriptors.Attribute{
+						{
+							Field:       "name",
+							Header:      "Role Name",
+							DataType:    descriptors.String,
+							DisplayType: "Text",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "disabled",
+							Header:      "Disabled",
+							DataType:    descriptors.Boolean,
+							DisplayType: "Checkbox",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "dashboard_page_id",
+							Header:      "Dashboard Page ID",
+							DataType:    descriptors.String,
+							DisplayType: "Text",
+							InList:      false,
+							InDetail:    true,
+						},
+						{
+							Field:       "menu_id",
+							Header:      "Menu ID",
+							DataType:    descriptors.String,
+							DisplayType: "Text",
+							InList:      false,
+							InDetail:    true,
+						},
+					},
+				},
+			},
+		}
+	case "user":
+		return &descriptors.Schema{
+			SchemaId:          "builtin-entity-user",
+			Name:              "User",
+			Type:              descriptors.EntitySchema,
+			IsLatest:          true,
+			PublicationStatus: descriptors.Published,
+			Settings: &descriptors.SchemaSettings{
+				Entity: &descriptors.Entity{
+					Name:               "User",
+					DisplayName:        "User",
+					TableName:          "__users",
+					PrimaryKey:         "id",
+					LabelAttributeName: "email",
+					Attributes: []descriptors.Attribute{
+						{
+							Field:       "email",
+							Header:      "Email",
+							DataType:    descriptors.String,
+							DisplayType: "Text",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "phone",
+							Header:      "Phone",
+							DataType:    descriptors.String,
+							DisplayType: "Text",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "password_hash",
+							Header:      "Password",
+							DataType:    descriptors.String,
+							DisplayType: "Password",
+							InList:      false,
+							InDetail:    true,
+						},
+					},
+				},
+			},
+		}
+	case "userrole":
+		return &descriptors.Schema{
+			SchemaId:          "builtin-entity-user-role",
+			Name:              "UserRole",
+			Type:              descriptors.EntitySchema,
+			IsLatest:          true,
+			PublicationStatus: descriptors.Published,
+			Settings: &descriptors.SchemaSettings{
+				Entity: &descriptors.Entity{
+					Name:               "UserRole",
+					DisplayName:        "User Role",
+					TableName:          "UserRole",
+					PrimaryKey:         "id",
+					LabelAttributeName: "role",
+					Attributes: []descriptors.Attribute{
+						{
+							Field:       "user_id",
+							Header:      "User ID",
+							DataType:    descriptors.Int,
+							DisplayType: "Number",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "role",
+							Header:      "Role",
+							DataType:    descriptors.String,
+							DisplayType: "Text",
+							InList:      true,
+							InDetail:    true,
+						},
+					},
+				},
+			},
+		}
+	case "docperm":
+		return &descriptors.Schema{
+			SchemaId:          "builtin-entity-docperm",
+			Name:              "DocPerm",
+			Type:              descriptors.EntitySchema,
+			IsLatest:          true,
+			PublicationStatus: descriptors.Published,
+			Settings: &descriptors.SchemaSettings{
+				Entity: &descriptors.Entity{
+					Name:               "DocPerm",
+					DisplayName:        "Document Permission",
+					TableName:          "DocPerm",
+					PrimaryKey:         "id",
+					LabelAttributeName: "role",
+					Attributes: []descriptors.Attribute{
+						{
+							Field:       "role",
+							Header:      "Role",
+							DataType:    descriptors.String,
+							DisplayType: "Text",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "read",
+							Header:      "Read",
+							DataType:    descriptors.Boolean,
+							DisplayType: "Checkbox",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "write",
+							Header:      "Write",
+							DataType:    descriptors.Boolean,
+							DisplayType: "Checkbox",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "create",
+							Header:      "Create",
+							DataType:    descriptors.Boolean,
+							DisplayType: "Checkbox",
+							InList:      true,
+							InDetail:    true,
+						},
+						{
+							Field:       "delete",
+							Header:      "Delete",
+							DataType:    descriptors.Boolean,
+							DisplayType: "Checkbox",
+							InList:      true,
+							InDetail:    true,
+						},
+					},
+				},
+			},
+		}
+	default:
+		return nil
+	}
+}
+
 func (s *SchemaService) BySchemaId(ctx context.Context, schemaId string) (*descriptors.Schema, error) {
 	rec, err := s.dao.Get(ctx, SchemaNamespace, schemaId)
 	if err != nil {
 		return nil, err
 	}
 	if rec == nil {
+		if strings.HasPrefix(schemaId, "builtin-entity-") {
+			return GetBuiltinEntitySchema(schemaId), nil
+		}
 		return nil, nil
 	}
 	return descriptors.RecordToSchema(rec.Rec.(map[string]interface{}))
@@ -179,10 +378,20 @@ func (s *SchemaService) ByNameOrDefault(ctx context.Context, name string, schema
 	}
 
 	recs, _, err := s.dao.List(ctx, SchemaNamespace, filters, datamodels.Pagination{}, []datamodels.Sort{{Field: "id", Order: datamodels.SortOrderDesc}})
-	if err != nil || len(recs) == 0 {
+	if err != nil {
 		return nil, err
 	}
-	return descriptors.RecordToSchema(recs[0].Rec.(map[string]interface{}))
+	if len(recs) > 0 {
+		return descriptors.RecordToSchema(recs[0].Rec.(map[string]interface{}))
+	}
+
+	if schemaType == descriptors.EntitySchema {
+		if builtin := GetBuiltinEntitySchema(name); builtin != nil {
+			return builtin, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func (s *SchemaService) ByStartsOrDefault(ctx context.Context, name string, schemaType descriptors.SchemaType, status *descriptors.PublicationStatus) (*descriptors.Schema, error) {

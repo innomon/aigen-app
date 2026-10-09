@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/innomon/aigen-app/core/descriptors"
@@ -27,6 +28,7 @@ func (a *SchemaApi) Register(r chi.Router) {
 		r.Use(a.authApi.JWTMiddleware)
 
 		r.Get("/", a.GetAll)
+		r.Get("/name/{name}", a.GetByName)
 		r.Get("/{schemaId}", a.GetBySchemaId)
 
 		r.Group(func(r chi.Router) {
@@ -55,6 +57,21 @@ func (a *SchemaApi) AdminOnlyMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func parseSchemaType(typeName string) descriptors.SchemaType {
+	switch strings.ToLower(typeName) {
+	case "entity":
+		return descriptors.EntitySchema
+	case "menu":
+		return descriptors.MenuSchema
+	case "query":
+		return descriptors.QuerySchema
+	case "page":
+		return descriptors.PageSchema
+	default:
+		return descriptors.SchemaType(typeName)
+	}
+}
+
 func (a *SchemaApi) GetAll(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	typeName := query.Get("type")
@@ -62,7 +79,7 @@ func (a *SchemaApi) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	var schemaType *descriptors.SchemaType
 	if typeName != "" {
-		st := descriptors.SchemaType(typeName)
+		st := parseSchemaType(typeName)
 		schemaType = &st
 	}
 
@@ -80,7 +97,39 @@ func (a *SchemaApi) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(schemas)
+}
+
+func (a *SchemaApi) GetByName(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "name")
+	query := r.URL.Query()
+	typeName := query.Get("type")
+	statusName := query.Get("status")
+
+	var schemaType descriptors.SchemaType = descriptors.EntitySchema
+	if typeName != "" {
+		schemaType = parseSchemaType(typeName)
+	}
+
+	var status *descriptors.PublicationStatus
+	if statusName != "" {
+		ps := descriptors.PublicationStatus(statusName)
+		status = &ps
+	}
+
+	schema, err := a.schemaService.ByNameOrDefault(r.Context(), name, schemaType, status)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if schema == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(schema)
 }
 
 func (a *SchemaApi) GetBySchemaId(w http.ResponseWriter, r *http.Request) {

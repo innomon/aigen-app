@@ -175,6 +175,11 @@ func NewApp(cfg *Config) (*App, error) {
 		logger.Printf("Warning: failed to bootstrap admin user: %v", err)
 	}
 
+	// Bootstrap default roles
+	if err := authService.BootstrapRoles(seedCtx); err != nil {
+		logger.Printf("Warning: failed to bootstrap roles: %v", err)
+	}
+
 	// Bootstrap default premium home page
 	if err := schemaService.BootstrapDefaultHomePage(seedCtx); err != nil {
 		logger.Printf("Warning: failed to bootstrap default home page: %v", err)

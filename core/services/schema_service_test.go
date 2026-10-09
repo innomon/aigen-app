@@ -55,4 +55,21 @@ func TestSchemaService(t *testing.T) {
 		assert.NotNil(t, found)
 		assert.Equal(t, "test_entity", found.Name)
 	})
+
+	t.Run("Built-in Schemas ByNameOrDefault and BySchemaId", func(t *testing.T) {
+		for _, name := range []string{"Role", "User", "UserRole", "DocPerm"} {
+			schema, err := svc.ByNameOrDefault(ctx, name, descriptors.EntitySchema, nil)
+			assert.NoError(t, err)
+			assert.NotNil(t, schema)
+			assert.Equal(t, name, schema.Name)
+			assert.NotNil(t, schema.Settings)
+			assert.NotNil(t, schema.Settings.Entity)
+			assert.NotEmpty(t, schema.Settings.Entity.Attributes)
+
+			bySchemaId, err := svc.BySchemaId(ctx, schema.SchemaId)
+			assert.NoError(t, err)
+			assert.NotNil(t, bySchemaId)
+			assert.Equal(t, name, bySchemaId.Name)
+		}
+	})
 }
