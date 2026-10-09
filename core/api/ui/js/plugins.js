@@ -14,13 +14,16 @@ async function loadPlugins() {
     listContainer.innerHTML = '<div class="text-center mt-5"><div class="spinner-border text-primary"></div></div>';
 
     try {
-        const res = await fetch('/api/plugins');
-        if (!res.ok) throw new Error("Failed to fetch plugins");
+        let res = await fetch('/api/app-extensions');
+        if (!res.ok) {
+            res = await fetch('/api/plugins');
+        }
+        if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
         const plugins = await res.json();
         renderPlugins(plugins);
     } catch (err) {
         toast("Error", err.message, "danger");
-        listContainer.innerHTML = '<div class="alert alert-danger">Failed to load plugins.</div>';
+        listContainer.innerHTML = '<div class="alert alert-danger">Failed to load plugins (' + err.message + ').</div>';
     }
 }
 
@@ -28,12 +31,23 @@ function renderPlugins(plugins) {
     const listContainer = document.getElementById('plugins-list');
     listContainer.innerHTML = '';
 
-    if (Object.keys(plugins).length === 0) {
-        listContainer.innerHTML = '<div class="col-12 text-center mt-5"><p class="text-muted">No plugins found in /plugins directory.</p></div>';
+    const pluginMap = {};
+    if (Array.isArray(plugins)) {
+        plugins.forEach(p => {
+            if (p && p.manifest && p.manifest.id) {
+                pluginMap[p.manifest.id] = p;
+            }
+        });
+    } else if (plugins && typeof plugins === 'object') {
+        Object.assign(pluginMap, plugins);
+    }
+
+    if (Object.keys(pluginMap).length === 0) {
+        listContainer.innerHTML = '<div class="col-12 text-center mt-5"><p class="text-muted">No plugins or app extensions found.</p></div>';
         return;
     }
 
-    Object.values(plugins).forEach(p => {
+    Object.values(pluginMap).forEach(p => {
         const card = document.createElement('div');
         card.className = 'col-md-6 col-lg-4 mb-4';
         
@@ -75,7 +89,10 @@ function renderPlugins(plugins) {
         btn.onclick = async () => {
             const id = btn.getAttribute('data-id');
             try {
-                const res = await fetch(`/api/plugins/${id}/mount`, { method: 'POST' });
+                let res = await fetch(`/api/app-extensions/${id}/mount`, { method: 'POST' });
+                if (!res.ok) {
+                    res = await fetch(`/api/plugins/${id}/mount`, { method: 'POST' });
+                }
                 if (res.ok) {
                     toast("Success", "Plugin mounted successfully", "success");
                     loadPlugins();
@@ -92,7 +109,7 @@ function renderPlugins(plugins) {
     document.querySelectorAll('.settings-btn').forEach(btn => {
         btn.onclick = () => {
             const id = btn.getAttribute('data-id');
-            showConfigModal(plugins[id]);
+            showConfigModal(pluginMap[id]);
         };
     });
 }

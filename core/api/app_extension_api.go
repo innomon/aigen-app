@@ -18,14 +18,22 @@ func NewAppExtensionApi(service *app_extensions.AppExtensionService, auth *AuthA
 }
 
 func (a *AppExtensionApi) Register(r chi.Router) {
-	r.Route("/api/app-extensions", func(r chi.Router) {
-		r.Use(a.Auth.JWTMiddleware)
-		r.Use(a.Auth.RequireAdmin)
-		r.Get("/", a.listExtensions)
-		r.Post("/{id}/mount", a.mountExtension)
-		r.Post("/{id}/authorize", a.authorizePermission)
-		r.Post("/{id}/secrets", a.setSecret)
-	})
+	mountRoutes := func(prefix string) {
+		r.With(a.Auth.JWTMiddleware, a.Auth.RequireAdmin).Get(prefix, a.listExtensions)
+		r.With(a.Auth.JWTMiddleware, a.Auth.RequireAdmin).Get(prefix+"/", a.listExtensions)
+
+		r.Route(prefix, func(r chi.Router) {
+			r.Use(a.Auth.JWTMiddleware)
+			r.Use(a.Auth.RequireAdmin)
+			r.Get("/", a.listExtensions)
+			r.Post("/{id}/mount", a.mountExtension)
+			r.Post("/{id}/authorize", a.authorizePermission)
+			r.Post("/{id}/secrets", a.setSecret)
+		})
+	}
+
+	mountRoutes("/api/app-extensions")
+	mountRoutes("/api/plugins")
 }
 
 func (a *AppExtensionApi) listExtensions(w http.ResponseWriter, r *http.Request) {
