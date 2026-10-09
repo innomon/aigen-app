@@ -7,6 +7,7 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2a"
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/graphql-go/graphql"
 	"github.com/innomon/aigen-app/core/descriptors"
 	"github.com/innomon/aigen-app/utils/datamodels"
 )
@@ -48,6 +49,7 @@ type IEvolutionService interface {
 type IGraphQLService interface {
 	Query(ctx context.Context, query string, variables map[string]interface{}) (interface{}, error)
 	ExecuteStoredQuery(ctx context.Context, name string, variables map[string]interface{}) (interface{}, error)
+	Execute(ctx context.Context, query string, variables map[string]interface{}) (*graphql.Result, error)
 }
 
 type IAssetService interface {

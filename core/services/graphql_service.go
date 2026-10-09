@@ -22,6 +22,17 @@ func NewGraphQLService(schemaService ISchemaService, entityService IEntityServic
 }
 
 func (s *GraphQLService) Query(ctx context.Context, query string, variables map[string]interface{}) (interface{}, error) {
+	res, err := s.Execute(ctx, query, variables)
+	if err != nil {
+		return nil, err
+	}
+	if len(res.Errors) > 0 {
+		return nil, fmt.Errorf("errors: %v", res.Errors)
+	}
+	return res.Data, nil
+}
+
+func (s *GraphQLService) Execute(ctx context.Context, query string, variables map[string]interface{}) (*graphql.Result, error) {
 	schema, err := s.BuildSchema(ctx)
 	if err != nil {
 		return nil, err
@@ -34,10 +45,7 @@ func (s *GraphQLService) Query(ctx context.Context, query string, variables map[
 		Context:        ctx,
 	}
 	res := graphql.Do(params)
-	if len(res.Errors) > 0 {
-		return nil, fmt.Errorf("errors: %v", res.Errors)
-	}
-	return res.Data, nil
+	return res, nil
 }
 
 func (s *GraphQLService) ExecuteStoredQuery(ctx context.Context, name string, variables map[string]interface{}) (interface{}, error) {
@@ -123,6 +131,9 @@ func (s *GraphQLService) BuildSchema(ctx context.Context) (graphql.Schema, error
 
 	return graphql.NewSchema(graphql.SchemaConfig{
 		Query: rootQuery,
+		Extensions: []graphql.Extension{
+			NewApolloTracingExtension(),
+		},
 	})
 }
 
