@@ -27,9 +27,9 @@ func NewPermissionService(dao relationdbdao.IPrimaryDao, schemaService ISchemaSe
 }
 
 func (s *PermissionService) HasAccess(ctx context.Context, userId int64, roles []string, entityName, action string) (bool, error) {
-	// SA always has access
+	// SA and Admin always have access
 	for _, r := range roles {
-		if r == "sa" {
+		if r == "sa" || r == "admin" {
 			return true, nil
 		}
 	}

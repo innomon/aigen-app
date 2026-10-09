@@ -321,6 +321,10 @@ func (a *AuthApi) JWTMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
+		if tokenString == "" {
+			tokenString = r.URL.Query().Get("token")
+		}
+
 		var userId int64
 		var roles []string
 		var err error
