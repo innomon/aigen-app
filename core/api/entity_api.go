@@ -22,24 +22,33 @@ func NewEntityApi(entityService services.IEntityService, authApi *AuthApi) *Enti
 }
 
 func (a *EntityApi) Register(r chi.Router) {
-	r.Route("/api/entities/{name}", func(r chi.Router) {
-		r.Use(a.authApi.JWTMiddleware)
+	mountEntityRoutes := func(prefix string) {
+		r.With(a.authApi.JWTMiddleware, a.authApi.RBACMiddleware("read")).Get(prefix+"/{name}", a.List)
+		r.With(a.authApi.JWTMiddleware, a.authApi.RBACMiddleware("create")).Post(prefix+"/{name}", a.Create)
+		r.With(a.authApi.JWTMiddleware, a.authApi.RBACMiddleware("write")).Put(prefix+"/{name}", a.Update)
 
-		r.With(a.authApi.RBACMiddleware("read")).Get("/", a.List)
-		r.With(a.authApi.RBACMiddleware("create")).Post("/", a.Create)
-		r.With(a.authApi.RBACMiddleware("read")).Get("/{id}", a.Get)
-		r.With(a.authApi.RBACMiddleware("write")).Put("/", a.Update)
-		r.With(a.authApi.RBACMiddleware("delete")).Delete("/{id}", a.Delete)
+		r.Route(prefix+"/{name}", func(r chi.Router) {
+			r.Use(a.authApi.JWTMiddleware)
 
-		r.Route("/{id}/{attr}", func(r chi.Router) {
-			r.With(a.authApi.RBACMiddleware("read")).Get("/collection", a.CollectionList)
-			r.With(a.authApi.RBACMiddleware("write")).Post("/collection", a.CollectionInsert)
+			r.With(a.authApi.RBACMiddleware("read")).Get("/", a.List)
+			r.With(a.authApi.RBACMiddleware("create")).Post("/", a.Create)
+			r.With(a.authApi.RBACMiddleware("read")).Get("/{id}", a.Get)
+			r.With(a.authApi.RBACMiddleware("write")).Put("/", a.Update)
+			r.With(a.authApi.RBACMiddleware("delete")).Delete("/{id}", a.Delete)
 
-			r.With(a.authApi.RBACMiddleware("read")).Get("/junction", a.JunctionList)
-			r.With(a.authApi.RBACMiddleware("write")).Post("/junction", a.JunctionSave)
-			r.With(a.authApi.RBACMiddleware("write")).Delete("/junction", a.JunctionDelete)
+			r.Route("/{id}/{attr}", func(r chi.Router) {
+				r.With(a.authApi.RBACMiddleware("read")).Get("/collection", a.CollectionList)
+				r.With(a.authApi.RBACMiddleware("write")).Post("/collection", a.CollectionInsert)
+
+				r.With(a.authApi.RBACMiddleware("read")).Get("/junction", a.JunctionList)
+				r.With(a.authApi.RBACMiddleware("write")).Post("/junction", a.JunctionSave)
+				r.With(a.authApi.RBACMiddleware("write")).Delete("/junction", a.JunctionDelete)
+			})
 		})
-	})
+	}
+
+	mountEntityRoutes("/api/entities")
+	mountEntityRoutes("/api/records")
 }
 
 func (a *EntityApi) handleError(w http.ResponseWriter, err error) {

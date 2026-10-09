@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/innomon/aigen-app/core/app_extensions"
@@ -43,6 +44,22 @@ func (a *StaticApi) Register(r chi.Router) {
 
 	r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/", http.StatusFound)
+	})
+
+	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		if customFS != nil {
+			if f, err := customFS.Open("favicon.ico"); err == nil {
+				f.Close()
+				http.ServeFile(w, r, filepath.Join(a.customUIPath, "favicon.ico"))
+				return
+			}
+		}
+		if f, err := sub.Open("favicon.ico"); err == nil {
+			f.Close()
+			fileServer.ServeHTTP(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	})
 
 	r.Handle("/admin/*", http.StripPrefix("/admin", fileServer))
