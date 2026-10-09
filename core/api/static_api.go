@@ -46,6 +46,14 @@ func (a *StaticApi) Register(r chi.Router) {
 		http.Redirect(w, r, "/admin/", http.StatusFound)
 	})
 
+	r.Get("/chat", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/chat.html", http.StatusFound)
+	})
+
+	r.Get("/chat.html", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/chat.html", http.StatusFound)
+	})
+
 	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		if customFS != nil {
 			if f, err := customFS.Open("favicon.ico"); err == nil {

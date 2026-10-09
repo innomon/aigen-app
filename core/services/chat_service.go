@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"github.com/innomon/aigen-app/utils/logger"
 
 	"github.com/innomon/agentic/pkg/config"
@@ -32,9 +34,23 @@ func NewChatService(configPath string, entityService IEntityService, schemaServi
 	var cfg *config.Config
 	var err error
 	if configPath != "" {
-		cfg, err = config.Load(configPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load agentic config: %w", err)
+		if _, statErr := os.Stat(configPath); os.IsNotExist(statErr) {
+			// Check if AIGEN_UPSTREAM_DIR has the agentic config file
+			if upstreamDir := os.Getenv("AIGEN_UPSTREAM_DIR"); upstreamDir != "" {
+				fallbackPath := filepath.Join(upstreamDir, configPath)
+				if _, fbErr := os.Stat(fallbackPath); fbErr == nil {
+					configPath = fallbackPath
+				}
+			}
+		}
+		if _, statErr := os.Stat(configPath); statErr == nil {
+			cfg, err = config.Load(configPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load agentic config: %w", err)
+			}
+		} else {
+			logger.Printf("Warning: agentic config %s not found, continuing with empty config", configPath)
+			cfg = &config.Config{}
 		}
 	} else {
 		cfg = &config.Config{}

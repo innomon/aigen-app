@@ -191,18 +191,19 @@ func NewApp(cfg *Config) (*App, error) {
 	tempAccessService := services.NewTempAccessService(cfg.TemporaryAccess, fileStore)
 	commerceService := services.NewCommerceService(entityService)
 
+	extWrapper := &deferredExtensionProvider{}
+	agents.RegisterRouterAgent(interactionService, extWrapper, permissionService)
+
 	chatService, err := services.NewChatService(cfg.AgenticConfigPath, entityService, schemaService, evolutionService, a2uiService, interactionService, commerceService)
 	if err != nil {
 		logger.Printf("Warning: failed to initialize chat service (agentic config missing or invalid): %v", err)
 	}
 
 	extensionService := app_extensions.NewAppExtensionService(cfg.AppExtensionsDir, schemaService, evolutionService, chatService, entityService, a2uiService, auditService)
+	extWrapper.svc = extensionService
 	if err := extensionService.Start(context.Background()); err != nil {
 		logger.Printf("Warning: failed to start app extension service: %v", err)
 	}
-
-	// Register Router Agent globally with App Extension provider and Permissions provider
-	agents.RegisterRouterAgent(interactionService, extensionService, permissionService)
 
 	a2aService := services.NewA2AService(chatService, cfg.Domain)
 	mcpService := services.NewMCPService(schemaService, entityService, authService, cfg.MCP)
@@ -328,4 +329,22 @@ func Start(cfg *Config) error {
 	}
 	defer app.DAO.Close()
 	return app.Run()
+}
+
+type deferredExtensionProvider struct {
+	svc *app_extensions.AppExtensionService
+}
+
+func (d *deferredExtensionProvider) GetRoutingDocs() map[string]string {
+	if d.svc != nil {
+		return d.svc.GetRoutingDocs()
+	}
+	return nil
+}
+
+func (d *deferredExtensionProvider) LoadAgenticConfig(id string) ([]byte, error) {
+	if d.svc != nil {
+		return d.svc.LoadAgenticConfig(id)
+	}
+	return nil, fmt.Errorf("extension service not initialized")
 }
