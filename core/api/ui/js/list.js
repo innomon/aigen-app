@@ -29,7 +29,7 @@ checkUser(async () => {
         } else if (type === schemaTypes.page) {
             html = `<a id="addPage" class="btn btn-primary" href="./page.html">Add Page</a>`;
         } else if (type === schemaTypes.query) {
-            html = `<a id="addQuery" class="btn btn-primary" href="/api/schemas/graphql">Add Query</a>`;
+            html = `<a id="addQuery" class="btn btn-primary" href="/graphql">Add Query</a>`;
         }
 
         if (headerBox) {

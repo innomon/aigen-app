@@ -76,6 +76,7 @@ type ICommentService interface {
 type IAuthService interface {
 	Register(ctx context.Context, email, password string) (*descriptors.User, error)
 	Login(ctx context.Context, email, password string) (string, error)
+	GetUserByEmail(ctx context.Context, email string) (*descriptors.User, error)
 	LoginByChannel(ctx context.Context, channelType descriptors.ChannelType, identifier string, token string, ip, ua string) (string, error)
 	LinkChannel(ctx context.Context, userId int64, channelType descriptors.ChannelType, identifier string) error
 	UpdateUser(ctx context.Context, user *descriptors.User) error

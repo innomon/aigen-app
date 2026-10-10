@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/innomon/aigen-app/core/descriptors"
@@ -123,11 +124,13 @@ func (s *EntityService) Insert(ctx context.Context, name string, data datamodels
 		val := v
 		if name == "User" && k == "password_hash" {
 			if str, ok := v.(string); ok && str != "" {
-				hashed, err := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
-				if err != nil {
-					return nil, fmt.Errorf("failed to hash password: %w", err)
+				if !strings.HasPrefix(str, "$2a$") && !strings.HasPrefix(str, "$2b$") && !strings.HasPrefix(str, "$2y$") {
+					hashed, err := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
+					if err != nil {
+						return nil, fmt.Errorf("failed to hash password: %w", err)
+					}
+					val = string(hashed)
 				}
-				val = string(hashed)
 			}
 		}
 		cleanData[k] = val
@@ -135,6 +138,39 @@ func (s *EntityService) Insert(ctx context.Context, name string, data datamodels
 
 	cleanData["created_at"] = time.Now()
 	cleanData["updated_at"] = time.Now()
+
+	if name == "User" {
+		roleStr, _ := cleanData["role"].(string)
+		var rolesList []string
+		if rRaw, ok := cleanData["roles"].([]interface{}); ok && len(rRaw) > 0 {
+			for _, item := range rRaw {
+				if sItem, ok := item.(string); ok && sItem != "" {
+					rolesList = append(rolesList, sItem)
+				}
+			}
+		} else if rList, ok := cleanData["roles"].([]string); ok && len(rList) > 0 {
+			rolesList = rList
+		}
+
+		if len(rolesList) == 0 {
+			switch roleStr {
+			case descriptors.RoleSa, "superadmin":
+				rolesList = []string{descriptors.RoleSa, descriptors.RoleAdmin, descriptors.RoleUser}
+			case descriptors.RoleAdmin:
+				rolesList = []string{descriptors.RoleAdmin, descriptors.RoleUser}
+			case descriptors.RoleUser:
+				rolesList = []string{descriptors.RoleUser}
+			case descriptors.RoleGuest:
+				rolesList = []string{descriptors.RoleGuest}
+			case "":
+				rolesList = []string{descriptors.RoleAdmin, descriptors.RoleUser}
+				cleanData["role"] = descriptors.RoleAdmin
+			default:
+				rolesList = []string{roleStr, descriptors.RoleUser}
+			}
+		}
+		cleanData["roles"] = rolesList
+	}
 
 	metadata := datamodels.MetaData{
 		Roles: roles,
@@ -151,6 +187,33 @@ func (s *EntityService) Insert(ctx context.Context, name string, data datamodels
 
 	if err := s.dao.Save(ctx, rec); err != nil {
 		return nil, err
+	}
+
+	if name == "User" {
+		if email, ok := cleanData["email"].(string); ok && email != "" {
+			userIdInt := ids.StringToInt64ID(fmt.Sprintf("%v", id))
+			phoneStr, _ := cleanData["phone"].(string)
+			pwHash, _ := cleanData["password_hash"].(string)
+			avatarStr, _ := cleanData["avatar_path"].(string)
+			rolesList, _ := cleanData["roles"].([]string)
+
+			userDesc := descriptors.User{
+				Id:           userIdInt,
+				Email:        email,
+				Phone:        phoneStr,
+				AvatarPath:   avatarStr,
+				PasswordHash: pwHash,
+				Roles:        rolesList,
+				CreatedAt:    cleanData["created_at"].(time.Time),
+				UpdatedAt:    cleanData["updated_at"].(time.Time),
+			}
+			_ = s.dao.Save(ctx, datamodels.RecJSON{
+				Namespace: "aigen.core.descriptors.User",
+				Key:       email,
+				Rec:       userDesc,
+				Tmstamp:   time.Now(),
+			})
+		}
 	}
 
 	return s.Single(ctx, name, id)
@@ -194,11 +257,13 @@ func (s *EntityService) Update(ctx context.Context, name string, data datamodels
 		val := v
 		if name == "User" && k == "password_hash" {
 			if str, ok := v.(string); ok && str != "" {
-				hashed, err := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
-				if err != nil {
-					return nil, fmt.Errorf("failed to hash password: %w", err)
+				if !strings.HasPrefix(str, "$2a$") && !strings.HasPrefix(str, "$2b$") && !strings.HasPrefix(str, "$2y$") {
+					hashed, err := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
+					if err != nil {
+						return nil, fmt.Errorf("failed to hash password: %w", err)
+					}
+					val = string(hashed)
 				}
-				val = string(hashed)
 			} else {
 				continue
 			}
@@ -208,6 +273,39 @@ func (s *EntityService) Update(ctx context.Context, name string, data datamodels
 
 	existing["updated_at"] = time.Now()
 
+	if name == "User" {
+		roleStr, _ := existing["role"].(string)
+		var rolesList []string
+		if rRaw, ok := existing["roles"].([]interface{}); ok && len(rRaw) > 0 {
+			for _, item := range rRaw {
+				if sItem, ok := item.(string); ok && sItem != "" {
+					rolesList = append(rolesList, sItem)
+				}
+			}
+		} else if rList, ok := existing["roles"].([]string); ok && len(rList) > 0 {
+			rolesList = rList
+		}
+
+		if len(rolesList) == 0 {
+			switch roleStr {
+			case descriptors.RoleSa, "superadmin":
+				rolesList = []string{descriptors.RoleSa, descriptors.RoleAdmin, descriptors.RoleUser}
+			case descriptors.RoleAdmin:
+				rolesList = []string{descriptors.RoleAdmin, descriptors.RoleUser}
+			case descriptors.RoleUser:
+				rolesList = []string{descriptors.RoleUser}
+			case descriptors.RoleGuest:
+				rolesList = []string{descriptors.RoleGuest}
+			case "":
+				rolesList = []string{descriptors.RoleAdmin, descriptors.RoleUser}
+				existing["role"] = descriptors.RoleAdmin
+			default:
+				rolesList = []string{roleStr, descriptors.RoleUser}
+			}
+		}
+		existing["roles"] = rolesList
+	}
+
 	rec.Rec = existing
 	rec.Tmstamp = time.Now()
 	// Metadata is preserved and will be incremented by Dao.Save
@@ -216,10 +314,45 @@ func (s *EntityService) Update(ctx context.Context, name string, data datamodels
 		return nil, err
 	}
 
+	if name == "User" {
+		if email, ok := existing["email"].(string); ok && email != "" {
+			userIdInt := ids.StringToInt64ID(fmt.Sprintf("%v", id))
+			phoneStr, _ := existing["phone"].(string)
+			pwHash, _ := existing["password_hash"].(string)
+			avatarStr, _ := existing["avatar_path"].(string)
+			rolesList, _ := existing["roles"].([]string)
+
+			userDesc := descriptors.User{
+				Id:           userIdInt,
+				Email:        email,
+				Phone:        phoneStr,
+				AvatarPath:   avatarStr,
+				PasswordHash: pwHash,
+				Roles:        rolesList,
+				UpdatedAt:    time.Now(),
+			}
+			_ = s.dao.Save(ctx, datamodels.RecJSON{
+				Namespace: "aigen.core.descriptors.User",
+				Key:       email,
+				Rec:       userDesc,
+				Tmstamp:   time.Now(),
+			})
+		}
+	}
+
 	return s.Single(ctx, name, id)
 }
 
 func (s *EntityService) Delete(ctx context.Context, name string, id interface{}) error {
+	if name == "User" {
+		if rec, _ := s.dao.Get(ctx, s.getNamespace(name), fmt.Sprintf("%v", id)); rec != nil {
+			if recMap, ok := rec.Rec.(map[string]interface{}); ok {
+				if email, ok := recMap["email"].(string); ok && email != "" {
+					_ = s.dao.Delete(ctx, "aigen.core.descriptors.User", email)
+				}
+			}
+		}
+	}
 	return s.dao.Delete(ctx, s.getNamespace(name), fmt.Sprintf("%v", id))
 }
 

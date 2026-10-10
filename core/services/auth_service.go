@@ -20,9 +20,10 @@ import (
 )
 
 const (
-	UserNamespace     = "aigen.core.descriptors.User"
-	RoleNamespace     = "aigen.core.descriptors.Role"
-	UserRoleNamespace = "aigen.core.descriptors.UserRole"
+	UserNamespace       = "aigen.core.descriptors.User"
+	EntityUserNamespace = "aigen.bizdef.entities.User"
+	RoleNamespace       = "aigen.core.descriptors.Role"
+	UserRoleNamespace   = "aigen.core.descriptors.UserRole"
 )
 
 type AuthService struct {
@@ -41,44 +42,192 @@ func NewAuthService(dao relationdbdao.IPrimaryDao, secret string, channelService
 	}
 }
 
+func (s *AuthService) convertEntityMapToUser(data map[string]interface{}, key string) *descriptors.User {
+	user := &descriptors.User{}
+
+	if email, ok := data["email"].(string); ok {
+		user.Email = email
+	}
+	if phone, ok := data["phone"].(string); ok {
+		user.Phone = phone
+	}
+	if pwHash, ok := data["password_hash"].(string); ok {
+		user.PasswordHash = pwHash
+	}
+	if avatar, ok := data["avatar_path"].(string); ok {
+		user.AvatarPath = avatar
+	}
+
+	rawID := data["id"]
+	if rawID == nil || rawID == "" {
+		rawID = key
+	}
+	switch v := rawID.(type) {
+	case int64:
+		user.Id = v
+	case float64:
+		user.Id = int64(v)
+	case int:
+		user.Id = int64(v)
+	default:
+		user.Id = ids.StringToInt64ID(fmt.Sprintf("%v", v))
+	}
+
+	var roles []string
+	if rolesRaw, ok := data["roles"].([]interface{}); ok && len(rolesRaw) > 0 {
+		for _, r := range rolesRaw {
+			if rStr, ok := r.(string); ok && rStr != "" {
+				roles = append(roles, rStr)
+			}
+		}
+	} else if rolesStrList, ok := data["roles"].([]string); ok && len(rolesStrList) > 0 {
+		roles = rolesStrList
+	}
+
+	if len(roles) == 0 {
+		roleStr, _ := data["role"].(string)
+		switch roleStr {
+		case descriptors.RoleSa, "superadmin":
+			roles = []string{descriptors.RoleSa, descriptors.RoleAdmin, descriptors.RoleUser}
+		case descriptors.RoleAdmin:
+			roles = []string{descriptors.RoleAdmin, descriptors.RoleUser}
+		case descriptors.RoleUser:
+			roles = []string{descriptors.RoleUser}
+		case descriptors.RoleGuest:
+			roles = []string{descriptors.RoleGuest}
+		case "":
+			roles = []string{descriptors.RoleAdmin, descriptors.RoleUser}
+		default:
+			roles = []string{roleStr, descriptors.RoleUser}
+		}
+	}
+	user.Roles = roles
+
+	if caStr, ok := data["created_at"].(string); ok && caStr != "" {
+		if t, err := time.Parse(time.RFC3339Nano, caStr); err == nil {
+			user.CreatedAt = t
+		} else if t, err := time.Parse(time.RFC3339, caStr); err == nil {
+			user.CreatedAt = t
+		}
+	} else if caTime, ok := data["created_at"].(time.Time); ok {
+		user.CreatedAt = caTime
+	}
+	if user.CreatedAt.IsZero() {
+		user.CreatedAt = time.Now()
+	}
+
+	if uaStr, ok := data["updated_at"].(string); ok && uaStr != "" {
+		if t, err := time.Parse(time.RFC3339Nano, uaStr); err == nil {
+			user.UpdatedAt = t
+		} else if t, err := time.Parse(time.RFC3339, uaStr); err == nil {
+			user.UpdatedAt = t
+		}
+	} else if uaTime, ok := data["updated_at"].(time.Time); ok {
+		user.UpdatedAt = uaTime
+	}
+	if user.UpdatedAt.IsZero() {
+		user.UpdatedAt = time.Now()
+	}
+
+	return user
+}
+
+func (s *AuthService) GetUserByEmail(ctx context.Context, email string) (*descriptors.User, error) {
+	// 1. Try UserNamespace
+	rec, err := s.dao.Get(ctx, UserNamespace, email)
+	if err == nil && rec != nil {
+		var user descriptors.User
+		if err := mapstructure.Decode(rec.Rec, &user); err == nil && user.Email != "" {
+			return &user, nil
+		}
+	}
+
+	// 2. Try EntityUserNamespace
+	filters := []datamodels.Filter{
+		{
+			FieldName: "email",
+			Constraints: []datamodels.Constraint{
+				{Match: "equals", Values: []interface{}{email}},
+			},
+		},
+	}
+	limStr := "1"
+	recs, _, err := s.dao.List(ctx, EntityUserNamespace, filters, datamodels.Pagination{Limit: &limStr}, nil)
+	if err != nil || len(recs) == 0 {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	entityRec := recs[0].Rec
+	entityMap, ok := entityRec.(map[string]interface{})
+	if !ok {
+		if err := mapstructure.Decode(entityRec, &entityMap); err != nil {
+			return nil, fmt.Errorf("failed to parse entity user: %w", err)
+		}
+	}
+
+	user := s.convertEntityMapToUser(entityMap, recs[0].Key)
+
+	// Backfill into UserNamespace
+	_ = s.dao.Save(ctx, datamodels.RecJSON{
+		Namespace: UserNamespace,
+		Key:       user.Email,
+		Rec:       user,
+		Tmstamp:   time.Now(),
+	})
+
+	return user, nil
+}
+
 func (s *AuthService) Register(ctx context.Context, email, password string) (*descriptors.User, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
+	now := time.Now()
 	user := &descriptors.User{
 		Id:           ids.NewRandomInt64ID(),
 		Email:        email,
 		PasswordHash: string(hashedPassword),
 		Roles:        []string{descriptors.RoleUser},
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 
 	rec := datamodels.RecJSON{
 		Namespace: UserNamespace,
 		Key:       email,
 		Rec:       user,
-		Tmstamp:   time.Now(),
+		Tmstamp:   now,
 	}
 
 	if err := s.dao.Save(ctx, rec); err != nil {
 		return nil, err
 	}
 
+	entityRec := datamodels.RecJSON{
+		Namespace: EntityUserNamespace,
+		Key:       fmt.Sprintf("%d", user.Id),
+		Rec: map[string]interface{}{
+			"id":            fmt.Sprintf("%d", user.Id),
+			"email":         user.Email,
+			"password_hash": user.PasswordHash,
+			"role":          descriptors.RoleUser,
+			"roles":         user.Roles,
+			"created_at":    now,
+			"updated_at":    now,
+		},
+		Tmstamp: now,
+	}
+	_ = s.dao.Save(ctx, entityRec)
+
 	return user, nil
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (string, error) {
-	rec, err := s.dao.Get(ctx, UserNamespace, email)
-	if err != nil || rec == nil {
+	user, err := s.GetUserByEmail(ctx, email)
+	if err != nil || user == nil {
 		return "", fmt.Errorf("user not found")
-	}
-
-	var user descriptors.User
-	if err := mapstructure.Decode(rec.Rec, &user); err != nil {
-		return "", fmt.Errorf("failed to decode user: %v", err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
@@ -101,13 +250,37 @@ func (s *AuthService) Me(ctx context.Context, userId int64) (*descriptors.User, 
 		{FieldName: "id", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{userId}}}},
 	}
 	recs, _, err := s.dao.List(ctx, UserNamespace, filters, datamodels.Pagination{}, nil)
-	if err != nil || len(recs) == 0 {
-		return nil, fmt.Errorf("user not found")
+	var user *descriptors.User
+	if err == nil && len(recs) > 0 {
+		var u descriptors.User
+		if err := mapstructure.Decode(recs[0].Rec, &u); err == nil {
+			user = &u
+		}
 	}
 
-	var user descriptors.User
-	if err := mapstructure.Decode(recs[0].Rec, &user); err != nil {
-		return nil, fmt.Errorf("failed to decode user: %v", err)
+	if user == nil {
+		allRecs, _, err := s.dao.List(ctx, EntityUserNamespace, nil, datamodels.Pagination{}, nil)
+		if err == nil {
+			for _, r := range allRecs {
+				if rMap, ok := r.Rec.(map[string]interface{}); ok {
+					u := s.convertEntityMapToUser(rMap, r.Key)
+					if u.Id == userId {
+						user = u
+						_ = s.dao.Save(ctx, datamodels.RecJSON{
+							Namespace: UserNamespace,
+							Key:       user.Email,
+							Rec:       user,
+							Tmstamp:   time.Now(),
+						})
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
 	}
 
 	if len(user.RolesDetails) == 0 && len(user.Roles) > 0 {
@@ -124,7 +297,7 @@ func (s *AuthService) Me(ctx context.Context, userId int64) (*descriptors.User, 
 		}
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 func (s *AuthService) ValidateToken(tokenString string) (int64, []string, error) {
@@ -324,7 +497,130 @@ func (s *AuthService) UpdateUser(ctx context.Context, user *descriptors.User) er
 		Rec:       user,
 		Tmstamp:   user.UpdatedAt,
 	}
-	return s.dao.Save(ctx, rec)
+	if err := s.dao.Save(ctx, rec); err != nil {
+		return err
+	}
+
+	entityKey := fmt.Sprintf("%d", user.Id)
+	roleVal := descriptors.RoleUser
+	if len(user.Roles) > 0 {
+		roleVal = user.Roles[0]
+	}
+	entityRec := datamodels.RecJSON{
+		Namespace: EntityUserNamespace,
+		Key:       entityKey,
+		Rec: map[string]interface{}{
+			"id":            entityKey,
+			"email":         user.Email,
+			"phone":         user.Phone,
+			"avatar_path":   user.AvatarPath,
+			"password_hash": user.PasswordHash,
+			"role":          roleVal,
+			"roles":         user.Roles,
+			"created_at":    user.CreatedAt,
+			"updated_at":    user.UpdatedAt,
+		},
+		Tmstamp: user.UpdatedAt,
+	}
+	_ = s.dao.Save(ctx, entityRec)
+
+	return nil
+}
+
+func (s *AuthService) syncUserStores(ctx context.Context) {
+	// 1. Sync from EntityUserNamespace to UserNamespace
+	entityRecs, _, err := s.dao.List(ctx, EntityUserNamespace, nil, datamodels.Pagination{}, nil)
+	if err == nil {
+		for _, er := range entityRecs {
+			var entityMap map[string]interface{}
+			if m, ok := er.Rec.(map[string]interface{}); ok {
+				entityMap = m
+			} else {
+				if err := mapstructure.Decode(er.Rec, &entityMap); err != nil {
+					continue
+				}
+			}
+			user := s.convertEntityMapToUser(entityMap, er.Key)
+			if user.Email == "" {
+				continue
+			}
+
+			// Ensure entity record itself has role/roles populated
+			updatedEntity := false
+			if entityMap["role"] == nil || fmt.Sprintf("%v", entityMap["role"]) == "" {
+				entityMap["role"] = descriptors.RoleAdmin
+				updatedEntity = true
+			}
+			if entityMap["roles"] == nil {
+				entityMap["roles"] = user.Roles
+				updatedEntity = true
+			}
+			if updatedEntity {
+				_ = s.dao.Save(ctx, datamodels.RecJSON{
+					Namespace: EntityUserNamespace,
+					Key:       er.Key,
+					Rec:       entityMap,
+					Tmstamp:   time.Now(),
+				})
+			}
+
+			// Ensure user exists in UserNamespace
+			uRec, err := s.dao.Get(ctx, UserNamespace, user.Email)
+			if err != nil || uRec == nil {
+				_ = s.dao.Save(ctx, datamodels.RecJSON{
+					Namespace: UserNamespace,
+					Key:       user.Email,
+					Rec:       user,
+					Tmstamp:   user.UpdatedAt,
+				})
+			}
+		}
+	}
+
+	// 2. Sync from UserNamespace to EntityUserNamespace
+	userRecs, _, err := s.dao.List(ctx, UserNamespace, nil, datamodels.Pagination{}, nil)
+	if err == nil {
+		for _, ur := range userRecs {
+			var u descriptors.User
+			if err := mapstructure.Decode(ur.Rec, &u); err != nil || u.Email == "" {
+				continue
+			}
+			entityKey := fmt.Sprintf("%d", u.Id)
+			eRec, err := s.dao.Get(ctx, EntityUserNamespace, entityKey)
+			if err != nil || eRec == nil {
+				// Also check by email in EntityUserNamespace
+				filters := []datamodels.Filter{
+					{FieldName: "email", Constraints: []datamodels.Constraint{{Match: "equals", Values: []interface{}{u.Email}}}},
+				}
+				lim := "1"
+				matching, _, mErr := s.dao.List(ctx, EntityUserNamespace, filters, datamodels.Pagination{Limit: &lim}, nil)
+				if mErr == nil && len(matching) > 0 {
+					continue
+				}
+
+				roleVal := descriptors.RoleUser
+				if len(u.Roles) > 0 {
+					roleVal = u.Roles[0]
+				}
+				_ = s.dao.Save(ctx, datamodels.RecJSON{
+					Namespace: EntityUserNamespace,
+					Key:       entityKey,
+					Rec: map[string]interface{}{
+						"id":            entityKey,
+						"email":         u.Email,
+						"phone":         u.Phone,
+						"avatar_path":   u.AvatarPath,
+						"password_hash": u.PasswordHash,
+						"role":          roleVal,
+						"roles":         u.Roles,
+						"created_at":    u.CreatedAt,
+						"updated_at":    u.UpdatedAt,
+					},
+					Tmstamp: u.UpdatedAt,
+				})
+			}
+		}
+	}
 }
 
 func (s *AuthService) BootstrapRoles(ctx context.Context) error {
@@ -363,6 +659,8 @@ func (s *AuthService) BootstrapRoles(ctx context.Context) error {
 
 func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultPassword string, isTestEnv bool) error {
 	_ = s.BootstrapRoles(ctx)
+	s.syncUserStores(ctx)
+	defer s.syncUserStores(ctx)
 
 	// 1. Select credentials to use and check for explicit environment variable configuration
 	email := defaultEmail
@@ -444,6 +742,21 @@ func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultP
 				if err := s.dao.Save(ctx, rec); err != nil {
 					return fmt.Errorf("failed to update admin user: %w", err)
 				}
+				entityKey := fmt.Sprintf("%d", user.Id)
+				_ = s.dao.Save(ctx, datamodels.RecJSON{
+					Namespace: EntityUserNamespace,
+					Key:       entityKey,
+					Rec: map[string]interface{}{
+						"id":            entityKey,
+						"email":         user.Email,
+						"password_hash": user.PasswordHash,
+						"role":          descriptors.RoleSa,
+						"roles":         user.Roles,
+						"created_at":    user.CreatedAt,
+						"updated_at":    now,
+					},
+					Tmstamp: now,
+				})
 				logger.Printf("[INFO] Synchronized super-admin credentials for: %s", email)
 			}
 		} else {
@@ -465,6 +778,21 @@ func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultP
 			if err := s.dao.Save(ctx, rec); err != nil {
 				return fmt.Errorf("failed to save bootstrapped admin user: %w", err)
 			}
+			entityKey := fmt.Sprintf("%d", user.Id)
+			_ = s.dao.Save(ctx, datamodels.RecJSON{
+				Namespace: EntityUserNamespace,
+				Key:       entityKey,
+				Rec: map[string]interface{}{
+					"id":            entityKey,
+					"email":         user.Email,
+					"password_hash": user.PasswordHash,
+					"role":          descriptors.RoleSa,
+					"roles":         user.Roles,
+					"created_at":    now,
+					"updated_at":    now,
+				},
+				Tmstamp: now,
+			})
 			logger.Printf("[INFO] Bootstrapped administrator user account: %s", email)
 		}
 
@@ -478,6 +806,7 @@ func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultP
 						if bcrypt.CompareHashAndPassword([]byte(defUser.PasswordHash), []byte("admin")) == nil ||
 							bcrypt.CompareHashAndPassword([]byte(defUser.PasswordHash), []byte("adminpassword")) == nil {
 							_ = s.dao.Delete(ctx, UserNamespace, legacyDefault)
+							_ = s.dao.Delete(ctx, EntityUserNamespace, fmt.Sprintf("%d", defUser.Id))
 							logger.Printf("[INFO] Removed legacy default account with default password: %s", legacyDefault)
 						}
 					}
@@ -574,6 +903,22 @@ func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultP
 	if err := s.dao.Save(ctx, rec); err != nil {
 		return fmt.Errorf("failed to save bootstrapped admin user: %w", err)
 	}
+
+	entityKey := fmt.Sprintf("%d", user.Id)
+	_ = s.dao.Save(ctx, datamodels.RecJSON{
+		Namespace: EntityUserNamespace,
+		Key:       entityKey,
+		Rec: map[string]interface{}{
+			"id":            entityKey,
+			"email":         user.Email,
+			"password_hash": user.PasswordHash,
+			"role":          descriptors.RoleSa,
+			"roles":         user.Roles,
+			"created_at":    now,
+			"updated_at":    now,
+		},
+		Tmstamp: now,
+	})
 
 	// 5. Securely persist or log credentials without displaying passwords on screen
 	if isRandom {

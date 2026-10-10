@@ -22,8 +22,16 @@
       "InDetail": true
     },
     {
+      "Field": "phone",
+      "Header": "Phone",
+      "DataType": "String",
+      "DisplayType": "Text",
+      "InList": true,
+      "InDetail": true
+    },
+    {
       "Field": "role",
-      "Header": "Legacy Role",
+      "Header": "Role",
       "DataType": "String",
       "DisplayType": "Text",
       "InList": true,

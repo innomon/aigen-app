@@ -24,7 +24,22 @@ func NewSchemaApi(schemaService services.ISchemaService, authApi *AuthApi) *Sche
 }
 
 func (a *SchemaApi) Register(r chi.Router) {
+	// Direct redirect for GraphQL playground if requested under /api/schemas/graphql
+	r.Get("/api/schemas/graphql", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/graphql", http.StatusFound)
+	})
+	r.Get("/api/schemas/graphql/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/graphql", http.StatusFound)
+	})
+
 	r.Route("/api/schemas", func(r chi.Router) {
+		r.Get("/graphql", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/graphql", http.StatusFound)
+		})
+		r.Get("/graphql/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/graphql", http.StatusFound)
+		})
+
 		r.Use(a.authApi.JWTMiddleware)
 
 		r.Get("/", a.GetAll)

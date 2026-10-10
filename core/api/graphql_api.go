@@ -30,6 +30,7 @@ func (a *GraphQLApi) Register(r chi.Router) {
 
 	mountGraphQL("/graphql")
 	mountGraphQL("/api/graphql")
+	mountGraphQL("/api/schemas/graphql")
 }
 
 type graphqlRequest struct {

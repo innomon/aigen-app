@@ -3,6 +3,8 @@ package ids
 import (
 	"crypto/rand"
 	"encoding/base32"
+	"hash/fnv"
+	"strconv"
 	"time"
 )
 
@@ -55,6 +57,23 @@ func NewRandomInt64ID() int64 {
 		int64(b[3])<<24 | int64(b[4])<<16 | int64(b[5])<<8 | int64(b[6])
 	if val <= 0 {
 		return time.Now().UnixNano() & 0x001FFFFFFFFFFFFF
+	}
+	return val
+}
+
+// StringToInt64ID stably converts a string ID into a positive 53-bit int64 ID.
+func StringToInt64ID(s string) int64 {
+	if s == "" {
+		return 0
+	}
+	if id, err := strconv.ParseInt(s, 10, 64); err == nil && id > 0 {
+		return id
+	}
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(s))
+	val := int64(h.Sum64() & 0x001FFFFFFFFFFFFF)
+	if val <= 0 {
+		return 1
 	}
 	return val
 }
