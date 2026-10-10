@@ -182,11 +182,18 @@ func LoadConfig(path string) (*Config, error) {
 	if agenticPath := os.Getenv("FORMCMS_AGENTIC_CONFIG_PATH"); agenticPath != "" {
 		config.AgenticConfigPath = agenticPath
 	}
-	if adminEmail := os.Getenv("AIGEN_ADMIN_EMAIL"); adminEmail != "" {
-		config.Admin.Email = adminEmail
+	// SA / Admin credentials overrides from environment variables
+	for _, envKey := range []string{"SA_USER", "SA_EMAIL", "SA_USER_ID", "AIGEN_ADMIN_EMAIL", "ADMIN_EMAIL", "ADMIN_USER"} {
+		if val := os.Getenv(envKey); val != "" {
+			config.Admin.Email = val
+			break
+		}
 	}
-	if adminPass := os.Getenv("AIGEN_ADMIN_PASSWORD"); adminPass != "" {
-		config.Admin.Password = adminPass
+	for _, envKey := range []string{"SA_PASSWORD", "SA_PASS", "AIGEN_ADMIN_PASSWORD", "ADMIN_PASSWORD", "ADMIN_PASS"} {
+		if val := os.Getenv(envKey); val != "" {
+			config.Admin.Password = val
+			break
+		}
 	}
 	if jwtSecret := os.Getenv("AIGEN_JWT_SECRET"); jwtSecret != "" {
 		config.Auth.JWTSecret = jwtSecret

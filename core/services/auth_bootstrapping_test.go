@@ -53,7 +53,47 @@ func TestBootstrapAdmin(t *testing.T) {
 			expectCreated: true,
 		},
 		{
-			name:         "Skip if admin already exists",
+			name:         "Bootstrap via SA_USER and SA_PASSWORD environment variables",
+			defaultEmail: "default@aigen.local",
+			defaultPass:  "defaultpass",
+			isTestEnv:    false,
+			setupEnv: func() {
+				os.Setenv("SA_USER", "superadmin@corp.io")
+				os.Setenv("SA_PASSWORD", "SuperSecurePassword123!")
+			},
+			cleanupEnv: func() {
+				os.Unsetenv("SA_USER")
+				os.Unsetenv("SA_PASSWORD")
+			},
+			expectedEmail: "superadmin@corp.io",
+			expectedRoles: []string{descriptors.RoleSa, descriptors.RoleAdmin, descriptors.RoleUser},
+			expectCreated: true,
+		},
+		{
+			name:         "Update existing user password via SA_PASSWORD in env",
+			defaultEmail: "",
+			defaultPass:  "",
+			isTestEnv:    false,
+			setupEnv: func() {
+				os.Setenv("SA_USER", "existing@aigen.local")
+				os.Setenv("SA_PASSWORD", "NewUpdatedPassword456!")
+			},
+			cleanupEnv: func() {
+				os.Unsetenv("SA_USER")
+				os.Unsetenv("SA_PASSWORD")
+			},
+			preExistingUser: &descriptors.User{
+				Id:           12345,
+				Email:        "existing@aigen.local",
+				PasswordHash: "$2a$10$oldhash",
+				Roles:        []string{descriptors.RoleAdmin},
+			},
+			expectedEmail: "existing@aigen.local",
+			expectedRoles: []string{descriptors.RoleSa, descriptors.RoleAdmin, descriptors.RoleUser},
+			expectCreated: true,
+		},
+		{
+			name:         "Skip if admin already exists and no env provided",
 			defaultEmail: "admin@aigen.local",
 			defaultPass:  "adminpassword",
 			isTestEnv:    true,
@@ -102,11 +142,14 @@ func TestBootstrapAdmin(t *testing.T) {
 
 				// Authenticate
 				token, err := authSvc.Login(ctx, tt.expectedEmail, func() string {
-					if tt.defaultPass != "" && os.Getenv("AIGEN_ADMIN_PASSWORD") == "" {
-						return tt.defaultPass
+					if envPass := os.Getenv("SA_PASSWORD"); envPass != "" {
+						return envPass
 					}
 					if envPass := os.Getenv("AIGEN_ADMIN_PASSWORD"); envPass != "" {
 						return envPass
+					}
+					if tt.defaultPass != "" {
+						return tt.defaultPass
 					}
 					return "adminpassword" // Fallback default
 				}())

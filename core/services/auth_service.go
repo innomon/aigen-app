@@ -364,7 +364,130 @@ func (s *AuthService) BootstrapRoles(ctx context.Context) error {
 func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultPassword string, isTestEnv bool) error {
 	_ = s.BootstrapRoles(ctx)
 
-	// 1. Scan for existing admin users in a database-agnostic way (paginating all records)
+	// 1. Select credentials to use and check for explicit environment variable configuration
+	email := defaultEmail
+	password := defaultPassword
+
+	hasExplicitEnv := false
+	for _, k := range []string{"SA_USER", "SA_EMAIL", "SA_USER_ID", "AIGEN_ADMIN_EMAIL", "ADMIN_EMAIL", "ADMIN_USER"} {
+		if envVal := os.Getenv(k); envVal != "" {
+			email = envVal
+			hasExplicitEnv = true
+			break
+		}
+	}
+	for _, k := range []string{"SA_PASSWORD", "SA_PASS", "AIGEN_ADMIN_PASSWORD", "ADMIN_PASSWORD", "ADMIN_PASS"} {
+		if envVal := os.Getenv(k); envVal != "" {
+			password = envVal
+			hasExplicitEnv = true
+			break
+		}
+	}
+
+	// If explicit credentials were provided via environment variables, ensure that account is configured
+	if hasExplicitEnv && email != "" {
+		if password == "" {
+			if isTestEnv {
+				password = "adminpassword"
+			} else {
+				randPass, err := generateSecurePassword(16)
+				if err != nil {
+					return fmt.Errorf("failed to generate secure random password: %w", err)
+				}
+				password = randPass
+				saveCredentialsToFile(email, password)
+			}
+		}
+
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("failed to hash password: %w", err)
+		}
+
+		existingRec, err := s.dao.Get(ctx, UserNamespace, email)
+		now := time.Now()
+		if err == nil && existingRec != nil {
+			// Update existing user credentials and ensure admin/sa roles
+			var user descriptors.User
+			if err := mapstructure.Decode(existingRec.Rec, &user); err == nil {
+				user.PasswordHash = string(hashedPassword)
+				user.UpdatedAt = now
+				hasSa := false
+				hasAdmin := false
+				hasUser := false
+				for _, r := range user.Roles {
+					if r == descriptors.RoleSa {
+						hasSa = true
+					}
+					if r == descriptors.RoleAdmin {
+						hasAdmin = true
+					}
+					if r == descriptors.RoleUser {
+						hasUser = true
+					}
+				}
+				if !hasSa {
+					user.Roles = append(user.Roles, descriptors.RoleSa)
+				}
+				if !hasAdmin {
+					user.Roles = append(user.Roles, descriptors.RoleAdmin)
+				}
+				if !hasUser {
+					user.Roles = append(user.Roles, descriptors.RoleUser)
+				}
+				rec := datamodels.RecJSON{
+					Namespace: UserNamespace,
+					Key:       email,
+					Rec:       user,
+					Tmstamp:   now,
+				}
+				if err := s.dao.Save(ctx, rec); err != nil {
+					return fmt.Errorf("failed to update admin user: %w", err)
+				}
+				logger.Printf("[INFO] Synchronized super-admin credentials for: %s", email)
+			}
+		} else {
+			// Create new super-admin user
+			user := &descriptors.User{
+				Id:           now.Unix(),
+				Email:        email,
+				PasswordHash: string(hashedPassword),
+				Roles:        []string{descriptors.RoleSa, descriptors.RoleAdmin, descriptors.RoleUser},
+				CreatedAt:    now,
+				UpdatedAt:    now,
+			}
+			rec := datamodels.RecJSON{
+				Namespace: UserNamespace,
+				Key:       email,
+				Rec:       user,
+				Tmstamp:   now,
+			}
+			if err := s.dao.Save(ctx, rec); err != nil {
+				return fmt.Errorf("failed to save bootstrapped admin user: %w", err)
+			}
+			logger.Printf("[INFO] Bootstrapped administrator user account: %s", email)
+		}
+
+		// If configured with a custom SA account, clean up default demo accounts to avoid public exposure
+		for _, legacyDefault := range []string{"admin@erp.local", "admin@aigen.local"} {
+			if email != legacyDefault {
+				if defRec, _ := s.dao.Get(ctx, UserNamespace, legacyDefault); defRec != nil {
+					var defUser descriptors.User
+					if mapstructure.Decode(defRec.Rec, &defUser) == nil {
+						// Only remove if it has the default legacy password
+						if bcrypt.CompareHashAndPassword([]byte(defUser.PasswordHash), []byte("admin")) == nil ||
+							bcrypt.CompareHashAndPassword([]byte(defUser.PasswordHash), []byte("adminpassword")) == nil {
+							_ = s.dao.Delete(ctx, UserNamespace, legacyDefault)
+							logger.Printf("[INFO] Removed legacy default account with default password: %s", legacyDefault)
+						}
+					}
+				}
+			}
+		}
+		return nil
+	}
+
+	// 2. Scan for existing admin users in a database-agnostic way (paginating all records)
 	adminExists := false
 	offset := uint64(0)
 	limit := uint64(100)
@@ -406,19 +529,7 @@ func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultP
 		return nil
 	}
 
-	// 2. Select credentials to use
-	email := defaultEmail
-	password := defaultPassword
-
-	// Environment variable overrides take precedence
-	if envEmail := os.Getenv("AIGEN_ADMIN_EMAIL"); envEmail != "" {
-		email = envEmail
-	}
-	if envPass := os.Getenv("AIGEN_ADMIN_PASSWORD"); envPass != "" {
-		password = envPass
-	}
-
-	// Default fallback email
+	// 3. Fallback credentials when no admin exists and no env provided
 	if email == "" {
 		email = "admin@aigen.local"
 	}
@@ -437,7 +548,7 @@ func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultP
 		}
 	}
 
-	// 3. Register the super-admin user
+	// 4. Register the super-admin user
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
@@ -464,14 +575,21 @@ func (s *AuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defaultP
 		return fmt.Errorf("failed to save bootstrapped admin user: %w", err)
 	}
 
-	// 4. Log or display output
+	// 5. Securely persist or log credentials without displaying passwords on screen
 	if isRandom {
-		printAdminBanner(email, password)
+		saveCredentialsToFile(email, password)
+		printAdminBanner(email)
 	} else {
 		logger.Printf("[INFO] Bootstrapped administrator user account: %s", email)
 	}
 
 	return nil
+}
+
+func saveCredentialsToFile(email, password string) {
+	_ = os.MkdirAll("logs", 0750)
+	content := fmt.Sprintf("# Super-Admin Initial Credentials\n# Generated at: %s\n# DO NOT COMMIT THIS FILE\nSA_USER=%s\nSA_PASSWORD=%s\n", time.Now().Format(time.RFC3339), email, password)
+	_ = os.WriteFile("logs/.admin_credentials", []byte(content), 0600)
 }
 
 func generateSecurePassword(length int) (string, error) {
@@ -487,14 +605,13 @@ func generateSecurePassword(length int) (string, error) {
 	return string(result), nil
 }
 
-func printAdminBanner(email, password string) {
+func printAdminBanner(email string) {
 	fmt.Println("========================================================================")
-	fmt.Println("[WARNING] FIRST TIME STARTUP DETECTED: NO ADMIN ACCOUNT FOUND.")
-	fmt.Println("We have safely bootstrapped a super-admin account for you:")
-	fmt.Println("")
+	fmt.Println("[SECURITY] FIRST TIME STARTUP DETECTED: NO ADMIN ACCOUNT FOUND.")
+	fmt.Println("A super-admin account has been securely initialized.")
 	fmt.Printf("  Username/Email: %s\n", email)
-	fmt.Printf("  Password:       %s\n", password)
-	fmt.Println("")
-	fmt.Println("Please log in and CHANGE this password immediately inside the admin panel!")
+	fmt.Println("  Password:       [PROTECTED - Never displayed on screen]")
+	fmt.Println("Credentials have been saved to: logs/.admin_credentials (mode 0600)")
+	fmt.Println("To set custom credentials, configure SA_USER and SA_PASSWORD in .env")
 	fmt.Println("========================================================================")
 }
