@@ -640,6 +640,12 @@ func (s *SchemaService) BootstrapDefaultHomePage(ctx context.Context) error {
 		return err
 	}
 	if schema != nil {
+		if schema.Settings != nil && schema.Settings.Page != nil && strings.Contains(schema.Settings.Page.Html, "PostgreSQL") {
+			schema.Settings.Page.Html = strings.ReplaceAll(schema.Settings.Page.Html, "in PostgreSQL", "that supports multiple databases")
+			schema.Settings.Page.Html = strings.ReplaceAll(schema.Settings.Page.Html, "inside PostgreSQL", "that supports multiple databases")
+			schema.Settings.Page.Html = strings.ReplaceAll(schema.Settings.Page.Html, "PostgreSQL", "multiple databases")
+			_, _ = s.Save(ctx, schema, true)
+		}
 		return nil
 	}
 
@@ -1115,7 +1121,7 @@ func (s *SchemaService) BootstrapDefaultHomePage(ctx context.Context) error {
         </h1>
 
         <p class="hero-description">
-            A dynamic application framework powered by a single-table JSON architecture in PostgreSQL, featuring custom schemas, role-based controls, and a developer-first GraphQL layer.
+            A dynamic application framework powered by a single-table JSON architecture that supports multiple databases, featuring custom schemas, role-based controls, and a developer-first GraphQL layer.
         </p>
 
         <div class="cta-container">
@@ -1175,7 +1181,7 @@ func (s *SchemaService) BootstrapDefaultHomePage(ctx context.Context) error {
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path></svg>
                 </div>
                 <h3 class="feature-name">Single-Table Persistence</h3>
-                <p class="feature-desc">Engineered around a high-performance JSON-B schema-on-read database model inside PostgreSQL. Zero migration stress.</p>
+                <p class="feature-desc">Engineered around a high-performance JSON-B schema-on-read database model that supports multiple databases. Zero migration stress.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
