@@ -263,6 +263,9 @@ func (a *AuthApi) DoRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user.PasswordHash = ""
+	user.TOTPSecret = nil
+	user.TOTPPubKey = nil
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -299,6 +302,9 @@ func (a *AuthApi) GetMe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	user.PasswordHash = ""
+	user.TOTPSecret = nil
+	user.TOTPPubKey = nil
 	json.NewEncoder(w).Encode(user)
 }
 
