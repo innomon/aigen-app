@@ -32,14 +32,43 @@ async function init(id, refId) {
 
     const schemaData = await loadSchema(id || refId);
     if (schemaData) {
-        const pageData = schemaData.settings[schemaTypes.page];
+        const pageData = schemaData.settings?.[schemaTypes.page] || 
+                         schemaData.settings?.Page || 
+                         (schemaData.settings ? schemaData.settings[Object.keys(schemaData.settings).find(k => k.toLowerCase() === 'page')] : null) || {};
         if (id) {
             schema = schemaData;
         } else {
             schema = { type: schemaTypes.page, settings: { [schemaTypes.page]: pageData } };
         }
-        restoreFormData(pageData);
-        editor = loadEditor(grapesBox, JSON.parse(pageData.components), JSON.parse(pageData.styles));
+        restoreFormData(pageData, schemaData);
+
+        let components = null;
+        if (pageData.components) {
+            try {
+                components = typeof pageData.components === 'string' ? JSON.parse(pageData.components) : pageData.components;
+            } catch (e) {
+                console.warn("Failed to parse page components JSON, falling back to raw components or html", e);
+                components = pageData.components;
+            }
+        }
+        if (!components && pageData.html) {
+            components = pageData.html;
+        }
+
+        let styles = null;
+        if (pageData.styles) {
+            try {
+                styles = typeof pageData.styles === 'string' ? JSON.parse(pageData.styles) : pageData.styles;
+            } catch (e) {
+                console.warn("Failed to parse page styles JSON, falling back to raw styles or css", e);
+                styles = pageData.styles;
+            }
+        }
+        if (!styles && pageData.css) {
+            styles = pageData.css;
+        }
+
+        editor = loadEditor(grapesBox, components, styles);
     }
 }
 
@@ -57,7 +86,10 @@ async function handleSave(publish) {
     }
 
     schema = schema || { type: schemaTypes.page };
-    schema.settings = { page: payload };
+    schema.type = schemaTypes.page;
+    schema.name = payload.name;
+    schema.title = payload.title;
+    schema.settings = { [schemaTypes.page]: payload };
 
     showOverlay();
     const { data, error } = await save(schema,publish);
@@ -114,10 +146,10 @@ function addInputs() {
 
 const controls = ['name', 'title', 'query'];
 
-function restoreFormData(payload) {
+function restoreFormData(payload, schemaData) {
     for (const ctl of controls) {
         const el = document.getElementById(ctl);
-        if (el) el.value = payload[ctl] || "";
+        if (el) el.value = payload[ctl] || (schemaData ? schemaData[ctl] : "") || "";
     }
 }
 

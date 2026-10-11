@@ -72,6 +72,9 @@ func (m *mockAuthService) BootstrapAdmin(ctx context.Context, defaultEmail, defa
 func (m *mockAuthService) BootstrapRoles(ctx context.Context) error {
 	return nil
 }
+func (m *mockAuthService) GetUserByEmail(ctx context.Context, email string) (*descriptors.User, error) {
+	return &descriptors.User{Id: 1, Email: email}, nil
+}
 
 type mockPermissionService struct {
 	hasAccessFn func(ctx context.Context, userId int64, roles []string, entityName, action string) (bool, error)

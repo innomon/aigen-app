@@ -9,6 +9,7 @@ This guide explains how to use **`sqlite-p2p`** as the default storage engine fo
 `sqlite-p2p` is a decentralized, peer-to-peer storage engine powered by pure-Go SQLite (`modernc.org/sqlite`) and Holepunch/Pear P2P networking protocols (`go-pear`).
 
 Key features:
+
 - **Zero-CGO Pure Go**: Runs seamlessly across platforms without external C compiler dependencies.
 - **Single-Table JSON Model**: Compatible with `AIGenApp`'s `aigen_records` schema-on-read persistence and SQLite's native `json_extract()` querying.
 - **Peer-to-Peer Replication**: Background synchronization across peer nodes using append-only changeset feeds (Hypercore) and Hyperswarm DHT discovery.

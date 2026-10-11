@@ -13,22 +13,23 @@ checkUser(async () => {
     const errorBox = document.querySelector('#error-box');
 
     const [type] = getParams([queryKeys.type]);
+    const lowerType = (type || '').toLowerCase();
 
     loadNavBar(navBox);
-    loadHeaderBar(type);
+    loadHeaderBar(lowerType);
     await renderSchemaTable(
         tableBox,
         errorBox,
-        () => list(type),
+        () => list(lowerType || type),
         { showDelete: true, showViewHistory: true }
     );
-    function loadHeaderBar(type) {
+    function loadHeaderBar(t) {
         let html = '';
-        if (type === schemaTypes.entity) {
+        if (t === schemaTypes.entity) {
             html = `<a id="addEntity" class="btn btn-primary" href="./edit.html?type=entity">Add Entity</a>`;
-        } else if (type === schemaTypes.page) {
+        } else if (t === schemaTypes.page) {
             html = `<a id="addPage" class="btn btn-primary" href="./page.html">Add Page</a>`;
-        } else if (type === schemaTypes.query) {
+        } else if (t === schemaTypes.query) {
             html = `<a id="addQuery" class="btn btn-primary" href="/graphql">Add Query</a>`;
         }
 

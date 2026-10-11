@@ -24,23 +24,15 @@ func NewSchemaApi(schemaService services.ISchemaService, authApi *AuthApi) *Sche
 }
 
 func (a *SchemaApi) Register(r chi.Router) {
-	// Direct redirect for GraphQL playground if requested under /api/schemas/graphql
-	r.Get("/api/schemas/graphql", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/graphql", http.StatusFound)
-	})
-	r.Get("/api/schemas/graphql/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/graphql", http.StatusFound)
-	})
-
 	r.Route("/api/schemas", func(r chi.Router) {
+		r.Use(a.authApi.JWTMiddleware)
+
 		r.Get("/graphql", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/graphql", http.StatusFound)
 		})
 		r.Get("/graphql/", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/graphql", http.StatusFound)
 		})
-
-		r.Use(a.authApi.JWTMiddleware)
 
 		r.Get("/", a.GetAll)
 		r.Get("/name/{name}", a.GetByName)
@@ -198,6 +190,11 @@ func (a *SchemaApi) Save(w http.ResponseWriter, r *http.Request) {
 
 func (a *SchemaApi) Delete(w http.ResponseWriter, r *http.Request) {
 	schemaId := chi.URLParam(r, "schemaId")
+	if id, err := strconv.ParseInt(schemaId, 10, 64); err == nil {
+		if schema, err := a.schemaService.ById(r.Context(), id); err == nil && schema != nil {
+			schemaId = schema.SchemaId
+		}
+	}
 	if err := a.schemaService.Delete(r.Context(), schemaId); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

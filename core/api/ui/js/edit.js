@@ -21,13 +21,22 @@ const [type, name, refId, id] = getParams([
     queryKeys.refId,
     queryKeys.id,
 ]);
-loadNavBar(navBox);
-if (type === schemaTypes.entity) {
-    addEntityActionsButtons();
-} else if (type === schemaTypes.menu) {
-    addMenuActionsButtons();
+
+const lowerType = (type || '').toLowerCase();
+if (lowerType === schemaTypes.page) {
+    const targetUrl = id ? `page.html?${queryKeys.id}=${encodeURIComponent(id)}` : (refId ? `page.html?${queryKeys.refId}=${encodeURIComponent(refId)}` : 'page.html');
+    window.location.replace(targetUrl);
+} else if (lowerType === schemaTypes.query) {
+    window.location.replace('/graphql');
+} else {
+    loadNavBar(navBox);
+    if (lowerType === schemaTypes.entity) {
+        addEntityActionsButtons();
+    } else if (lowerType === schemaTypes.menu) {
+        addMenuActionsButtons();
+    }
+    checkUser(() => loadEditor(id, lowerType, name, refId));
 }
-checkUser(() => loadEditor(id, type, name, refId));
 
 function addMenuActionsButtons() {
     headerBox.innerHTML = `<button id='saveMenu' class="btn btn-primary">Save Menu</button>`;
@@ -119,12 +128,15 @@ function loadEditor(id, type, name, refId) {
 
             if (schemaData) {
                 document.title = `${schemaData.name} - ${type} setting - AiGen CMS Schema Builder`;
+                const settingData = schemaData.settings?.[type] ||
+                    schemaData.settings?.[lowercaseType] ||
+                    (schemaData.settings ? schemaData.settings[Object.keys(schemaData.settings).find(k => k.toLowerCase() === lowercaseType)] : null);
                 if (refId) {
-                    schema = {type, settings: {[type]: schemaData.settings[type]}};
+                    schema = {type, settings: {[type]: settingData}};
                 } else {
                     schema = schemaData;
                 }
-                editor.setValue(schemaData.settings[type]);
+                editor.setValue(settingData);
             } else {
                 errorBox.textContent = error;
                 errorBox.style.display = 'block';

@@ -41,14 +41,17 @@ export async function renderSchemaTable(tblContainer, errContainer, loadData, ac
     (data || []).forEach((item, i) => {
         let url = "";
         let duplicateUrl = "";
-        switch (item.type) {
+        const itemType = (item.type || '').toLowerCase();
+        switch (itemType) {
             case schemaTypes.page:
                 url = `page.html?${queryKeys.id}=${item.id}`;
                 duplicateUrl = `page.html?${queryKeys.refId}=${item.id}`;
                 break;
             case schemaTypes.query:
-                url = item.settings.query.ideUrl;
-                duplicateUrl = item.settings.query.ideUrl.replace("query%20" + item.name, "query%20" + item.name + "Copy");
+                const querySrc = item.settings?.query?.source || '';
+                const fallbackIdeUrl = `/graphql${querySrc ? '?query=' + encodeURIComponent(querySrc) : ''}`;
+                url = item.settings?.query?.ideUrl || fallbackIdeUrl;
+                duplicateUrl = (item.settings?.query?.ideUrl || fallbackIdeUrl).replace("query%20" + item.name, "query%20" + item.name + "Copy");
                 break;
             default:
                 url = `edit.html?${queryKeys.type}=${item.type}&${queryKeys.id}=${item.id}`;
@@ -60,7 +63,7 @@ export async function renderSchemaTable(tblContainer, errContainer, loadData, ac
             `<button class="btn badge btn-primary btn-sm publish-schema" id="${item.id}" data-schema-id="${item.schemaId}">Publish</button>`;
 
         const deleteButton = showDelete ?
-            `<button class="btn badge btn-danger btn-sm delete-schema" id="${item.id}" data-name="${item.name}">Delete</button>` : '';
+            `<button class="btn badge btn-danger btn-sm delete-schema" id="${item.id}" data-schema-id="${item.schemaId}" data-name="${item.name}">Delete</button>` : '';
 
         const historyButton = showViewHistory ?
             `<a href="history.html?${queryKeys.schemaId}=${item.schemaId}&${queryKeys.type}=${item.type}"  
@@ -98,7 +101,8 @@ export async function renderSchemaTable(tblContainer, errContainer, loadData, ac
         const btn = e.currentTarget;
         if (confirm("Do you want to delete schema: " + btn.getAttribute('data-name'))) {
             showOverlay();
-            const { error } = await del(btn.id);
+            const idToDel = btn.getAttribute('data-schema-id') || btn.id;
+            const { error } = await del(idToDel);
             hideOverlay();
             if (error) {
                 errorPanel.textContent = error;
