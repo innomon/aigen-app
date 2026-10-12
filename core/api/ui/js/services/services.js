@@ -86,6 +86,15 @@ export async function publish(data) {
     );
 }
 
+export async function unpublish(data) {
+    return await tryFetch(() =>
+        buildFetch(`/schemas/unpublish`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        })
+    );
+}
+
 export async function define(name) {
     return await tryFetch(() => buildFetch(`/schemas/entity/${name}/define`));
 }

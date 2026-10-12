@@ -1,4 +1,4 @@
-import { del, publish } from "../services/services.js";
+import { del, publish, unpublish } from "../services/services.js";
 import { queryKeys, schemaTypes } from "../models/types.js";
 import { hideOverlay, showOverlay } from "./loadingOverlay.js";
 
@@ -59,8 +59,10 @@ export async function renderSchemaTable(tblContainer, errContainer, loadData, ac
                 break;
         }
 
-        const publishButton = item.publicationStatus === 'published' ? '' :
-            `<button class="btn badge btn-primary btn-sm publish-schema" id="${item.id}" data-schema-id="${item.schemaId}">Publish</button>`;
+        const isPublished = (item.publicationStatus || '').toLowerCase() === 'published';
+        const publishButton = isPublished ?
+            `<button class="btn badge btn-warning btn-sm unpublish-schema" id="${item.id}" data-schema-id="${item.schemaId}" data-name="${item.name}">Unpublish</button>` :
+            `<button class="btn badge btn-primary btn-sm publish-schema" id="${item.id}" data-schema-id="${item.schemaId}" data-name="${item.name}">Publish</button>`;
 
         const deleteButton = showDelete ?
             `<button class="btn badge btn-danger btn-sm delete-schema" id="${item.id}" data-schema-id="${item.schemaId}" data-name="${item.name}">Delete</button>` : '';
@@ -96,6 +98,10 @@ export async function renderSchemaTable(tblContainer, errContainer, loadData, ac
     document.querySelectorAll('.publish-schema').forEach(btn => {
         btn.addEventListener('click', handlePublish);
     });
+
+    document.querySelectorAll('.unpublish-schema').forEach(btn => {
+        btn.addEventListener('click', handleUnpublish);
+    });
     
     async function handleDelete(e) {
         const btn = e.currentTarget;
@@ -117,13 +123,34 @@ export async function renderSchemaTable(tblContainer, errContainer, loadData, ac
         const btn = e.currentTarget;
         const id = btn.id;
         const schemaId = btn.getAttribute('data-schema-id');
+        showOverlay();
         const { error } = await publish({ id, schemaId });
+        hideOverlay();
 
         if (error) {
             errorPanel.textContent = error;
             errorPanel.style.display = 'block';
         } else {
             window.location.reload();
+        }
+    }
+
+    async function handleUnpublish(e) {
+        const btn = e.currentTarget;
+        const id = btn.id;
+        const schemaId = btn.getAttribute('data-schema-id');
+        const name = btn.getAttribute('data-name') || '';
+        if (confirm(`Do you want to unpublish schema: ${name}? It will be reverted to Draft (data will not be deleted).`)) {
+            showOverlay();
+            const { error } = await unpublish({ id, schemaId });
+            hideOverlay();
+
+            if (error) {
+                errorPanel.textContent = error;
+                errorPanel.style.display = 'block';
+            } else {
+                window.location.reload();
+            }
         }
     }
 }
