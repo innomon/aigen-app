@@ -1,6 +1,7 @@
 # AiGen CMS: Agentic SDK, Chat, and A2UI Implementation Guide
 
 ## 1. Overview
+
 The AiGen CMS framework incorporates an AI-driven architecture to enhance how users interact with the CMS data and dashboard. By leveraging the **Agentic Development Kit (ADK)** (`google.golang.org/adk/agent`), the application implements a multi-agent system that seamlessly blends natural language chat interfaces with rich, dynamic User Interfaces generated on the fly (A2UI).
 
 ## 2. Agentic SDK (ADK) Implementation
@@ -8,6 +9,7 @@ The AiGen CMS framework incorporates an AI-driven architecture to enhance how us
 The agentic capabilities are built using a declarative configuration approach backed by a Go-based registry and execution engine.
 
 ### 2.1. Agent Configuration (`agentic.yaml`)
+
 The core of the multi-agent system is defined in `agentic.yaml`. This file dictates the models, available tools, and the agent hierarchy.
 
 - **Models**: Defines the underlying LLM (e.g., `gemini-2.5-pro` via the `gemini` provider).
@@ -18,6 +20,7 @@ The core of the multi-agent system is defined in `agentic.yaml`. This file dicta
   - **Workflow Agents**: Orchestrate complex stateful operations using direct graphs with explicit execution nodes and routing edges.
 
 #### 2.1.1. Workflow Agents (ADK 2.0 Workflows)
+
 With the transition to ADK 2.0, you can declaratively construct graph-based agent workflows using `type: workflow`.
 
 A workflow defines **Nodes** (referencing existing agents or tools) and **Edges** (specifying the routing route/condition transitions):
@@ -54,6 +57,7 @@ agents:
   - `cms_a2ui_update`: For modifying the frontend A2UI state.
 
 ### 2.2. The Router Agent (`router_agent.go`)
+
 The `RouterAgent` is a custom Go implementation registered with the ADK `registry`. It implements a lightweight, keyword-based intent classification system.
 
 - **Execution Flow**: When a user sends a message, the `RouterAgent` analyzes the text (`ic.UserContent()`).
@@ -63,8 +67,10 @@ The `RouterAgent` is a custom Go implementation registered with the ADK `registr
 - **Delegation**: Once the target sub-agent is selected, the router delegates the execution context (`targetAgent.Run(ic)`) and yields the events back to the session.
 
 ### 2.3. Initialization (`chat_service.go`)
-The `ChatService` serves as the bridge between the standard Go web backend and the ADK. 
+
+The `ChatService` serves as the bridge between the standard Go web backend and the ADK.
 Upon initialization (`NewChatService`), it:
+
 1. Registers the custom `RouterAgent` type.
 2. Registers the specific CMS tools bound to the `EntityService`, `SchemaService`, and `A2UIService`.
 3. Loads the `agentic.yaml` configuration into the `registry`.
@@ -77,6 +83,7 @@ Upon initialization (`NewChatService`), it:
 The chat system is the primary entry point for AI interactions. Instead of relying on a single monolithic LLM prompt, the chat is driven by the **Router -> Sub-Agent** architecture.
 
 ### Conversational Workflows
+
 1. **Data Operations**: A user asks, "Show me the latest CRM leads." The `RouterAgent` forwards this to the `cms_agent`. The `cms_agent` invokes the `cms_entity_list` tool, retrieves the data, and formulates a natural language response.
 2. **UI Generation**: A user asks, "Create a dashboard view for the leads." The router forwards this to the `ui_agent`. The `ui_agent` invokes the `cms_a2ui_update` tool, which pushes a new UI component structure to the frontend.
 
@@ -89,24 +96,27 @@ By separating the "Data" persona from the "UI" persona, the system maintains str
 A2UI is a protocol that allows the backend Agent to stream rich, interactive UI structures as JSON data to the frontend. This bypasses traditional static templating, allowing the AI to generate bespoke interfaces based on user intent.
 
 ### 4.1. The Adjacency List Model
+
 A2UI utilizes a flat **Adjacency List** data structure rather than deeply nested JSON. This makes it highly efficient for streaming deltas and updating specific nodes.
 
 ```go
 type A2UIComponent struct {
-	ID         string                 `json:"id"`
-	Type       string                 `json:"type"`       // e.g., "Card", "TextField", "Button"
-	Attributes map[string]interface{} `json:"attributes,omitempty"`
-	Children   []string               `json:"children,omitempty"` // IDs of child components
+ ID         string                 `json:"id"`
+ Type       string                 `json:"type"`       // e.g., "Card", "TextField", "Button"
+ Attributes map[string]interface{} `json:"attributes,omitempty"`
+ Children   []string               `json:"children,omitempty"` // IDs of child components
 }
 ```
 
 ### 4.2. State Management (`a2ui_service.go`)
+
 The `A2UIService` acts as the definitive "Source of Truth" for the active dashboard UI.
 
 - **Pub/Sub via SSE**: The service uses Go channels (`s.subscribers`) and `sync.RWMutex` to manage state safely across concurrent connections.
 - **Streaming Updates**: When the `ui_agent` modifies a component via the `cms_a2ui_update` tool, the `UpdateComponent` method is called. This updates the internal component map and immediately broadcasts the updated state array to all active Server-Sent Events (SSE) subscribers.
 
 ### 4.3. The Interaction Loop
+
 The integration between the Frontend (Renderer), Backend (Agent), and Database (Entity Service) follows a strict Producer-Consumer model:
 
 1. **Rendering**: The frontend JavaScript connects to `/api/a2ui/stream`. It maintains a local Component Map and recursively renders the UI using a trusted Bootstrap 5 component catalog.
@@ -116,16 +126,22 @@ The integration between the Frontend (Renderer), Backend (Agent), and Database (
 5. **UI Delta Update**: The `A2UIService` pushes any resulting UI updates (e.g., showing a success message or updating a chart) back through the SSE stream, seamlessly updating the user's view.
 
 ### 4.4. Security and RBAC
+
 The A2UI layer is "security-aware". When the Agent fetches data to populate an A2UI component (like a `DataTable`), it executes through the `EntityService` using the user's authenticated context. This ensures that all Role-Based Access Control (RBAC), row-level filters, and field-level permissions are strictly enforced before the data ever reaches the UI generation phase. Client-side execution of arbitrary code is prevented by restricting rendering to a pre-defined, trusted component catalog.
+
 - `cms_bizdef_list`, `cms_bizdef_get`: For exploring installed BizDefs, their definitions, roles, and entity contexts.
 - `cms_a2ui_update`: For modifying the frontend A2UI state.
 
 ### 2.2. The Router Agent (`router_agent.go`)
+
 ...
+
 ### 5. Multi-Agent Context Injection
 
 ### 5.1. The `bizdef.json` Specification
+
 Each BizDef can define a `bizdef.json` file in its root directory (e.g., `bizdefs/erpnext_accounting/bizdef.json`). This file acts as a manifest that provides the LLM with deep context:
+
 - `name`: The system name of the BizDef.
 - `display_name`: Human-readable name.
 - `description`: A short summary of the BizDef's purpose.
@@ -134,10 +150,12 @@ Each BizDef can define a `bizdef.json` file in its root directory (e.g., `bizdef
 - `entities`: A mapping of entity schemas to their descriptions and, optionally, a `context_file`.
 
 ### 5.2. Context Files
+
 Entities defined in `bizdef.json` can point to external Markdown context files via the `context_file` property (e.g., `docs/account.md`). These files contain detailed business rules, relationships, or specific instructions on how to handle the entity, which is directly injected into the LLM's context window.
 
 ### 5.3. Discovery Tools
+
 The Agent discovers this information through two primary tools:
+
 1. **`cms_bizdef_list`**: Reads the global `bizdefs.json` to find enabled BizDefs, then parses each BizDef's `bizdef.json` to return a summarized list of available BizDefs.
 2. **`cms_bizdef_get`**: Retrieves the full definition of a specific BizDef. Crucially, this tool automatically traverses the `entities` mapping, reads any referenced `context_file`s from the disk, and embeds their raw text directly into the response payload. This allows the LLM to acquire comprehensive entity knowledge in a single tool call without manual file system navigation.
-
